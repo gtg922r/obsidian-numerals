@@ -1,8 +1,23 @@
-/*
+.numberpad-line {
+    font-family: var(--font-monospace);
+    line-height: var(--line-height-tight);
+    font-size: var(--code-size);
+    /* Float input on the left and results on the right */
+    /* Source: [html - How to float a span in a div? - Stack Overflow](https://stackoverflow.com/questions/17938303/how-to-float-a-span-in-a-div) */
+    clear: both;
+    overflow: auto;    
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.numberpad-line .numberpad-input {
+    float: left;
+}
 
-If your plugin does not need CSS, delete this file.
+.numberpad-line .numberpad-result {
+    float: right;
+    color: var(--text-muted);
+}
 
-*/
+.block-language-math {
+    padding: var(--size-4-4);
+    background-color: var(--code-background);
+}

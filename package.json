@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
-	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"name": "obsidian-number-pad",
+	"version": "0.0.1",
+	"description": "This plugin processes `math` codeblocks and evaluates each line as a natural language calculation.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
@@ -20,5 +20,10 @@
 		"obsidian": "latest",
 		"tslib": "2.4.0",
 		"typescript": "4.7.4"
+	},
+	"dependencies": {
+		"@medv/numbr": "github:antonmedv/numbr",
+		"fcal": "^0.4.3",
+		"mathjs": "^11.3.0"
 	}
 }
