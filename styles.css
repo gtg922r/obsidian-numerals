@@ -1,9 +1,8 @@
-.numberpad-line {
+/* ** Initial Style ** */
+/* .numberpad-line {
     font-family: var(--font-monospace);
     line-height: var(--line-height-tight);
     font-size: var(--code-size);
-    /* Float input on the left and results on the right */
-    /* Source: [html - How to float a span in a div? - Stack Overflow](https://stackoverflow.com/questions/17938303/how-to-float-a-span-in-a-div) */
     clear: both;
     overflow: auto;    
 }
@@ -20,4 +19,39 @@
 .block-language-math {
     padding: var(--size-4-4);
     background-color: var(--code-background);
+} */
+
+/* ** Two color Style ** */
+.numberpad-line {
+    font-family: var(--font-monospace);
+    line-height: var(--line-height-tight);
+    font-size: var(--code-size);
+    clear: both;
+    overflow: auto;
+    background-color: var(--code-background);
+ }
+
+.numberpad-line .numberpad-input {
+    float: left;
+    width: 70%;
+    padding-left: var(--size-4-4);
 }
+
+.numberpad-line .numberpad-result {
+    float: right;
+    color: var(--text-muted);
+    background-color: var(--color-base-25);
+    width: 30%;
+    text-align: right;
+    border-left: 1px solid var(--background-modifier-border-focus);
+    padding-right: var(--size-4-4);
+}
+
+.block-language-math {
+    background-color: var(--code-background);
+}
+
+.numberpad-line:first-child .numberpad-input    {padding-top:    var(--size-4-4);}
+.numberpad-line:first-child .numberpad-result   {padding-top:    var(--size-4-4);}
+.numberpad-line:last-child  .numberpad-input    {padding-bottom: var(--size-4-4);}
+.numberpad-line:last-child  .numberpad-result   {padding-bottom: var(--size-4-4);}

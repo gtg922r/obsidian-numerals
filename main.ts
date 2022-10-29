@@ -56,7 +56,8 @@ export default class MyPlugin extends Plugin {
 				// line.createSpan( {text: " → "}, cls: "numberpad-sep");
 				// const formattedResult = math.format(results[i], {upperExp: 7, precision: 8});
 				const emptyLine = (results[i] === undefined)
-				const formattedResult = !emptyLine ? " → " + math.format(results[i], numberFormatter) : '\xa0';
+				// const formattedResult = !emptyLine ? " → " + math.format(results[i], numberFormatter) : '\xa0';
+				const formattedResult = !emptyLine ? math.format(results[i], numberFormatter) : '\xa0';				
 				line.createEl("span", { text: formattedResult, cls: "numberpad-result" });
 				// console.log(math.parse(rows[i]).toHTML())			  
 			}

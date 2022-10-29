@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-number-pad",
-	"version": "0.0.1",
-	"description": "This plugin processes `math` codeblocks and evaluates each line as a natural language calculation.",
+	"name": "obsidian-numerals",
+	"version": "0.0.2",
+	"description": "Numerals turns any code block into an advanced calculator. Evaluates math expressions on each line of a code block, including units and currency",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

@@ -1,9 +1,9 @@
 {
-	"id": "obsidian-number-pad",
-	"name": "NumberPad",
-	"version": "0.0.1",
+	"id": "obsidian-numerals",
+	"name": "Numerals",
+	"version": "0.0.2",
 	"minAppVersion": "0.16.0",
-	"description": "This plugin processes `math` codeblocks and evaluates each line as a natural language calculation.",
+	"description": "Numerals turns any code block into an advanced calculator. Evaluates math expressions on each line of a code block, including units and currency",
 	"author": "ryancash",
 	"authorUrl": "https://obsidian.md",
 	"isDesktopOnly": false
