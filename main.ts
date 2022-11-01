@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, DropdownComponent, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import * as math from `mathjs`;
 
 
@@ -6,10 +6,12 @@ import * as math from `mathjs`;
 
 interface MyPluginSettings {
 	mySetting: string;
+	renderStyle: number;
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+	mySetting: " → ",
+	renderStyle: 3,
 }
 
 export default class MyPlugin extends Plugin {
@@ -36,6 +38,10 @@ export default class MyPlugin extends Plugin {
 		}
 
 		this.registerMarkdownCodeBlockProcessor("math", (source, el, ctx) => {
+			el.toggleClass("numerals-panes", 		this.settings.renderStyle == 1)
+			el.toggleClass("numerals-answer-right", this.settings.renderStyle == 2)
+			el.toggleClass("numerals-answer-below", this.settings.renderStyle == 3)						
+
 			let processedSource = source;
 			for (let processor of preProcessors ) {
 				processedSource = processedSource.replace(processor.regex, processor.replaceStr)
@@ -56,8 +62,8 @@ export default class MyPlugin extends Plugin {
 				// line.createSpan( {text: " → "}, cls: "numberpad-sep");
 				// const formattedResult = math.format(results[i], {upperExp: 7, precision: 8});
 				const emptyLine = (results[i] === undefined)
-				// const formattedResult = !emptyLine ? " → " + math.format(results[i], numberFormatter) : '\xa0';
-				const formattedResult = !emptyLine ? math.format(results[i], numberFormatter) : '\xa0';				
+				const formattedResult = !emptyLine ? this.settings.mySetting + math.format(results[i], numberFormatter) : '\xa0';
+				// const formattedResult = !emptyLine ? math.format(results[i], numberFormatter) : '\xa0';				
 				line.createEl("span", { text: formattedResult, cls: "numberpad-result" });
 				// console.log(math.parse(rows[i]).toHTML())			  
 			}
@@ -129,15 +135,30 @@ class SampleSettingTab extends PluginSettingTab {
 		containerEl.createEl('h2', {text: 'Settings for my awesome plugin.'});
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('Numerals Render Style')
+			.setDesc('Style of results rendering in Live Preview and Reading mode')
+			.addDropdown(dropDown => {
+				dropDown.addOption(1, '2 Panes');
+				dropDown.addOption(2, 'Answer to the right');
+				dropDown.addOption(3, 'Answer below each line');
+				dropDown.setValue(this.plugin.settings.renderStyle);
+				dropDown.onChange(async (value) => {
+					this.plugin.settings.renderStyle = value;
+					await this.plugin.saveSettings();
+				});
+			});		
+
+		new Setting(containerEl)
+			.setName('Result Indicator')
+			.setDesc('String to show preceeding the calculation result')
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
+				.setPlaceholder('" → "')
 				.setValue(this.plugin.settings.mySetting)
 				.onChange(async (value) => {
-					console.log('Secret: ' + value);
 					this.plugin.settings.mySetting = value;
 					await this.plugin.saveSettings();
 				}));
+
+				
 	}
 }

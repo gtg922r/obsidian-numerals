@@ -1,57 +1,91 @@
-/* ** Initial Style ** */
-/* .numberpad-line {
-    font-family: var(--font-monospace);
+/***********************************/
+/******** Non-setting specific   **/
+
+
+.block-language-math  {
+    background-color: var(--code-background);
+    font-family: var(--font-monospace);    
+    font-size: var(--code-size);    
+} 
+
+/**********************************/
+/* ** Right-aligned Style ** */
+.numerals-answer-right .numberpad-line {
     line-height: var(--line-height-tight);
-    font-size: var(--code-size);
     clear: both;
     overflow: auto;    
 }
 
-.numberpad-line .numberpad-input {
+.numerals-answer-right .numberpad-line:nth-child(even){
+    background-color: var(--color-base-20);
+}
+
+.numerals-answer-right .numberpad-input {
     float: left;
 }
 
-.numberpad-line .numberpad-result {
+.numerals-answer-right .numberpad-result {
     float: right;
     color: var(--text-muted);
 }
 
-.block-language-math {
+.block-language-math.numerals-answer-right  {
     padding: var(--size-4-4);
-    background-color: var(--code-background);
-} */
+} 
 
-/* ** Two color Style ** */
-.numberpad-line {
-    font-family: var(--font-monospace);
+/**********************************/
+/* ** Two Panes Style ** */
+/* this leads to filling all the way to the bottom of the container. probably bigger than desired */
+.numerals-panes .numberpad-line {
     line-height: var(--line-height-tight);
-    font-size: var(--code-size);
-    clear: both;
-    overflow: auto;
-    background-color: var(--code-background);
- }
-
-.numberpad-line .numberpad-input {
-    float: left;
-    width: 70%;
+    display: table-row;
+}
+ 
+.numerals-panes .numberpad-input {
+    display:table-cell;
     padding-left: var(--size-4-4);
 }
 
-.numberpad-line .numberpad-result {
-    float: right;
+.numerals-panes .numberpad-result {
+    display: table-cell;
     color: var(--text-muted);
     background-color: var(--color-base-25);
-    width: 30%;
+    width: 25%;
     text-align: right;
     border-left: 1px solid var(--background-modifier-border-focus);
     padding-right: var(--size-4-4);
 }
 
-.block-language-math {
-    background-color: var(--code-background);
+.block-language-math.numerals-panes {
+    display:table;
+    width: 100%;
 }
 
-.numberpad-line:first-child .numberpad-input    {padding-top:    var(--size-4-4);}
-.numberpad-line:first-child .numberpad-result   {padding-top:    var(--size-4-4);}
-.numberpad-line:last-child  .numberpad-input    {padding-bottom: var(--size-4-4);}
-.numberpad-line:last-child  .numberpad-result   {padding-bottom: var(--size-4-4);}
+.numerals-panes .numberpad-line:first-child span {padding-top:    var(--size-4-4);} */
+.numerals-panes .numberpad-line:last-child  span {padding-bottom: var(--size-4-4);} */
+
+/**********************************/
+/* ** Result on following line ** */
+
+.numerals-answer-below .numberpad-line {
+    line-height: var(--line-height-tight);
+}
+
+
+.numerals-answer-below .numberpad-line span {
+    display:block;
+    padding-left: var(--size-4-4);
+    padding-right: var(--size-4-4);   
+}
+
+.numerals-answer-below .numberpad-line .numberpad-result {
+    /* float: right; */
+    color: var(--text-muted);
+    padding-left: var(--size-4-8);
+    padding-bottom: var(--size-2-1);
+}
+
+.block-language-math.numerals-answer-below {
+    padding-top: var(--size-4-4);
+    padding-bottom: var(--size-4-4);
+} 
