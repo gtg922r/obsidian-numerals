@@ -7,11 +7,13 @@ import * as math from `mathjs`;
 interface MyPluginSettings {
 	mySetting: string;
 	renderStyle: number;
+	alternateRowColor: boolean;
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: " → ",
 	renderStyle: 3,
+	alternateRowColor: false
 }
 
 export default class MyPlugin extends Plugin {
@@ -41,6 +43,8 @@ export default class MyPlugin extends Plugin {
 			el.toggleClass("numerals-panes", 		this.settings.renderStyle == 1)
 			el.toggleClass("numerals-answer-right", this.settings.renderStyle == 2)
 			el.toggleClass("numerals-answer-below", this.settings.renderStyle == 3)						
+
+			el.toggleClass("numerals-alt-row-color", this.settings.alternateRowColor)
 
 			let processedSource = source;
 			for (let processor of preProcessors ) {
@@ -158,6 +162,16 @@ class SampleSettingTab extends PluginSettingTab {
 					this.plugin.settings.mySetting = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Alternating row color')
+			.setDesc('Alternating rows are colored slightly differently to help differentiate between rows')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.alternateRowColor)
+				.onChange(async (value) => {
+					this.plugin.settings.alternateRowColor = value;
+					await this.plugin.saveSettings();
+				}));				
 
 				
 	}

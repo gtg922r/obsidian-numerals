@@ -5,8 +5,18 @@
 .block-language-math  {
     background-color: var(--code-background);
     font-family: var(--font-monospace);    
-    font-size: var(--code-size);    
+    font-size: var(--code-size);
+    padding: var(--size-4-4);    
 } 
+
+.numerals-alt-row-color .numberpad-line:nth-child(even){
+    background-color: var(--background-modifier-hover);
+}
+
+.numerals-alt-row-color .numberpad-line {
+    padding-left: var(--size-2-1);
+    padding-right: var(--size-2-1);        
+}
 
 /**********************************/
 /* ** Right-aligned Style ** */
@@ -14,10 +24,6 @@
     line-height: var(--line-height-tight);
     clear: both;
     overflow: auto;    
-}
-
-.numerals-answer-right .numberpad-line:nth-child(even){
-    background-color: var(--color-base-20);
 }
 
 .numerals-answer-right .numberpad-input {
@@ -29,9 +35,6 @@
     color: var(--text-muted);
 }
 
-.block-language-math.numerals-answer-right  {
-    padding: var(--size-4-4);
-} 
 
 /**********************************/
 /* ** Two Panes Style ** */
@@ -39,6 +42,10 @@
 .numerals-panes .numberpad-line {
     line-height: var(--line-height-tight);
     display: table-row;
+}
+
+.numerals-panes .numberpad-line span {
+    /* background-color: red; */
 }
  
 .numerals-panes .numberpad-input {
@@ -49,7 +56,7 @@
 .numerals-panes .numberpad-result {
     display: table-cell;
     color: var(--text-muted);
-    background-color: var(--color-base-25);
+    background-color: var(--background-modifier-hover);
     width: 25%;
     text-align: right;
     border-left: 1px solid var(--background-modifier-border-focus);
@@ -59,10 +66,11 @@
 .block-language-math.numerals-panes {
     display:table;
     width: 100%;
+    padding:0px;
 }
 
-.numerals-panes .numberpad-line:first-child span {padding-top:    var(--size-4-4);} */
-.numerals-panes .numberpad-line:last-child  span {padding-bottom: var(--size-4-4);} */
+.numerals-panes .numberpad-line:first-child span {padding-top:    var(--size-4-4);} 
+.numerals-panes .numberpad-line:last-child  span {padding-bottom: var(--size-4-4);} 
 
 /**********************************/
 /* ** Result on following line ** */
@@ -71,21 +79,17 @@
     line-height: var(--line-height-tight);
 }
 
-
 .numerals-answer-below .numberpad-line span {
     display:block;
-    padding-left: var(--size-4-4);
-    padding-right: var(--size-4-4);   
 }
 
 .numerals-answer-below .numberpad-line .numberpad-result {
-    /* float: right; */
     color: var(--text-muted);
-    padding-left: var(--size-4-8);
+    padding-left: var(--size-4-4);
     padding-bottom: var(--size-2-1);
 }
 
-.block-language-math.numerals-answer-below {
-    padding-top: var(--size-4-4);
-    padding-bottom: var(--size-4-4);
-} 
+.numerals-answer-below .numberpad-line .numberpad-input {
+    padding-top: var(--size-2-1);
+}
+
