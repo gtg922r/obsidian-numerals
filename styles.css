@@ -9,13 +9,21 @@
     padding: var(--size-4-4);    
 } 
 
+.numberpad-input.numerals-empty {
+    font-weight: bold;
+    color: var(--text-faint);
+}
+
 .numerals-alt-row-color .numberpad-line:nth-child(even){
     background-color: var(--background-modifier-hover);
 }
 
-.numerals-alt-row-color .numberpad-line {
-    padding-left: var(--size-2-1);
-    padding-right: var(--size-2-1);        
+.numerals-alt-row-color .numberpad-line .numberpad-input{
+    padding-left: var(--size-2-2);
+}
+
+.numerals-alt-row-color .numberpad-line .numberpad-result {
+    padding-right: var(--size-2-2);        
 }
 
 /**********************************/
@@ -41,36 +49,27 @@
 /* this leads to filling all the way to the bottom of the container. probably bigger than desired */
 .numerals-panes .numberpad-line {
     line-height: var(--line-height-tight);
-    display: table-row;
+ 
 }
 
-.numerals-panes .numberpad-line span {
-    /* background-color: red; */
-}
+.numerals-panes .numberpad-line {
+    display: flex;
+ }
  
 .numerals-panes .numberpad-input {
-    display:table-cell;
-    padding-left: var(--size-4-4);
+    width:75%;
 }
 
 .numerals-panes .numberpad-result {
-    display: table-cell;
+
     color: var(--text-muted);
     background-color: var(--background-modifier-hover);
     width: 25%;
     text-align: right;
     border-left: 1px solid var(--background-modifier-border-focus);
-    padding-right: var(--size-4-4);
 }
 
-.block-language-math.numerals-panes {
-    display:table;
-    width: 100%;
-    padding:0px;
-}
 
-.numerals-panes .numberpad-line:first-child span {padding-top:    var(--size-4-4);} 
-.numerals-panes .numberpad-line:last-child  span {padding-bottom: var(--size-4-4);} 
 
 /**********************************/
 /* ** Result on following line ** */
@@ -93,3 +92,11 @@
     padding-top: var(--size-2-1);
 }
 
+.numerals-answer-below .numberpad-input.numerals-empty {
+    padding-top: var(--size-4-3);
+    padding-bottom: var(--size-4-1);
+}
+
+.numerals-answer-below .numberpad-result.numerals-empty {
+    display: none;
+}

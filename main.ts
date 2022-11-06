@@ -21,7 +21,8 @@ export default class MyPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-
+		
+	
 		// ** Mathjs Setup ** //
 		const isUnitAlphaOriginal = math.Unit.isValidAlpha;
 		math.Unit.isValidAlpha = function (c, cPrev, cNext) {
@@ -61,29 +62,18 @@ export default class MyPlugin extends Plugin {
 			const results = math.evaluate(rows);
 
 			for (let i = 0; i < rows.length; i++) {
-				const line = el.createEl("div", {cls: "numberpad-line"})
-				line.createEl("span", { text: rawRows[i], cls: "numberpad-input"});
-				// line.createSpan( {text: " → "}, cls: "numberpad-sep");
-				// const formattedResult = math.format(results[i], {upperExp: 7, precision: 8});
+				const line = el.createEl("div", {cls: "numberpad-line"});
+				const inputElement = line.createEl("span", { text: rawRows[i], cls: "numberpad-input"});
+
 				const emptyLine = (results[i] === undefined)
 				const formattedResult = !emptyLine ? this.settings.mySetting + math.format(results[i], numberFormatter) : '\xa0';
-				// const formattedResult = !emptyLine ? math.format(results[i], numberFormatter) : '\xa0';				
-				line.createEl("span", { text: formattedResult, cls: "numberpad-result" });
-				// console.log(math.parse(rows[i]).toHTML())			  
+				const resultElement = line.createEl("span", { text: formattedResult, cls: "numberpad-result" });
+
+				resultElement.toggleClass("numerals-empty", emptyLine);
+				inputElement.toggleClass("numerals-empty", emptyLine);
+
 			}
 
-
-
-			// // *** Original Working with indepdent lines ***
-			// for (let i = 0; i < rows.length; i++) {
-			// 	const line = el.createEl("div", {cls: "numberpad-line"})
-
-			// 	const result = evaluate(rows[i])
-
-			// 	line.createEl("span", { text: rows[i], cls: "numberpad-input"});
-			// 	// line.createSpan( {text: " → "}, cls: "numberpad-sep");
-			// 	line.createEl("span", { text: " → " + evaluate(rows[i]), cls: "numberpad-result" });			  
-			// }
 		});
 
 		// *********** START Sample Plugin Code *********** //
