@@ -12,7 +12,7 @@ Numerals gives you the power of an advanced calculator inside a `math` code bloc
 	- `$1,000 * 2` → `2,000 USD`
 	- `$10 + $0.75` → `10.75 USD`
 - Math functions
-	- `sin`, `cos`, `abs`, `log`, etc (see [mathjs](https://mathjs.org/docs/reference/functions.html) for full list)
+	- `sqrt`, `sin`, `cos`, `abs`, `log`, etc (see [mathjs](https://mathjs.org/docs/reference/functions.html) for full list)
 - Hex, Binary, Octal, and other bases
 	- `0xff + 0b100` → `259`
 	- `hex(0xff + 0b100)` → `"0x103"`
@@ -49,6 +49,15 @@ Numerals has been tested with the default theme and most other top themes. It us
 Choose between a consistent code block background color (left), or alternating rows to help track from input to result (right).
 
 <img width="1010" alt="Numerals Alternating Row Style Comparison" src="https://user-images.githubusercontent.com/1195174/200187338-24912a83-eb1e-4188-a843-e189f33e7133.png">
+
+## Installation
+*Numerals* is not yet in the Obsidian community plugin list. The easiest way to try *Numerals* is by using the [Obsidian BRAT plugin](https://github.com/TfTHacker/obsidian42-brat). 
+
+**Using BRAT**
+1. Ensure BRAT is installed
+2. Trigger the command `Obsidian42 - BRAT: Add a beta plugin for testing` 
+3. Enter this repository, `gtg922r/obsidian-numerals`
+4. Activate *Numerals* plugin in community plugin list
 
 ## Remaining features in progress
 - Support for additional currency symbols (currently only supports `$`)
