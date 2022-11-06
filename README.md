@@ -48,7 +48,7 @@ Numerals has been tested with the default theme and most other top themes. It us
 ### Alternating Row Colors
 Choose between a consistent code block background color (left), or alternating rows to help track from input to result (right).
 
-<img width="1010" alt="Numerals Alternating Row Style Comparison" src="https://user-images.githubusercontent.com/1195174/200187204-9b6b5848-7164-4555-b5d9-6b9acfdcd4f9.png">
+<img width="1010" alt="Numerals Alternating Row Style Comparison" src="https://user-images.githubusercontent.com/1195174/200187338-24912a83-eb1e-4188-a843-e189f33e7133.png">
 
 ## Remaining features in progress
 - Support for additional currency symbols (currently only supports `$`)
