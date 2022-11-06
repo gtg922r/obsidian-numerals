@@ -51,28 +51,33 @@ export default class NumeralsPlugin extends Plugin {
 			for (let processor of preProcessors ) {
 				processedSource = processedSource.replace(processor.regex, processor.replaceStr)
 			}
-			// const preprocessRegex = /(?:\$)([\d,\.]+)/g
-			// const replaceString = '$1 USD' // Delete "$" and append USD to any currency
-			// const processedSource = source.replace(preprocessRegex, replaceString)
 
-			// const rows = processedSource.split("\n").filter((row) => row.length > 0);
-			// const rawRows = source.split("\n").filter((row) => row.length > 0);
 			const rows = processedSource.split("\n");
 			const rawRows = source.split("\n");
-			const results = math.evaluate(rows);
 
-			for (let i = 0; i < rows.length; i++) {
-				const line = el.createEl("div", {cls: "numerals-line"});
-				const inputElement = line.createEl("span", { text: rawRows[i], cls: "numerals-input"});
+			try {
+				const results = math.evaluate(rows);	
+				
+				for (let i = 0; i < rows.length; i++) {
+					const line = el.createEl("div", {cls: "numerals-line"});
+					const inputElement = line.createEl("span", { text: rawRows[i], cls: "numerals-input"});
+	
+					const emptyLine = (results[i] === undefined)
+					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], numberFormatter) : '\xa0';
+					const resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
+	
+					resultElement.toggleClass("numerals-empty", emptyLine);
+					inputElement.toggleClass("numerals-empty", emptyLine);
+	
+				}				
 
-				const emptyLine = (results[i] === undefined)
-				const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], numberFormatter) : '\xa0';
-				const resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
-
-				resultElement.toggleClass("numerals-empty", emptyLine);
-				inputElement.toggleClass("numerals-empty", emptyLine);
-
+			} catch (error) {
+				el.createEl("div", {cls: "numerals-error-line"});
+				el.createEl("span", {cls:"numerals-error-name", text: error.name + ":"});
+				el.createEl("span", {cls:"numerals-error-message", text: error.message});		
 			}
+
+
 
 		});
 
@@ -97,21 +102,7 @@ export default class NumeralsPlugin extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
 
 class SampleSettingTab extends PluginSettingTab {
 	plugin: NumeralsPlugin;

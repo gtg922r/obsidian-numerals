@@ -9,36 +9,41 @@
     padding: var(--size-4-4);    
 } 
 
-.numerals-input.numerals-empty {
+.numberpad-input.numerals-empty {
     font-weight: bold;
     color: var(--text-faint);
 }
 
-.numerals-alt-row-color .numerals-line:nth-child(even){
+.numerals-alt-row-color .numberpad-line:nth-child(even){
     background-color: var(--background-modifier-hover);
 }
 
-.numerals-alt-row-color .numerals-line .numerals-input{
+.numerals-alt-row-color .numberpad-line .numberpad-input{
     padding-left: var(--size-2-2);
 }
 
-.numerals-alt-row-color .numerals-line .numerals-result {
+.numerals-alt-row-color .numberpad-line .numberpad-result {
     padding-right: var(--size-2-2);        
+}
+
+.numerals-error-name {
+    color:var(--color-red);
+    padding-right: var(--size-4-2);
 }
 
 /**********************************/
 /* ** Right-aligned Style ** */
-.numerals-answer-right .numerals-line {
+.numerals-answer-right .numberpad-line {
     line-height: var(--line-height-tight);
     clear: both;
     overflow: auto;    
 }
 
-.numerals-answer-right .numerals-input {
+.numerals-answer-right .numberpad-input {
     float: left;
 }
 
-.numerals-answer-right .numerals-result {
+.numerals-answer-right .numberpad-result {
     float: right;
     color: var(--text-muted);
 }
@@ -47,20 +52,20 @@
 /**********************************/
 /* ** Two Panes Style ** */
 /* this leads to filling all the way to the bottom of the container. probably bigger than desired */
-.numerals-panes .numerals-line {
+.numerals-panes .numberpad-line {
     line-height: var(--line-height-tight);
  
 }
 
-.numerals-panes .numerals-line {
+.numerals-panes .numberpad-line {
     display: flex;
  }
  
-.numerals-panes .numerals-input {
+.numerals-panes .numberpad-input {
     width:75%;
 }
 
-.numerals-panes .numerals-result {
+.numerals-panes .numberpad-result {
 
     color: var(--text-muted);
     background-color: var(--background-modifier-hover);
@@ -74,29 +79,29 @@
 /**********************************/
 /* ** Result on following line ** */
 
-.numerals-answer-below .numerals-line {
+.numerals-answer-below .numberpad-line {
     line-height: var(--line-height-tight);
 }
 
-.numerals-answer-below .numerals-line span {
+.numerals-answer-below .numberpad-line span {
     display:block;
 }
 
-.numerals-answer-below .numerals-line .numerals-result {
+.numerals-answer-below .numberpad-line .numberpad-result {
     color: var(--text-muted);
     padding-left: var(--size-4-4);
     padding-bottom: var(--size-2-1);
 }
 
-.numerals-answer-below .numerals-line .numerals-input {
+.numerals-answer-below .numberpad-line .numberpad-input {
     padding-top: var(--size-2-1);
 }
 
-.numerals-answer-below .numerals-input.numerals-empty {
+.numerals-answer-below .numberpad-input.numerals-empty {
     padding-top: var(--size-4-3);
     padding-bottom: var(--size-4-1);
 }
 
-.numerals-answer-below .numerals-result.numerals-empty {
+.numerals-answer-below .numberpad-result.numerals-empty {
     display: none;
 }
