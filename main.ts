@@ -4,20 +4,20 @@ import * as math from `mathjs`;
 
 // Remember to rename these classes and interfaces!
 
-interface MyPluginSettings {
-	mySetting: string;
+interface NumeralsSettings {
+	resultSeparator: string;
 	renderStyle: number;
 	alternateRowColor: boolean;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: " → ",
+const DEFAULT_SETTINGS: NumeralsSettings = {
+	resultSeparator: " → ",
 	renderStyle: 3,
 	alternateRowColor: false
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class NumeralsPlugin extends Plugin {
+	settings: NumeralsSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -62,12 +62,12 @@ export default class MyPlugin extends Plugin {
 			const results = math.evaluate(rows);
 
 			for (let i = 0; i < rows.length; i++) {
-				const line = el.createEl("div", {cls: "numberpad-line"});
-				const inputElement = line.createEl("span", { text: rawRows[i], cls: "numberpad-input"});
+				const line = el.createEl("div", {cls: "numerals-line"});
+				const inputElement = line.createEl("span", { text: rawRows[i], cls: "numerals-input"});
 
 				const emptyLine = (results[i] === undefined)
-				const formattedResult = !emptyLine ? this.settings.mySetting + math.format(results[i], numberFormatter) : '\xa0';
-				const resultElement = line.createEl("span", { text: formattedResult, cls: "numberpad-result" });
+				const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], numberFormatter) : '\xa0';
+				const resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
 
 				resultElement.toggleClass("numerals-empty", emptyLine);
 				inputElement.toggleClass("numerals-empty", emptyLine);
@@ -114,9 +114,9 @@ class SampleModal extends Modal {
 }
 
 class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	plugin: NumeralsPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: NumeralsPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -147,9 +147,9 @@ class SampleSettingTab extends PluginSettingTab {
 			.setDesc('String to show preceeding the calculation result')
 			.addText(text => text
 				.setPlaceholder('" → "')
-				.setValue(this.plugin.settings.mySetting)
+				.setValue(this.plugin.settings.resultSeparator)
 				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
+					this.plugin.settings.resultSeparator = value;
 					await this.plugin.saveSettings();
 				}));
 

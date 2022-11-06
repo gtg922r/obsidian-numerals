@@ -22,8 +22,6 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
-		"@medv/numbr": "github:antonmedv/numbr",
-		"fcal": "^0.4.3",
 		"mathjs": "^11.3.0"
 	}
 }
