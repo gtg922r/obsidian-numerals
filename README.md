@@ -1,73 +1,56 @@
-# Obsidian Sample Plugin
+# Numerals Obsidian Plugin
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Numerals gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can perform calculations inline with your notes, and see both the input and the evaluated result. Numerals works with Live Preview as well as Reader view. Math expressions can be commented with `#`, or descriptive sentences can be added between calculations.
 
-This project uses Typescript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in Typescript Definition format, which contains TSDoc comments describing what it does.
+![Numerals Side by Side Lemonade Stand](https://user-images.githubusercontent.com/1195174/200161667-2a3d5a59-b660-45bd-b940-e54b2c417e3d.png)
 
-**Note:** The Obsidian API is still in early alpha and is subject to change at any time!
+## Features
+- Units
+ 	- `1ft + 12in` → `2ft`
+	- `20 mi / 4 hr to m/s` → `2.235 m / s`
+	- `9.81 m/s^2 * 100 kg * 40 m` → `39.24 kJ`
+- Currency
+	- `$1,000 * 2` → `2,000 USD`
+	- `$10 + $0.75` → `10.75 USD`
+- Math functions
+	- `sin`, `cos`, `abs`, `log`, etc (see [mathjs](https://mathjs.org/docs/reference/functions.html) for full list)
+- Hex, Binary, Octal, and other bases
+	- `0xff + 0b100` → `259`
+	- `hex(0xff + 0b100)` → `"0x103"`
+- Natural Constants
+	- `e`, `i`, `pi`, `speedOfLight`, `gravitationConstant`, `vacuumImpedance`, `avogadro`
+	- And many more (see [mathjs: Constants](https://mathjs.org/docs/reference/constants.html) and [mathjs: Units](https://mathjs.org/docs/datatypes/units.html) for more)
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Changes the default font color to red using `styles.css`.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+## Style Options
+Numerals has been tested with the default theme and most other top themes. It uses default values such that it should play nice with any other theme. There are 3 options to choose from:
 
-## First time developing plugins?
+### Layout
+#### 2-panes
+- answer is shown to the right of the input with a background color and a seperator.
+- Distinctive style that seperates input from evaluated answers
 
-Quick starting guide for new plugin devs:
+![Numerals 2 pane](https://user-images.githubusercontent.com/1195174/200162583-6d50954b-2654-4aa2-a011-b9cb757c006f.png)
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+#### Answer to the Right
+- Answer to the right: answer is shown in the same line as the input, but right-aligned
+- More subtle than 2-panes that works well with just a few calculations
 
-## Releasing new releases
+![Numerals answer to the right](https://user-images.githubusercontent.com/1195174/200162587-be5e9036-fdd8-4453-9cbd-230c73a67936.png)
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+#### Answer Below
+- Answer is shown below the input, on the next line. 
+- Less compact vertically, but much more compact width
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+![Numerals answer below](https://user-images.githubusercontent.com/1195174/200162593-49c1c2e3-89b6-4199-ad34-5b7c24659f4f.png)
 
-## Adding your plugin to the community plugin list
+### Alternating Row Colors
+Choose between a consistent code block background color, or alternating rows to help track from input to result.
 
-- Check https://github.com/obsidianmd/obsidian-releases/blob/master/plugin-review.md
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+![Numerals - No Alternating](https://user-images.githubusercontent.com/1195174/200162735-13c8bdd5-44d8-49ff-843e-3afb3ea8da97.png) ![Numerals Alternating](https://user-images.githubusercontent.com/1195174/200162737-1276a79b-2cda-429f-8e2b-1987a6b59826.png)
 
-## How to use
-
-- Clone this repo.
-- `npm i` or `yarn` to install dependencies
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
-
-
-## API Documentation
-
-See https://github.com/obsidianmd/obsidian-api
+## Remaining features in progress
+- Support for additional currency symbols (currently only supports `$`)
+- Support for mapping currency symbols to different currencies (currently `$` maps to `USD`)
+- Error handling (currently code block processer just errors out and refuses to update the code block)
+- Style Settings support for all colors and other style options
+- Syntax highlighting of input
