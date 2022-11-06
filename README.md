@@ -1,8 +1,7 @@
 # Numerals Obsidian Plugin
 
 Numerals gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can perform calculations inline with your notes, and see both the input and the evaluated result. Numerals works with Live Preview as well as Reader view. Math expressions can be commented with `#`, or descriptive sentences can be added between calculations.
-
-![Numerals Side by Side Lemonade Stand](https://user-images.githubusercontent.com/1195174/200161667-2a3d5a59-b660-45bd-b940-e54b2c417e3d.png)
+<img width="1032" alt="Numerals Lemonade Stand -Side By Side - 11-6" src="https://user-images.githubusercontent.com/1195174/200186757-a71b5e7a-df96-4350-b6a4-366d758e696d.png">
 
 ## Features
 - Units
@@ -29,27 +28,27 @@ Numerals has been tested with the default theme and most other top themes. It us
 
 ### Layout
 #### 2-panes
-- answer is shown to the right of the input with a background color and a seperator.
+- Answer is shown to the right of the input with a background color and a seperator.
 - Distinctive style that seperates input from evaluated answers
 
-![Numerals 2 pane](https://user-images.githubusercontent.com/1195174/200162583-6d50954b-2654-4aa2-a011-b9cb757c006f.png)
+<img width="622" alt="Numerals 2 Panes - 11-6" src="https://user-images.githubusercontent.com/1195174/200186692-0b6a0a7b-3f77-47f8-887f-d7d333b53967.png">
 
 #### Answer to the Right
 - Answer to the right: answer is shown in the same line as the input, but right-aligned
 - More subtle than 2-panes that works well with just a few calculations
 
-![Numerals answer to the right](https://user-images.githubusercontent.com/1195174/200162587-be5e9036-fdd8-4453-9cbd-230c73a67936.png)
+<img width="622" alt="Numerals answer right - 11-6" src="https://user-images.githubusercontent.com/1195174/200186885-dedf1ccb-0464-4732-976e-0eaf54f5d098.png">
 
 #### Answer Below
 - Answer is shown below the input, on the next line. 
-- Less compact vertically, but much more compact width
+- Less compact vertically, but more compact horizontally
 
-![Numerals answer below](https://user-images.githubusercontent.com/1195174/200162593-49c1c2e3-89b6-4199-ad34-5b7c24659f4f.png)
+<img width="622" alt="Numerals answer below - 11-6" src="https://user-images.githubusercontent.com/1195174/200186929-8e5bf0de-ab1e-47d0-a3f3-cf5164136c62.png">
 
 ### Alternating Row Colors
-Choose between a consistent code block background color, or alternating rows to help track from input to result.
+Choose between a consistent code block background color (left), or alternating rows to help track from input to result (right).
 
-![Numerals - No Alternating](https://user-images.githubusercontent.com/1195174/200162735-13c8bdd5-44d8-49ff-843e-3afb3ea8da97.png) ![Numerals Alternating](https://user-images.githubusercontent.com/1195174/200162737-1276a79b-2cda-429f-8e2b-1987a6b59826.png)
+<img width="1010" alt="Numerals Alternating Row Style Comparison" src="https://user-images.githubusercontent.com/1195174/200187204-9b6b5848-7164-4555-b5d9-6b9acfdcd4f9.png">
 
 ## Remaining features in progress
 - Support for additional currency symbols (currently only supports `$`)
