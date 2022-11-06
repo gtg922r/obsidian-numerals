@@ -76,17 +76,11 @@ export default class NumeralsPlugin extends Plugin {
 				el.createEl("span", {cls:"numerals-error-name", text: error.name + ":"});
 				el.createEl("span", {cls:"numerals-error-message", text: error.message});		
 			}
-
-
-
 		});
 
-		// *********** START Sample Plugin Code *********** //
-
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new NumeralsSettingTab(this.app, this));
 
-		// *********** END Sample Plugin Code *********** //
 	}
 
 	onunload() {
@@ -104,7 +98,7 @@ export default class NumeralsPlugin extends Plugin {
 
 
 
-class SampleSettingTab extends PluginSettingTab {
+class NumeralsSettingTab extends PluginSettingTab {
 	plugin: NumeralsPlugin;
 
 	constructor(app: App, plugin: NumeralsPlugin) {
