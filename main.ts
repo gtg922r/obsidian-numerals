@@ -12,8 +12,8 @@ interface NumeralsSettings {
 
 const DEFAULT_SETTINGS: NumeralsSettings = {
 	resultSeparator: " → ",
-	renderStyle: 3,
-	alternateRowColor: false
+	renderStyle: 1,
+	alternateRowColor: true
 }
 
 export default class NumeralsPlugin extends Plugin {
