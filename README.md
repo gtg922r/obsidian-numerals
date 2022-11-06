@@ -65,3 +65,13 @@ Choose between a consistent code block background color (left), or alternating r
 - Better Error handling (currently no indication of error line)
 - Style Settings support for all colors and other style options
 - Syntax highlighting of input
+
+## Related
+There are a number of other plugins that address math and calculation use cases in Obsidian. 
+- If you are primarily interested in evaluating math expressions and inserting the result into your notes, look into [meld-cp/obsidian-calc](https://github.com/meld-cp/obsidian-calc)
+- If you are looking for a full-featured Computer Algebra System including plots and with similar code block rendering, consider [Canna71/obsidian-mathpad: Computer Algebra System (CAS) for Obsidian.md](https://github.com/Canna71/obsidian-mathpad)
+
+There are also a number of "calculator as notes" apps that acted as the inspiration for *Numerals*. If you are looking for a purpose-built app outside of Obsidian, consider:
+- [Numi. Beautiful calculator app for Mac.](https://numi.app/)
+- [Numbr](https://numbr.dev/)
+- [Soulver 3 - Notepad Calculator App for Mac](https://soulver.app/)
