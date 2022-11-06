@@ -70,7 +70,8 @@
     color: var(--text-muted);
     background-color: var(--background-modifier-hover);
     width: 25%;
-    text-align: right;
+    text-align: left;
+    padding-left: var(--size-2-2);
     border-left: 1px solid var(--background-modifier-border-focus);
 }
 
