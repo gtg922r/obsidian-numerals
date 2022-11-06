@@ -20,6 +20,9 @@ Numerals gives you the power of an advanced calculator inside a `math` code bloc
 - Natural Constants
 	- `e`, `i`, `pi`, `speedOfLight`, `gravitationConstant`, `vacuumImpedance`, `avogadro`
 	- And many more (see [mathjs: Constants](https://mathjs.org/docs/reference/constants.html) and [mathjs: Units](https://mathjs.org/docs/datatypes/units.html) for more)
+	
+*Numerals* utilizes the [mathjs](https://mathjs.org/) library for all calculations. *Numerals* implements a preprocessor to allow more human-friendly syntax, such as currency symbols and thousands separators. For all available functions and capabilities (which includes matrices, vectors, symbolic algebra and calculus, etc), see the [mathjs documentation](https://mathjs.org/docs/index.html)
+
 
 ## Style Options
 Numerals has been tested with the default theme and most other top themes. It uses default values such that it should play nice with any other theme. There are 3 options to choose from:
@@ -51,6 +54,6 @@ Choose between a consistent code block background color, or alternating rows to 
 ## Remaining features in progress
 - Support for additional currency symbols (currently only supports `$`)
 - Support for mapping currency symbols to different currencies (currently `$` maps to `USD`)
-- Error handling (currently code block processer just errors out and refuses to update the code block)
+- Better Error handling (currently no indication of error line)
 - Style Settings support for all colors and other style options
 - Syntax highlighting of input
