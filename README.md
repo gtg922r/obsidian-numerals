@@ -1,6 +1,6 @@
 # Numerals Obsidian Plugin
 
-Numerals gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can perform calculations inline with your notes, and see both the input and the evaluated result. Numerals works with Live Preview as well as Reader view. Math expressions can be commented with `#`, or descriptive sentences can be added between calculations.
+*Numerals* gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can perform calculations inline with your notes, and see both the input and the evaluated result. *Numerals* works with Live Preview as well as Reader view. Math expressions can be commented with `#`, or descriptive sentences can be added between calculations.
 <img width="1032" alt="Numerals Lemonade Stand -Side By Side - 11-6" src="https://user-images.githubusercontent.com/1195174/200186757-a71b5e7a-df96-4350-b6a4-366d758e696d.png">
 
 ## Features
@@ -10,7 +10,7 @@ Numerals gives you the power of an advanced calculator inside a `math` code bloc
 	- `9.81 m/s^2 * 100 kg * 40 m` → `39.24 kJ`
 - Currency
 	- `$1,000 * 2` → `2,000 USD`
-	- `$10 + $0.75` → `10.75 USD`
+	- `£10 + £0.75` → `10.75 GBP`
 - Math functions
 	- `sqrt`, `sin`, `cos`, `abs`, `log`, etc (see [mathjs](https://mathjs.org/docs/reference/functions.html) for full list)
 - Hex, Binary, Octal, and other bases
@@ -60,11 +60,11 @@ Choose between a consistent code block background color (left), or alternating r
 4. Activate *Numerals* plugin in community plugin list
 
 ## Remaining features in progress
-- Support for additional currency symbols (currently only supports `$`)
-- Support for mapping currency symbols to different currencies (currently `$` maps to `USD`)
-- Better Error handling (currently no indication of error line)
-- Style Settings support for all colors and other style options
-- Syntax highlighting of input
+- [ ] Support for mapping currency symbols to different currencies (currently `$` maps to `USD`)
+- [ ] Better Error handling (currently no indication of error line)
+- [ ] Style Settings support for all colors and other style options
+- [ ] Syntax highlighting of input
+- [x] ~~Support for additional currency symbols (currently only supports `$`)~~ (added in [0.0.9](https://github.com/gtg922r/obsidian-numerals/releases/tag/0.0.9))
 
 ## Related
 There are a number of other plugins that address math and calculation use cases in Obsidian. 
