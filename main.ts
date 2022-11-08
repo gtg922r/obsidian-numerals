@@ -2,8 +2,6 @@ import { App, DropdownComponent, Editor, MarkdownView, Modal, Notice, Plugin, Pl
 import * as math from `mathjs`;
 
 
-// Remember to rename these classes and interfaces!
-
 interface NumeralsSettings {
 	resultSeparator: string;
 	renderStyle: number;
@@ -24,16 +22,29 @@ export default class NumeralsPlugin extends Plugin {
 		
 	
 		// ** Mathjs Setup ** //
+		const isAlphaOriginal = math.parse.isAlpha;
+		math.parse.isAlpha = function (c, cPrev, cNext) {
+			return isAlphaOriginal(c, cPrev, cNext) || ['$', '€', '£', '¥'].includes(c)
+			};	
+
 		const isUnitAlphaOriginal = math.Unit.isValidAlpha;
 		math.Unit.isValidAlpha = function (c, cPrev, cNext) {
-			return isUnitAlphaOriginal(c, cPrev, cNext) || ['$', '€'].includes(c)
-			};	
+			return isUnitAlphaOriginal(c, cPrev, cNext) || ['$', '€', '£', '¥'].includes(c)
+			};				
+
 		math.createUnit('USD', {aliases:['usd', '$']});
+		math.createUnit('EUR', {aliases:['eur', '€']});
+		math.createUnit('GBP', {aliases:['gbp', '£']});
+		math.createUnit('JPY', {aliases:['jpy', '¥']});
+		
 
 		const preProcessors = [
 			// {regex: /\$((\d|\.|(,\d{3}))+)/g, replace: '$1 USD'}, // Use this if commas haven't been removed already
 			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands seperators. Will be wrong for add(100,100)
-			{regex: /\$([\d\.]+)/g, replaceStr: '$1 USD'}, // convert $### to ### USD. Assumes commas removed
+			{regex: /\$([\d\.]+)/g, replaceStr: '$1 USD'}, // convert $### to ### USD. Assumes commas removed already
+			{regex: /\€([\d\.]+)/g, replaceStr: '$1 EUR'}, // convert €### to ### EUR. Assumes commas removed already
+			{regex: /\£([\d\.]+)/g, replaceStr: '$1 GBP'}, // convert £### to ### GBP. Assumes commas removed already						
+			{regex: /\¥([\d\.]+)/g, replaceStr: '$1 JPY'}, // convert ¥### to ### JPY. Assumes commas removed already									
 		];
 
 		function numberFormatter(value:number) {
@@ -56,6 +67,7 @@ export default class NumeralsPlugin extends Plugin {
 			const rawRows = source.split("\n");
 
 			try {
+
 				const results = math.evaluate(rows);	
 				
 				for (let i = 0; i < rows.length; i++) {
