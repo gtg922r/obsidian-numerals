@@ -33,7 +33,7 @@ interface NumeralsSettings {
 	resultSeparator: string;
 	layoutStyle: NumeralsLayout;
 	alternateRowColor: boolean;
-	renderStyle: NumeralsRenderStyle;
+	defaultRenderStyle: NumeralsRenderStyle;
 }
 
 interface CurrencyType {
@@ -47,7 +47,7 @@ const DEFAULT_SETTINGS: NumeralsSettings = {
 	resultSeparator: " → ",
 	layoutStyle: NumeralsLayout.TwoPanes,
 	alternateRowColor: true,
-	renderStyle: NumeralsRenderStyle.Plain,
+	defaultRenderStyle: NumeralsRenderStyle.Plain,
 }
 
 
@@ -115,7 +115,7 @@ export default class NumeralsPlugin extends Plugin {
 
 	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx): Promise<any> {		
 
-		const blockRenderStyle: NumeralsRenderStyle = type ? type : this.settings.renderStyle;
+		const blockRenderStyle: NumeralsRenderStyle = type ? type : this.settings.defaultRenderStyle;
 		
 		el.toggleClass("numerals-block", true);
 		el.toggleClass(numeralsLayoutClasses[this.settings.layoutStyle], true);
@@ -318,9 +318,9 @@ class NumeralsSettingTab extends PluginSettingTab {
 				dropDown.addOption(NumeralsRenderStyle.Plain, 'Plain Text');
 				dropDown.addOption(NumeralsRenderStyle.TeX, 'TeX Style');
 				dropDown.addOption(NumeralsRenderStyle.SyntaxHighlight, 'Syntax Highlighting of Plain Text');
-				dropDown.setValue(this.plugin.settings.renderStyle);
+				dropDown.setValue(this.plugin.settings.defaultRenderStyle);
 				dropDown.onChange(async (value) => {
-					this.plugin.settings.renderStyle = value;
+					this.plugin.settings.defaultRenderStyle = value;
 					await this.plugin.saveSettings();
 				});
 			});				
