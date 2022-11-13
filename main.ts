@@ -138,10 +138,17 @@ export default class NumeralsPlugin extends Plugin {
 		let scope = {};
 		
 		try {
-			for (var row of rows.slice(0,-1)) { // Last row is always empty
+			for (var row of rows.slice(0,-1)) { // Last row may be empty
 				results.push(math.evaluate(row, scope));
 				inputs.push(row); // Only pushes if evaluate is successful
 			}
+
+			const lastRow = rows.slice(-1)[0];
+			if (lastRow != '') { // Last row is always empty in reader view
+					results.push(math.evaluate(lastRow, scope));
+					inputs.push(lastRow); // Only pushes if evaluate is successful
+				}
+
 		} catch (error) {
 			errorMsg = error;
 			errorInput = row;
