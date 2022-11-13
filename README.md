@@ -63,10 +63,10 @@ Choose between a consistent code block background color (left), or alternating r
 4. Activate *Numerals* plugin in community plugin list
 
 ## Remaining features in progress
-- [ ] Support for mapping currency symbols to different currencies (currently `$` maps to `USD`)
-- [ ] Better Error handling (currently no indication of error line)
 - [ ] Style Settings support for all colors and other style options
-- [ ] Syntax highlighting of input
+- [ ] Support for mapping currency symbols to different currencies (currently `$` maps to `USD`)
+- [x] ~~Better Error handling (currently no indication of error line)~~ (added in [0.0.12](https://github.com/gtg922r/obsidian-numerals/releases/tag/0.0.12))
+- [x] ~~Syntax highlighting or TeX rendering of input~~ (added in [0.0.12](https://github.com/gtg922r/obsidian-numerals/releases/tag/0.0.12))
 - [x] ~~Support for additional currency symbols (currently only supports `$`)~~ (added in [0.0.9](https://github.com/gtg922r/obsidian-numerals/releases/tag/0.0.9))
 
 ## Related
