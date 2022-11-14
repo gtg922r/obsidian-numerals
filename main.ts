@@ -266,10 +266,6 @@ export default class NumeralsPlugin extends Plugin {
 
 	}
 
-	onunload() {
-
-	}
-
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
@@ -278,12 +274,6 @@ export default class NumeralsPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 }
-
-onunload() {
-
-}
-
-
 
 class NumeralsSettingTab extends PluginSettingTab {
 	plugin: NumeralsPlugin;
