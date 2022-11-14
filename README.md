@@ -27,7 +27,18 @@
 
 
 ## Style Options
-Numerals has been tested with the default theme and most other top themes. It uses default values such that it should play nice with any other theme. There are 3 options to choose from:
+*Numerals* has been tested with the default theme and most other top themes. It uses default values such that it should play nice with any other theme. There are also several configurable settings to modify how *Numerals* renders math blocks
+
+### Render Style
+*Numerals* supports rendering inputs/ouputs as either:
+1. Plain Text
+2. TeX
+3. Syntax Highlighting
+
+One of these options can either be chosen as a default from *Numerals* settings, or then can be applied on a per-block basis by using `math-plain`, `math-tex`, or `math-highlight` rather than a `math` code block. 
+
+![Numerals Render Style Side by Side](https://user-images.githubusercontent.com/1195174/201587645-5a79aafa-5008-49d0-b584-5c6a99c7edc5.png)
+
 
 ### Layout
 #### 2-panes
