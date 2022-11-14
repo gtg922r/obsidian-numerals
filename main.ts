@@ -236,15 +236,15 @@ export default class NumeralsPlugin extends Plugin {
 		await this.loadSettings();
 
 		// // DEBUGGING PURPOSES ONLY: Add command to reset plugin settings
-		this.addCommand({
-			id: 'reset-numerals-settings',
-			name: 'Reset Numerals Settings to Defaults',
-			callback: async () => {
-					this.settings = DEFAULT_SETTINGS;
-					await this.saveSettings();
-					new Notice('All Numerals settings reset to defaults')					
-			}
-		});		
+		// this.addCommand({
+		// 	id: 'reset-numerals-settings',
+		// 	name: 'Reset Numerals Settings to Defaults',
+		// 	callback: async () => {
+		// 			this.settings = DEFAULT_SETTINGS;
+		// 			await this.saveSettings();
+		// 			new Notice('All Numerals settings reset to defaults')					
+		// 	}
+		// });		
 
 		// Load MathJax for TeX Rendering
 		await loadMathJax();
@@ -277,6 +277,10 @@ export default class NumeralsPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+}
+
+onunload() {
+
 }
 
 
