@@ -89,3 +89,7 @@ There are also a number of "calculator as notes" apps that acted as the inspirat
 - [Numi. Beautiful calculator app for Mac.](https://numi.app/)
 - [Numbr](https://numbr.dev/)
 - [Soulver 3 - Notepad Calculator App for Mac](https://soulver.app/)
+
+
+## Info
+This plugin is closed source (for now, researching options)
