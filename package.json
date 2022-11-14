@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-numerals",
-	"version": "1.0.1",
-	"description": "Numerals turns any code block into an advanced calculator. Evaluates math expressions on each line of a code block, including units and currency and optional TeX rendering",
+	"version": "1.0.2",
+	"description": "Numerals turns any code block into an advanced calculator. Evaluates math expressions on each line of a code block, including units, currency, and optional TeX rendering.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

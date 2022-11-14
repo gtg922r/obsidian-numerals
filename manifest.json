@@ -1,9 +1,9 @@
 {
 	"id": "obsidian-numerals",
 	"name": "Numerals",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"minAppVersion": "0.16.0",
-	"description": "Numerals turns any code block into an advanced calculator. Evaluates math expressions on each line of a code block, including units and currency",
+	"description": "Numerals turns any code block into an advanced calculator. Evaluates math expressions on each line of a code block, including units, currency, and optional TeX rendering.",
 	"author": "RyanC",
 	"authorUrl": "https://github.com/gtg922r/obsidian-numerals",
 	"isDesktopOnly": false
