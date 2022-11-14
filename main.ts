@@ -288,7 +288,7 @@ class NumeralsSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Settings for my *Numerals* plugin.'});
+		containerEl.createEl('h2', {text: 'Numerals Plugin Settings'});
 
 		new Setting(containerEl)
 			.setName('Numerals Layout Style')
