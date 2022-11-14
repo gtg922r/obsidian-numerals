@@ -1,5 +1,5 @@
 import { App, finishRenderMath, Notice, Plugin, PluginSettingTab, renderMath, Setting, loadMathJax} from 'obsidian';
-import * as math from `mathjs`;
+import * as math from 'mathjs';
 
 enum NumeralsLayout { 
 	TwoPanes,
