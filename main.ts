@@ -2,10 +2,10 @@ import { App, finishRenderMath, Notice, Plugin, PluginSettingTab, renderMath, Se
 import * as math from 'mathjs';
 
 enum NumeralsLayout { 
-	TwoPanes,
-	AnswerRight,
-	AnswerBelow,
-	AnswerInline,
+	TwoPanes = "TwoPanes",
+	AnswerRight = "AnswerRight",
+	AnswerBelow = "AnswerBelow",
+	AnswerInline = "AnswerInline",
 }
 
 const numeralsLayoutClasses = {
@@ -17,7 +17,7 @@ const numeralsLayoutClasses = {
 
 enum NumeralsRenderStyle {
 	Plain = "Plain",
-	TeX ="Tex",
+	TeX ="TeX",
 	SyntaxHighlight = "SyntaxHighlight",
 }
 
@@ -69,8 +69,10 @@ math.parse.isAlpha = function (c, cPrev, cNext) {
 	return isAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
 	};	
 
-const isUnitAlphaOriginal = math.Unit.isValidAlpha;
-math.Unit.isValidAlpha = function (c, cPrev, cNext) {
+// 														@ts-ignore
+const isUnitAlphaOriginal = math.Unit.isValidAlpha; // 	@ts-ignore
+math.Unit.isValidAlpha =
+function (c: string, cPrev: any, cNext: any) {
 	return isUnitAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
 	};			
 
@@ -113,7 +115,7 @@ async function mathjaxLoop(container: HTMLElement, value: string) {
 export default class NumeralsPlugin extends Plugin {
 	settings: NumeralsSettings;
 
-	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx): Promise<any> {		
+	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: any): Promise<any> {		
 
 		const blockRenderStyle: NumeralsRenderStyle = type ? type : this.settings.defaultRenderStyle;
 		
@@ -137,21 +139,26 @@ export default class NumeralsPlugin extends Plugin {
 		let inputs: string[] = [];			
 		let scope = {};
 		
-		try {
-			for (var row of rows.slice(0,-1)) { // Last row may be empty
+		for (var row of rows.slice(0,-1)) { // Last row may be empty
+			try {
 				results.push(math.evaluate(row, scope));
 				inputs.push(row); // Only pushes if evaluate is successful
+			} catch (error) {
+				errorMsg = error;
+				errorInput = row;
+				break;
 			}
+		}
 
-			const lastRow = rows.slice(-1)[0];
-			if (lastRow != '') { // Last row is always empty in reader view
-					results.push(math.evaluate(lastRow, scope));
-					inputs.push(lastRow); // Only pushes if evaluate is successful
-				}
-
-		} catch (error) {
-			errorMsg = error;
-			errorInput = row;
+		const lastRow = rows.slice(-1)[0];
+		if (lastRow != '') { // Last row is always empty in reader view
+			try {
+				results.push(math.evaluate(lastRow, scope));
+				inputs.push(lastRow); // Only pushes if evaluate is successful
+			} catch (error) {
+				errorMsg = error;
+				errorInput = lastRow;
+			}
 		}	
 						
 		for (let i in inputs) {
@@ -195,7 +202,7 @@ export default class NumeralsPlugin extends Plugin {
 					let inputText = emptyLine ? rawRows[i] : "";
 					var inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
 					if (!emptyLine) {
-						let input_html = htmlToElements(math.parse(inputs[i]).toHTML())
+						let input_html:any = htmlToElements(math.parse(inputs[i]).toHTML())
 						for (const element of input_html) {
 							inputElement.createEl("span", {cls: element.className, text: element.innerHTML})
 						}
@@ -300,7 +307,8 @@ class NumeralsSettingTab extends PluginSettingTab {
 				dropDown.addOption(NumeralsLayout.AnswerInline, 'Answer inline, beside input');				
 				dropDown.setValue(this.plugin.settings.layoutStyle);
 				dropDown.onChange(async (value) => {
-					this.plugin.settings.layoutStyle = value;
+					let layoutStyleStr = value as keyof typeof NumeralsLayout;
+					this.plugin.settings.layoutStyle = NumeralsLayout[layoutStyleStr];
 					await this.plugin.saveSettings();
 				});
 			});		
@@ -314,7 +322,12 @@ class NumeralsSettingTab extends PluginSettingTab {
 				dropDown.addOption(NumeralsRenderStyle.SyntaxHighlight, 'Syntax Highlighting of Plain Text');
 				dropDown.setValue(this.plugin.settings.defaultRenderStyle);
 				dropDown.onChange(async (value) => {
-					this.plugin.settings.defaultRenderStyle = value;
+					console.log(value)
+					let renderStyleStr = value as keyof typeof NumeralsRenderStyle;
+					console.log(renderStyleStr)
+					this.plugin.settings.defaultRenderStyle = NumeralsRenderStyle[renderStyleStr]
+					console.log(NumeralsRenderStyle)
+					console.log(NumeralsRenderStyle[renderStyleStr])
 					await this.plugin.saveSettings();
 				});
 			});				
