@@ -1,7 +1,12 @@
+/***********************************/
+/******** Non-setting specific   **/
+
 .numerals-syntax .numerals-input span {
     padding: 0 2px;
 }
-
+.numerals-syntax .numerals-input {
+    overflow-wrap: break-word;
+}
 .numerals-block .numerals-input .math-parenthesis,
  .numerals-block .numerals-input .math-paranthesis {
     padding-left: 0px;
