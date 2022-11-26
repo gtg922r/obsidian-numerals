@@ -282,6 +282,7 @@ export default class NumeralsPlugin extends Plugin {
 			const oldRenderStyleMap = {
 				1: NumeralsLayout.TwoPanes,
 				2: NumeralsLayout.AnswerRight,
+				3: NumeralsLayout.AnswerBelow}
 
 			loadData.layoutStyle = oldRenderStyleMap[loadData.renderStyle as keyof typeof oldRenderStyleMap];
 			if(loadData.layoutStyle) {
