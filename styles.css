@@ -1,5 +1,59 @@
+/* @settings
+
+name: Numerals
+id: numerals-style
+settings:
+    - 
+        id: numerals-comment
+        title: In-line Comment Color
+        description: Color of the text in in-line comments. Default is `--text-faint`.
+        type: variable-themed-color
+        format: hex
+        opacity: false
+        default-light: '#'
+        default-dark: '#'
+    - 
+        id: numerals-heading
+        title: Heading / Comment Line Color
+        description: Color of lines with only a comment. Default is `--text-faint`.
+        type: variable-themed-color
+        format: hex
+        opacity: false
+        default-light: '#'
+        default-dark: '#'
+    - 
+        id: numerals-background
+        title: Block background color
+        description: Background color of the block. Default is same as code-block background. 
+        type: variable-themed-color
+        format: hex
+        opacity: false
+        default-light: '#'
+        default-dark: '#'         
+    - 
+        id: numerals-font
+        title: Numerals block font
+        description: Font used for Numerals block. Default is same as a code-block
+        type: variable-text
+        default: ''
+    - 
+        id: numerals-size
+        title: Numerals block font size
+        description: Accepts an CSS font-size value. Default is same as a code-block
+        type: variable-text
+        default: ''
+*/
+
 /***********************************/
 /******** Non-setting specific   **/
+
+body {
+    --numerals-comment: var(--text-faint);
+    --numerals-heading: var(--text-faint);
+    --numerals-background: var(--code-background);
+    --numerals-font: var(--font-monospace);
+    --numerals-size: var(--code-size);
+}
 
 .numerals-syntax .numerals-input span {
     padding: 0 2px;
@@ -52,9 +106,9 @@
 }
 
 .numerals-block  {
-    background-color: var(--code-background);
-    font-family: var(--font-monospace);    
-    font-size: var(--code-size);
+    background-color: var(--numerals-background);
+    font-family: var(--numerals-font);    
+    font-size: var(--numerals-size);    
     padding: var(--size-4-4);    
 } 
 
@@ -66,16 +120,17 @@
 
 .numerals-input.numerals-empty {
     font-weight: bold;
-    color: var(--text-faint);
+    color: var(--numerals-heading);
 }
 
 .numerals-input .numerals-tex {
     display:inline-block;
 }
+
 .numerals-input .numerals-inline-comment {
     display: inline-block;
     padding-left: 1em;
-    color: var(--text-faint);
+    color: var(--numerals-comment);
 }
 
 .numerals-alt-row-color .numerals-line:nth-child(even){
@@ -179,7 +234,6 @@
 
 /**********************************/
 /* ** Inline Style ** */
-
 /* TODO Switch to a diffent display layout so that result can be centered */
 
 .numerals-answer-right .numerals-line {
