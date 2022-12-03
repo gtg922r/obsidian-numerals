@@ -231,6 +231,11 @@ body {
     display: none;
 }
 
+/* Don't show text in .numerals-result that and aren't descendents of .numerals-emitter */
+.numerals-emitters-present .numerals-result:not(.numerals-emitter .numerals-result) {
+    color: var(--text-faint);
+}
+
 
 /**********************************/
 /* ** Inline Style ** */

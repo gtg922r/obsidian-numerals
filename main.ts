@@ -124,17 +124,40 @@ export default class NumeralsPlugin extends Plugin {
 		el.toggleClass(numeralsRenderStyleClasses[blockRenderStyle], true);			
 		el.toggleClass("numerals-alt-row-color", this.settings.alternateRowColor)
 	
+		// Pre-process input
+	
+		const rawRows: string[] = source.split("\n");
 		let processedSource:string = source;
+
+		// find every line that ends with `=>` (ignore any whitespace after it)
+		const emitter_lines: number[] = [];
+		for (let i = 0; i < rawRows.length; i++) {
+			if (rawRows[i].trimEnd().endsWith('=>')) {
+				emitter_lines.push(i);
+			}
+		}
+
+		// if there are any emitter lines then add the class `numerals-emitters-present` to the block
+		if (emitter_lines.length > 0) {
+			el.toggleClass("numerals-emitters-present", true);
+		}
+
+		// TODO Need to decide if want to remove emitter indicator from input text
+		// TODO need to decide if want to change (or drop) the seperator if there is an emitter
+
+		// remove `=>` at the end of lines (preserve comments)
+		processedSource = processedSource.replace(/(\s*=>)(\s*)(#.*)?$/gm,"$2$3") 
+			
 		for (let processor of preProcessors ) {
 			processedSource = processedSource.replace(processor.regex, processor.replaceStr)
 		}
-	
-		const rawRows: string[] = source.split("\n");
-		const rows: string[] = processedSource.split("\n");
 		
+		// Process input through mathjs
+
 		let errorMsg = null;
 		let errorInput = '';
-	
+
+		const rows: string[] = processedSource.split("\n");
 		let results: string[] = [];
 		let inputs: string[] = [];			
 		let scope = {};
@@ -161,9 +184,15 @@ export default class NumeralsPlugin extends Plugin {
 			}
 		}	
 						
-		for (let i in inputs) {
+		for (let i = 0; i < inputs.length; i++) {
 			const line = el.createEl("div", {cls: "numerals-line"});
 			const emptyLine = (results[i] === undefined)
+
+			// if line is an emitter lines, add numerals-emitter class	
+			if (emitter_lines.includes(i)) {
+				line.toggleClass("numerals-emitter", true);
+			}
+
 	
 			switch(blockRenderStyle) {
 				case NumeralsRenderStyle.Plain: {
