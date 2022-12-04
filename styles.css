@@ -31,6 +31,15 @@ settings:
         default-light: '#'
         default-dark: '#'         
     - 
+        id: numerals-alternating-row-color
+        title: Alternating Row Color
+        description: Background color for the row when alternating rows (when enabled)
+        type: variable-themed-color
+        format: hex
+        opacity: false
+        default-light: '#'
+        default-dark: '#'            
+    - 
         id: numerals-font
         title: Numerals block font
         description: Font used for Numerals block. Default is same as a code-block
@@ -42,6 +51,12 @@ settings:
         description: Accepts an CSS font-size value. Default is same as a code-block
         type: variable-text
         default: ''
+    - 
+        id: numerals-emitter-input-weight
+        title: Emitted Input Font Weight
+        description: Font weight for input which has emitter annotation (`=>`) (accepts CSS font-weight value). Default is `var(--normal-weight)`.
+        type: variable-text
+        default: ''        
 */
 
 /***********************************/
@@ -53,6 +68,8 @@ body {
     --numerals-background: var(--code-background);
     --numerals-font: var(--font-monospace);
     --numerals-size: var(--code-size);
+    --numerals-emitter-input-weight: var(--normal-weight);
+    --numerals-alternating-row-color: var(--background-modifier-hover);
 }
 
 .numerals-syntax .numerals-input span {
@@ -134,7 +151,7 @@ body {
 }
 
 .numerals-alt-row-color .numerals-line:nth-child(even){
-    background-color: var(--background-modifier-hover);
+    background-color: var(--numerals-alternating-row-color);
 }
 
 .numerals-alt-row-color .numerals-line .numerals-input{
@@ -232,8 +249,16 @@ body {
 }
 
 /* Don't show text in .numerals-result that and aren't descendents of .numerals-emitter */
-.numerals-emitters-present .numerals-result:not(.numerals-emitter .numerals-result) {
+.numerals-emitters-present:not(.numerals-hide-non-emitters) .numerals-result:not(.numerals-emitter .numerals-result) {
     color: var(--text-faint);
+}
+
+.numerals-emitter .numerals-input {
+    font-weight: var(--numerals-emitter-input-weight)
+}
+
+.numerals-emitters-present.numerals-hide-non-emitters .numerals-result:not(.numerals-emitter .numerals-result) {
+    color: transparent;
 }
 
 

@@ -34,13 +34,8 @@ interface NumeralsSettings {
 	layoutStyle: NumeralsLayout;
 	alternateRowColor: boolean;
 	defaultRenderStyle: NumeralsRenderStyle;
-}
-
-interface CurrencyType {
-	symbol: string;
-	unicode: string;
-	currency: string;
-	name: string;
+	hideLinesWithoutMarkupWhenEmitting: boolean;
+	hideEmitterMarkupInInput: boolean;
 }
 
 const DEFAULT_SETTINGS: NumeralsSettings = {
@@ -48,6 +43,15 @@ const DEFAULT_SETTINGS: NumeralsSettings = {
 	layoutStyle: NumeralsLayout.TwoPanes,
 	alternateRowColor: true,
 	defaultRenderStyle: NumeralsRenderStyle.Plain,
+	hideLinesWithoutMarkupWhenEmitting: true,
+	hideEmitterMarkupInInput: true,
+}
+
+interface CurrencyType {
+	symbol: string;
+	unicode: string;
+	currency: string;
+	name: string;
 }
 
 
@@ -129,10 +133,10 @@ export default class NumeralsPlugin extends Plugin {
 		const rawRows: string[] = source.split("\n");
 		let processedSource:string = source;
 
-		// find every line that ends with `=>` (ignore any whitespace after it)
+		// find every line that ends with `=>` (ignore any whitespace or comments after it)
 		const emitter_lines: number[] = [];
 		for (let i = 0; i < rawRows.length; i++) {
-			if (rawRows[i].trimEnd().endsWith('=>')) {
+			if (rawRows[i].match(/=>\s*(#.*)?$/)) { 
 				emitter_lines.push(i);
 			}
 		}
@@ -140,6 +144,7 @@ export default class NumeralsPlugin extends Plugin {
 		// if there are any emitter lines then add the class `numerals-emitters-present` to the block
 		if (emitter_lines.length > 0) {
 			el.toggleClass("numerals-emitters-present", true);
+			el.toggleClass("numerals-hide-non-emitters", this.settings.hideLinesWithoutMarkupWhenEmitting);
 		}
 
 		// TODO Need to decide if want to remove emitter indicator from input text
@@ -193,6 +198,10 @@ export default class NumeralsPlugin extends Plugin {
 				line.toggleClass("numerals-emitter", true);
 			}
 
+			// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
+			if (this.settings.hideLinesWithoutMarkupWhenEmitting) {
+				rawRows[i] = rawRows[i].replace(/(\s*=>)(\s*)(#.*)?$/gm,"$2$3");
+			}
 	
 			switch(blockRenderStyle) {
 				case NumeralsRenderStyle.Plain: {
@@ -204,7 +213,7 @@ export default class NumeralsPlugin extends Plugin {
 					var resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
 					break;
 				} case NumeralsRenderStyle.TeX: {
-					let inputText = emptyLine ? rawRows[i] : "";
+					let inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
 					var inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
 					const resultContent = !emptyLine ? "" : '\xa0';
 					var resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
@@ -228,7 +237,7 @@ export default class NumeralsPlugin extends Plugin {
 					}
 					break;
 				} case NumeralsRenderStyle.SyntaxHighlight: {
-					let inputText = emptyLine ? rawRows[i] : "";
+					let inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
 					var inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
 					if (!emptyLine) {
 						let input_html:any = htmlToElements(math.parse(inputs[i]).toHTML())
@@ -416,7 +425,27 @@ class NumeralsSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.alternateRowColor = value;
 					await this.plugin.saveSettings();
-				}));				
+				}));	
+
+		new Setting(containerEl)
+			.setName('Hide Result on Lines without Emitter Markups')
+			.setDesc('When math block uses result emitter markup (`=>`) on any line, only lines with emitter markup will be shown in the result pane. If off, non-emitter lines will be shown in faint text color.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.hideLinesWithoutMarkupWhenEmitting)
+				.onChange(async (value) => {
+					this.plugin.settings.hideLinesWithoutMarkupWhenEmitting = value;
+					await this.plugin.saveSettings();
+				}));			
+		new Setting(containerEl)
+			.setName('Hide Emitter Markup in Input')
+			.setDesc('Emitter markup (`=>`) will be hidden in the input pane when rendering the math block')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.hideEmitterMarkupInInput)
+				.onChange(async (value) => {
+					this.plugin.settings.hideEmitterMarkupInInput = value;
+					await this.plugin.saveSettings();
+				}));					
+				
 
 				
 	}
