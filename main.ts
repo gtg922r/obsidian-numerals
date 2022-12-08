@@ -318,41 +318,42 @@ export default class NumeralsPlugin extends Plugin {
 	async loadSettings() {
 
 		let loadData = await this.loadData();
+		if (loadData) {
+			// Check for signature of old setting format, then port to new setting format
+			if (loadData.layoutStyle == undefined) {
+				const oldRenderStyleMap = {
+					1: NumeralsLayout.TwoPanes,
+					2: NumeralsLayout.AnswerRight,
+					3: NumeralsLayout.AnswerBelow}
 
-		// Check for signature of old setting format, then port to new setting format
-		if (loadData.layoutStyle == undefined) {
-			const oldRenderStyleMap = {
-				1: NumeralsLayout.TwoPanes,
-				2: NumeralsLayout.AnswerRight,
-				3: NumeralsLayout.AnswerBelow}
+				loadData.layoutStyle = oldRenderStyleMap[loadData.renderStyle as keyof typeof oldRenderStyleMap];
+				if(loadData.layoutStyle) {
+					delete loadData.renderStyle
+					this.settings = loadData
+					this.saveSettings();			
+				} else {
+					console.log("Numerals: Error porting old layout style")
+				}
 
-			loadData.layoutStyle = oldRenderStyleMap[loadData.renderStyle as keyof typeof oldRenderStyleMap];
-			if(loadData.layoutStyle) {
-				delete loadData.renderStyle
-				this.settings = loadData
-				this.saveSettings();			
-			} else {
-				console.log("Numerals: Error porting old layout style")
+			} else if (loadData.layoutStyle in [0, 1, 2, 3]) {
+				const oldLayoutStyleMap = {
+					0: NumeralsLayout.TwoPanes,
+					1: NumeralsLayout.AnswerRight,
+					2: NumeralsLayout.AnswerBelow,
+					3: NumeralsLayout.AnswerInline,
+				}			
+
+				loadData.layoutStyle = oldLayoutStyleMap[loadData.layoutStyle as keyof typeof oldLayoutStyleMap];
+				if(loadData.layoutStyle) {
+					this.settings = loadData
+					this.saveSettings();			
+				} else {
+					console.log("Numerals: Error porting old layout style")
+				}		
 			}
-
-		} else if (loadData.layoutStyle in [0, 1, 2, 3]) {
-			const oldLayoutStyleMap = {
-				0: NumeralsLayout.TwoPanes,
-				1: NumeralsLayout.AnswerRight,
-				2: NumeralsLayout.AnswerBelow,
-				3: NumeralsLayout.AnswerInline,
-			}			
-
-			loadData.layoutStyle = oldLayoutStyleMap[loadData.layoutStyle as keyof typeof oldLayoutStyleMap];
-			if(loadData.layoutStyle) {
-				this.settings = loadData
-				this.saveSettings();			
-			} else {
-				console.log("Numerals: Error porting old layout style")
-			}		
 		}
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadData);
 
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadData);
 	}
 
 	async saveSettings() {
