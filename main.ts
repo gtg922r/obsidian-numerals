@@ -1,4 +1,4 @@
-import { App, finishRenderMath, Notice, Plugin, PluginSettingTab, renderMath, Setting, loadMathJax} from 'obsidian';
+import { App, finishRenderMath, Notice, Plugin, PluginSettingTab, renderMath, Setting, loadMathJax, sanitizeHTMLToDom} from 'obsidian';
 import * as math from 'mathjs';
 
 enum NumeralsLayout { 
@@ -101,12 +101,16 @@ function texCurrencyReplacement(input_tex:string) {
 	return input_tex
 }
 
-function htmlToElements(html:string) {
-	var template = document.createElement('template');
-	template.innerHTML = html;
-	const elements = template.content.children;
-	return elements;
-}
+/**
+ * Converts a string of HTML into a DocumentFragment continaing a sanitized collection array of DOM elements.
+ *
+ * @param html The HTML string to convert.
+ * @returns A DocumentFragment contaning DOM elements.
+ */
+ function htmlToElements(html: string): DocumentFragment {
+	const sanitizedHTML = sanitizeHTMLToDom(html);
+	return sanitizedHTML;
+  }
 
 async function mathjaxLoop(container: HTMLElement, value: string) {
 	const html = renderMath(value, true);
@@ -167,7 +171,7 @@ export default class NumeralsPlugin extends Plugin {
 		let inputs: string[] = [];			
 		let scope = {};
 		
-		for (var row of rows.slice(0,-1)) { // Last row may be empty
+		for (let row of rows.slice(0,-1)) { // Last row may be empty
 			try {
 				results.push(math.evaluate(row, scope));
 				inputs.push(row); // Only pushes if evaluate is successful
@@ -203,51 +207,51 @@ export default class NumeralsPlugin extends Plugin {
 				rawRows[i] = rawRows[i].replace(/(\s*=>)(\s*)(#.*)?$/gm,"$2$3");
 			}
 	
+			let inputElement: HTMLElement, resultElement: HTMLElement;
 			switch(blockRenderStyle) {
 				case NumeralsRenderStyle.Plain: {
 					let rawInputSansComment = rawRows[i].replace(/#.+$/, "")
 					let inputText = emptyLine ? rawRows[i] : rawInputSansComment;
-					var inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
+					inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
 					
 					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], numberFormatter) : '\xa0';
-					var resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
+					resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
+
 					break;
 				} case NumeralsRenderStyle.TeX: {
 					let inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
-					var inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
+					inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
 					const resultContent = !emptyLine ? "" : '\xa0';
-					var resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
+					resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
 					if (!emptyLine) {
 						// Input to Tex
 						let input_tex:string = math.parse(inputs[i]).toTex();
-						var texElement = inputElement.createEl("span", {cls: "numerals-tex"})
+						let inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
 
 						input_tex = texCurrencyReplacement(input_tex);
-						mathjaxLoop(texElement, input_tex);
+						mathjaxLoop(inputTexElement, input_tex);
 
 						// Result to Tex
-						var texElement = resultElement.createEl("span", {cls: "numerals-tex"})
+						let resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
 						let processedResult:string = math.format(results[i], numberFormatter);
 						for (let processor of preProcessors ) {
 							processedResult = processedResult.replace(processor.regex, processor.replaceStr)
 						}
 						let texResult = math.parse(processedResult).toTex() // TODO: Add custom handler for numbers to get good localeString formatting
 						texResult = texCurrencyReplacement(texResult);
-						mathjaxLoop(texElement, texResult);
+						mathjaxLoop(resultTexElement, texResult);
 					}
 					break;
 				} case NumeralsRenderStyle.SyntaxHighlight: {
 					let inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
-					var inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
+					inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
 					if (!emptyLine) {
-						let input_html:any = htmlToElements(math.parse(inputs[i]).toHTML())
-						for (const element of input_html) {
-							inputElement.createEl("span", {cls: element.className, text: element.innerHTML})
-						}
+						const input_elements:DocumentFragment = htmlToElements(math.parse(inputs[i]).toHTML())
+						inputElement.appendChild(input_elements);
 					}
 
 					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], numberFormatter) : '\xa0';
-					var resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
+					resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
 
 					break;
 				}
