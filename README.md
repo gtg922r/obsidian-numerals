@@ -1,7 +1,7 @@
 # Numerals Obsidian Plugin
 
-*Numerals* gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can perform calculations inline with your notes, and see both the input and the evaluated result. *Numerals* works with Live Preview as well as Reader view, and offers TeX-style rendering and Syntax Highlighting. Comments or explanations can be added with `#`.
-<img width="1032" alt="Numerals Lemonade Stand -Side By Side - 11-6" src="https://user-images.githubusercontent.com/1195174/200186757-a71b5e7a-df96-4350-b6a4-366d758e696d.png">
+*Numerals* gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can perform calculations inline with your notes, and see both the input and the evaluated result. *Numerals* works with Live Preview as well as Reader view, and offers TeX-style rendering and Syntax Highlighting. Comments or explanations can be added with `#`, and important results can be indicated with `=>` after the calculation. 
+![Numerals Lemonade Stand - Side by Side](https://user-images.githubusercontent.com/1195174/200186757-a71b5e7a-df96-4350-b6a4-366d758e696d.png)
 ![Numerals Tex Example](https://user-images.githubusercontent.com/1195174/201516487-75bb7a08-76ab-4ff3-bf6b-d654aa284ab7.png)
 
 ## Features
@@ -22,11 +22,16 @@
 	- And many more (see [mathjs: Constants](https://mathjs.org/docs/reference/constants.html) and [mathjs: Units](https://mathjs.org/docs/datatypes/units.html) for more)
 - Fractions:	
 	- `fraction(1/3) + fraction(1/4)` → `7/12`
+- Comments and Headings:
+	- `#` at the end of a line will be ignored, but rendered in faint text as a comment
+	- A line starting with `#` will be ignored by the math engine, but will be bolded when rendered
+- Result Annotation:
+	- `=>` at the end of a line (but before a comment) will tell *Numerals* that a result should be highlighted. Any line in that code block *without* a `=>` annotation will be rendered faintly (or hidden depending on settings).
 
 *Numerals* utilizes the [mathjs](https://mathjs.org/) library for all calculations. *Numerals* implements a preprocessor to allow more human-friendly syntax, such as currency symbols and thousands separators. For all available functions and capabilities (which includes matrices, vectors, symbolic algebra and calculus, etc), see the [mathjs documentation](https://mathjs.org/docs/index.html)
 
 
-## Style Options
+## Styling Options
 *Numerals* has been tested with the default theme and most other top themes. It uses default values such that it should play nice with any other theme. There are also several configurable settings to modify how *Numerals* renders math blocks
 
 ### Render Style
@@ -45,40 +50,46 @@ One of these options can either be chosen as a default from *Numerals* settings,
 - Answer is shown to the right of the input with a background color and a seperator.
 - Distinctive style that seperates input from evaluated answers
 
-<img width="622" alt="Numerals 2 Panes - 11-6" src="https://user-images.githubusercontent.com/1195174/200186692-0b6a0a7b-3f77-47f8-887f-d7d333b53967.png">
+![Numerals 2 Panes](https://user-images.githubusercontent.com/1195174/200186692-0b6a0a7b-3f77-47f8-887f-d7d333b53967.png)
 
 #### Answer to the Right
 - Answer to the right: answer is shown in the same line as the input, but right-aligned
 - More subtle than 2-panes that works well with just a few calculations
 
-<img width="622" alt="Numerals answer right - 11-6" src="https://user-images.githubusercontent.com/1195174/200186885-dedf1ccb-0464-4732-976e-0eaf54f5d098.png">
+![Numerals answer right](https://user-images.githubusercontent.com/1195174/200186885-dedf1ccb-0464-4732-976e-0eaf54f5d098.png)
 
 #### Answer Below
 - Answer is shown below the input, on the next line. 
 - Less compact vertically, but more compact horizontally
 
-<img width="622" alt="Numerals answer below - 11-6" src="https://user-images.githubusercontent.com/1195174/200186929-8e5bf0de-ab1e-47d0-a3f3-cf5164136c62.png">
+![Numerals answer below](https://user-images.githubusercontent.com/1195174/200186929-8e5bf0de-ab1e-47d0-a3f3-cf5164136c62.png)
 
 ### Alternating Row Colors
 Choose between a consistent code block background color (left), or alternating rows to help track from input to result (right).
 
-<img width="1010" alt="Numerals Alternating Row Style Comparison" src="https://user-images.githubusercontent.com/1195174/200187338-24912a83-eb1e-4188-a843-e189f33e7133.png">
+![Numerals Alternating Row Style Comparison](https://user-images.githubusercontent.com/1195174/200187338-24912a83-eb1e-4188-a843-e189f33e7133.png)
 
 ## Installation
-*Numerals* is not yet in the Obsidian community plugin list. The easiest way to try *Numerals* is by using the [Obsidian BRAT plugin](https://github.com/TfTHacker/obsidian42-brat). 
+*Numerals* can be found in the Obsidian community plugin list.
 
-**Using BRAT**
+### Using BRAT
+To try the latest features of *Numerals* before they are released, and provide helpful feedback and testing, try *Numerals* by using the [Obsidian BRAT plugin](https://github.com/TfTHacker/obsidian42-brat). 
+
 1. Ensure BRAT is installed
 2. Trigger the command `Obsidian42 - BRAT: Add a beta plugin for testing` 
 3. Enter this repository, `gtg922r/obsidian-numerals`
 4. Activate *Numerals* plugin in community plugin list
 
-## Remaining features in progress
-- [ ] Style Settings support for all colors and other style options
-- [ ] Support for mapping currency symbols to different currencies (currently `$` maps to `USD`)
-- [x] ~~Better Error handling (currently no indication of error line)~~ (added in [0.0.12](https://github.com/gtg922r/obsidian-numerals/releases/tag/0.0.12))
-- [x] ~~Syntax highlighting or TeX rendering of input~~ (added in [0.0.12](https://github.com/gtg922r/obsidian-numerals/releases/tag/0.0.12))
-- [x] ~~Support for additional currency symbols (currently only supports `$`)~~ (added in [0.0.9](https://github.com/gtg922r/obsidian-numerals/releases/tag/0.0.9))
+## Features in progress and roadmap
+- [ ] Support for mapping currency symbols to different currencies, currently `$` maps to `USD` ([#17](https://github.com/gtg922r/obsidian-numerals/issues/17))
+- [ ] Style Settings support for all colors and other style options ([#13](https://github.com/gtg922r/obsidian-numerals/issues/13))
+	- Partial support added in 1.0.5
+- [ ] Result annotation, similar to Calca feature ([#4](https://github.com/gtg922r/obsidian-numerals/issues/4))
+	- Partial support added in 1.0.5
+- [ ] Autocompletion of functions and variable inside math code block ([#15](https://github.com/gtg922r/obsidian-numerals/issues/15))
+- [ ] Inline calculation for inline code blocks ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5))
+
+Feel free to suggest additional features by creating an issue!
 
 ## Related
 There are a number of other plugins that address math and calculation use cases in Obsidian. 
@@ -90,6 +101,3 @@ There are also a number of "calculator as notes" apps that acted as the inspirat
 - [Numbr](https://numbr.dev/)
 - [Soulver 3 - Notepad Calculator App for Mac](https://soulver.app/)
 
-
-## Info
-This plugin is closed source (for now, researching options)

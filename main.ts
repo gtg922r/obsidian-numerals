@@ -34,8 +34,8 @@ interface NumeralsSettings {
 	layoutStyle: NumeralsLayout;
 	alternateRowColor: boolean;
 	defaultRenderStyle: NumeralsRenderStyle;
-	hideLinesWithoutMarkupWhenEmitting: boolean;
-	hideEmitterMarkupInInput: boolean;
+	hideLinesWithoutMarkupWhenEmitting: boolean; // "Emitting" is "result annotation"
+	hideEmitterMarkupInInput: boolean; 
 }
 
 const DEFAULT_SETTINGS: NumeralsSettings = {
@@ -433,8 +433,8 @@ class NumeralsSettingTab extends PluginSettingTab {
 				}));	
 
 		new Setting(containerEl)
-			.setName('Hide Result on Lines without Emitter Markups')
-			.setDesc('When math block uses result emitter markup (`=>`) on any line, only lines with emitter markup will be shown in the result pane. If off, non-emitter lines will be shown in faint text color.')
+			.setName('Hide Result on Lines without Result Annotation')
+			.setDesc('If a math block uses result annotation (`=>`) on any line, hide the results for lines that are not annotated as a result. If off, results of non-annotated lines will be shown in faint text color.')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.hideLinesWithoutMarkupWhenEmitting)
 				.onChange(async (value) => {
@@ -442,8 +442,8 @@ class NumeralsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));			
 		new Setting(containerEl)
-			.setName('Hide Emitter Markup in Input')
-			.setDesc('Emitter markup (`=>`) will be hidden in the input pane when rendering the math block')
+			.setName('Hide Result Annotation Markup in Input')
+			.setDesc('Result Annotation markup (`=>`) will be hidden in the input when rendering the math block')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.hideEmitterMarkupInInput)
 				.onChange(async (value) => {
