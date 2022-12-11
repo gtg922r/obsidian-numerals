@@ -203,7 +203,8 @@ export default class NumeralsPlugin extends Plugin {
 			}
 
 			// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
-			if (this.settings.hideLinesWithoutMarkupWhenEmitting) {
+			if (this.settings.hideEmitterMarkupInInput) {
+				console.log("rawRows[i] before: " + rawRows[i]);
 				rawRows[i] = rawRows[i].replace(/(\s*=>)(\s*)(#.*)?$/gm,"$2$3");
 			}
 	
