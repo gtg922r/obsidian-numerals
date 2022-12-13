@@ -27,15 +27,21 @@ const numeralsRenderStyleClasses = {
 	[NumeralsRenderStyle.SyntaxHighlight]: 	"numerals-syntax",
 }
 
-// TODO: Add a switch for only rendering input
+interface CurrencySymbolMapping {
+	symbol: string;
+	currency: string; // ISO 4217 Currency Code
+}
 
+// TODO: Add a switch for only rendering input
 interface NumeralsSettings {
 	resultSeparator: string;
 	layoutStyle: NumeralsLayout;
 	alternateRowColor: boolean;
 	defaultRenderStyle: NumeralsRenderStyle;
 	hideLinesWithoutMarkupWhenEmitting: boolean; // "Emitting" is "result annotation"
-	hideEmitterMarkupInInput: boolean; 
+	hideEmitterMarkupInInput: boolean;
+	dollarSymbolCurrency: CurrencySymbolMapping;
+	yenSymbolCurrency: CurrencySymbolMapping;
 }
 
 const DEFAULT_SETTINGS: NumeralsSettings = {
@@ -45,29 +51,65 @@ const DEFAULT_SETTINGS: NumeralsSettings = {
 	defaultRenderStyle: NumeralsRenderStyle.Plain,
 	hideLinesWithoutMarkupWhenEmitting: true,
 	hideEmitterMarkupInInput: true,
+	dollarSymbolCurrency: 	{symbol: "$", currency: "USD"},
+	yenSymbolCurrency: 		{symbol: "¥", currency: "JPY"},
 }
 
 interface CurrencyType {
 	symbol: string;
 	unicode: string;
-	currency: string;
 	name: string;
+	currency: string;
 }
 
+interface StringReplaceMap {
+	regex: RegExp;
+	replaceStr: string;
+}
 
-const moneyTypes: CurrencyType[] = [
-	{	symbol: "$", unicode: "x024", currency: "USD", name: "dollar"},
-	{	symbol: "€", unicode: "x20AC", currency: "EUR", name: "euro"},
-	{	symbol: "£", unicode: "x00A3", currency: "GBP", name: "pound"},
-	{	symbol: "¥", unicode: "x00A5", currency: "JPY", name: "yen"},
+const defaultCurrencyMap: CurrencyType[] = [
+	{	symbol: "$", unicode: "x024", 	name: "dollar", currency: "USD"},
+	{	symbol: "€", unicode: "x20AC",	name: "euro", 	currency: "EUR"},
+	{	symbol: "£", unicode: "x00A3",	name: "pound", 	currency: "GBP"},
+	{	symbol: "¥", unicode: "x00A5",	name: "yen", 	currency: "JPY"},
+	{	symbol: "₹", unicode: "x20B9",	name: "rupee", 	currency: "INR"}	
 ];
 
-for (let moneyType of moneyTypes) {
-	math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
-}
+const currencyCodesForDollarSign: {[key:string]: string} = {
+    AUD: "Australian Dollar",
+    BBD: "Barbadian Dollar",
+    BMD: "Bermudian Dollar",
+    BND: "Brunei Dollar",
+    BSD: "Bahamian Dollar",
+    CAD: "Canadian Dollar",
+    FJD: "Fijian Dollar",
+    GYD: "Guyanese Dollar",
+    HKD: "Hong Kong Dollar",
+    JMD: "Jamaican Dollar",
+    KYD: "Cayman Islands Dollar",
+    LRD: "Liberian Dollar",
+    MXN: "Mexican Peso",
+    NAD: "Namibian Dollar",
+    NZD: "New Zealand Dollar",
+    SBD: "Solomon Islands Dollar",
+    SGD: "Singapore Dollar",
+    SRD: "Surinamese Dollar",
+    TTD: "Trinidad and Tobago Dollar",
+    TWD: "New Taiwan Dollar",
+    USD: "United States Dollar",
+    VND: "Vietnamese Dong",
+    XCD: "East Caribbean Dollar",
+};
+
+const currencyCodesForYenSign: {[key:string]: string} = {
+    JPY: "Japanese Yen",
+    CNY: "Chinese Yuan",
+    KRW: "Korean Won",
+};
+
 
 // Modify mathjs internal functions to allow for use of currency symbols
-const currencySymbols = moneyTypes.map(m => m.symbol);
+const currencySymbols: string[] = defaultCurrencyMap.map(m => m.symbol);
 const isAlphaOriginal = math.parse.isAlpha;
 math.parse.isAlpha = function (c, cPrev, cNext) {
 	return isAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
@@ -80,25 +122,22 @@ function (c: string, cPrev: any, cNext: any) {
 	return isUnitAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
 	};			
 
-const currencyPreProcessors = moneyTypes.map(m => {
-	return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
-})
 
-const preProcessors = [
-	// {regex: /\$((\d|\.|(,\d{3}))+)/g, replace: '$1 USD'}, // Use this if commas haven't been removed already
-	{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands seperators. Will be wrong for add(100,100)
-	...currencyPreProcessors
-];
-
-function numberFormatter(value:number) {
-	return value.toLocaleString();
-}
-
+// TODO: see if would be faster to return a single set of RegEx to get executed, rather than re-computing regex each time
 function texCurrencyReplacement(input_tex:string) {
-	for (let moneyType of moneyTypes) {
-		input_tex = input_tex.replace(RegExp("\\\\*\\"+moneyType.symbol,'g'),"\\" + moneyType.name);
+	for (let symbolType of defaultCurrencyMap) {
+		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name);
 	}
 	return input_tex
+}
+
+/**
+ * Apply a consistant formatter to numbers
+ * @param value Number to be formatted
+ * @returns value as LocaleString
+ */
+function numberFormatter(value:number) {
+	return value.toLocaleString();
 }
 
 /**
@@ -122,6 +161,9 @@ async function mathjaxLoop(container: HTMLElement, value: string) {
 
 export default class NumeralsPlugin extends Plugin {
 	settings: NumeralsSettings;
+	private currencyMap: CurrencyType[] = defaultCurrencyMap;
+	private preProcessors: StringReplaceMap[];
+	private currencyPreProcessors: StringReplaceMap[];
 
 	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: any): Promise<any> {		
 
@@ -157,7 +199,7 @@ export default class NumeralsPlugin extends Plugin {
 		// remove `=>` at the end of lines (preserve comments)
 		processedSource = processedSource.replace(/(\s*=>)(\s*)(#.*)?$/gm,"$2$3") 
 			
-		for (let processor of preProcessors ) {
+		for (let processor of this.preProcessors ) {
 			processedSource = processedSource.replace(processor.regex, processor.replaceStr)
 		}
 		
@@ -204,7 +246,6 @@ export default class NumeralsPlugin extends Plugin {
 
 			// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
 			if (this.settings.hideEmitterMarkupInInput) {
-				console.log("rawRows[i] before: " + rawRows[i]);
 				rawRows[i] = rawRows[i].replace(/(\s*=>)(\s*)(#.*)?$/gm,"$2$3");
 			}
 	
@@ -235,7 +276,7 @@ export default class NumeralsPlugin extends Plugin {
 						// Result to Tex
 						let resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
 						let processedResult:string = math.format(results[i], numberFormatter);
-						for (let processor of preProcessors ) {
+						for (let processor of this.preProcessors ) {
 							processedResult = processedResult.replace(processor.regex, processor.replaceStr)
 						}
 						let texResult = math.parse(processedResult).toTex() // TODO: Add custom handler for numbers to get good localeString formatting
@@ -281,6 +322,21 @@ export default class NumeralsPlugin extends Plugin {
 	
 	};
 
+	private createCurrencyMap(dollarCurrency: string, yenCurrency: string): CurrencyType[] {
+		const currencyMap: CurrencyType[] = defaultCurrencyMap.map(m => {
+			if (m.symbol === "$") {
+				if (Object.keys(currencyCodesForDollarSign).includes(dollarCurrency)) {
+					m.currency = dollarCurrency;
+				}
+			} else if (m.symbol === "¥") {
+				if (Object.keys(currencyCodesForYenSign).includes(yenCurrency)) {
+					m.currency = yenCurrency;
+				}
+			}
+			return m;
+		})
+		return currencyMap;
+	}
 
 	async onload() {
 		await this.loadSettings();
@@ -299,10 +355,32 @@ export default class NumeralsPlugin extends Plugin {
 		// Load MathJax for TeX Rendering
 		await loadMathJax();
 
+		// this.currencyMap = this.createMoneyMap(this.settings.dollarCurrency, this.settings.yenCurrency);
+		this.currencyMap = this.createCurrencyMap(
+			this.settings.dollarSymbolCurrency.currency,
+			this.settings.yenSymbolCurrency.currency
+		);
+
 		// Configure currency commands in MathJax
-		const configureCurrencyStr =  moneyTypes.map(m => '\\def\\' + m.name + '{\\unicode{' + m.unicode + '}}').join('\n');
+		const configureCurrencyStr = this.currencyMap.map(m => '\\def\\' + m.name + '{\\unicode{' + m.unicode + '}}').join('\n');
 		const currencyTex = renderMath(configureCurrencyStr, true);
 
+
+		// TODO: Once mathjs support removing units (josdejong/mathjs#2081),
+		//       rerun unit creation and regex preprocessors on settings change
+		for (let moneyType of this.currencyMap) {
+			math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
+		}
+		
+		this.currencyPreProcessors = this.currencyMap.map(m => {
+			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
+		})
+		
+		this.preProcessors = [
+			// {regex: /\$((\d|\.|(,\d{3}))+)/g, replace: '$1 USD'}, // Use this if commas haven't been removed already
+			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands seperators. Will be wrong for add(100,100)
+			...this.currencyPreProcessors
+		];
 		
 		this.registerMarkdownCodeBlockProcessor("math", this.numeralsMathBlockHandler.bind(this, null));
 		this.registerMarkdownCodeBlockProcessor("Math", this.numeralsMathBlockHandler.bind(this, null));		
@@ -375,7 +453,8 @@ class NumeralsSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Numerals Plugin Settings'});
+		containerEl.createEl('h1', {text: 'Numerals Plugin Settings'});
+		containerEl.createEl('h2', {text: 'Layout and Render Settings'});
 
 		new Setting(containerEl)
 			.setName('Numerals Layout Style')
@@ -412,6 +491,7 @@ class NumeralsSettingTab extends PluginSettingTab {
 				});
 			});				
 
+		containerEl.createEl('h2', {text: 'Styling Settings'});			
 		new Setting(containerEl)
 			.setName('Result Indicator')
 			.setDesc('String to show preceeding the calculation result')
@@ -451,6 +531,39 @@ class NumeralsSettingTab extends PluginSettingTab {
 					this.plugin.settings.hideEmitterMarkupInInput = value;
 					await this.plugin.saveSettings();
 				}));					
+
+		containerEl.createEl('h2', {text: 'Currency Settings'});
+		
+		new Setting(containerEl)
+			.setName('`$` symbol currency mapping')
+			.setDesc('Choose the currency the `$` symbol maps to (requires Obsidian reload to take effect)')
+				.addDropdown(dropDown => {
+					// addOption for every currency in currencyCodesForDollarSign
+					for (let currencyCode in currencyCodesForDollarSign) {
+						dropDown.addOption(currencyCode, `${currencyCode} (${currencyCodesForDollarSign[currencyCode]})`);
+					}
+					dropDown.setValue(this.plugin.settings.dollarSymbolCurrency.currency);
+					dropDown.onChange(async (value) => {
+						this.plugin.settings.dollarSymbolCurrency.currency = value;
+						await this.plugin.saveSettings();
+					});
+			});	
+			new Setting(containerEl)
+			.setName('`¥` symbol currency mapping')
+			.setDesc('Choose the currency the `¥` symbol maps to (requires Obsidian reload to take effect)')
+				.addDropdown(dropDown => {
+					// addOption for every currency in currencyCodesForYenSign
+					for (let currencyCode in currencyCodesForYenSign) {
+						dropDown.addOption(currencyCode, `${currencyCode} (${currencyCodesForYenSign[currencyCode]})`);
+					}
+					dropDown.setValue(this.plugin.settings.yenSymbolCurrency.currency);
+					dropDown.onChange(async (value) => {
+						this.plugin.settings.yenSymbolCurrency.currency = value;
+						await this.plugin.saveSettings();
+					});
+			});	
+
+
 				
 
 				
