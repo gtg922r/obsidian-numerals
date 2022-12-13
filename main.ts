@@ -76,12 +76,16 @@ const defaultCurrencyMap: CurrencyType[] = [
 ];
 
 const currencyCodesForDollarSign: {[key:string]: string} = {
-    AUD: "Australian Dollar",
+	ARS: "Argentine Peso",
+	AUD: "Australian Dollar",
     BBD: "Barbadian Dollar",
     BMD: "Bermudian Dollar",
     BND: "Brunei Dollar",
     BSD: "Bahamian Dollar",
+	BZD: "Belize Dollar",
     CAD: "Canadian Dollar",
+	CLP: "Chilean Peso",
+	COP: "Colombian Peso",
     FJD: "Fijian Dollar",
     GYD: "Guyanese Dollar",
     HKD: "Hong Kong Dollar",
@@ -97,7 +101,7 @@ const currencyCodesForDollarSign: {[key:string]: string} = {
     TTD: "Trinidad and Tobago Dollar",
     TWD: "New Taiwan Dollar",
     USD: "United States Dollar",
-    VND: "Vietnamese Dong",
+	UYU: "Uruguayan Peso",
     XCD: "East Caribbean Dollar",
 };
 
