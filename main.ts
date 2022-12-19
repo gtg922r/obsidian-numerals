@@ -202,7 +202,7 @@ export default class NumeralsPlugin extends Plugin {
 		// TODO need to decide if want to change (or drop) the seperator if there is an emitter
 
 		// remove `=>` at the end of lines (preserve comments)
-		processedSource = processedSource.replace(/(\s*=>)(?<!#.*)(\s*)(#.*)?$/gm,"$2$3") 
+		processedSource = processedSource.replace(/(=>)(?<!#.*)(\s*)(#.*)?$/gm,"$2$3") 
 			
 		for (let processor of this.preProcessors ) {
 			processedSource = processedSource.replace(processor.regex, processor.replaceStr)
@@ -251,7 +251,7 @@ export default class NumeralsPlugin extends Plugin {
 
 			// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
 			if (this.settings.hideEmitterMarkupInInput) {
-				rawRows[i] = rawRows[i].replace(/(\s*=>)(?<!#.*)(\s*)(#.*)?$/gm,"$2$3");
+				rawRows[i] = rawRows[i].replace(/(=>)(?<!#.*)(\s*)(#.*)?$/gm,"$2$3");
 			}
 	
 			let inputElement: HTMLElement, resultElement: HTMLElement;
