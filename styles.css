@@ -53,8 +53,8 @@ settings:
         default: ''
     - 
         id: numerals-emitter-input-weight
-        title: Emitted Input Font Weight
-        description: Font weight for input which has emitter annotation (`=>`) (accepts CSS font-weight value). Default is `var(--normal-weight)`.
+        title: Annotated Result Input Font Weight
+        description: Font weight for input which has result annotation (`=>`) (accepts CSS font-weight value). Default is `var(--normal-weight)`.
         type: variable-text
         default: ''        
 */
