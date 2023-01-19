@@ -47,6 +47,7 @@ interface NumeralsSettings {
 	dollarSymbolCurrency: CurrencySymbolMapping;
 	yenSymbolCurrency: CurrencySymbolMapping;
 	provideSuggestions: boolean;
+	suggestionsIncludeMathjsSymbols: boolean;
 }
 
 const DEFAULT_SETTINGS: NumeralsSettings = {
@@ -59,6 +60,7 @@ const DEFAULT_SETTINGS: NumeralsSettings = {
 	dollarSymbolCurrency: 				{symbol: "$", currency: "USD"},
 	yenSymbolCurrency: 					{symbol: "¥", currency: "JPY"},
 	provideSuggestions: 				true,
+	suggestionsIncludeMathjsSymbols: 	false,
 }
 
 interface CurrencyType {
@@ -512,10 +514,11 @@ class NumeralsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
-			
+
+		containerEl.createEl('h2', {text: 'Auto-Complete Suggestion Settings'});
 		new Setting(containerEl)
 			.setName('Provide Auto-Complete Suggestions')
-			.setDesc('Enable auto-complete suggestions when inside a math codeblock. Will base suggestions on variables in current codeblock, as well as mathjs functions and constants (Disabling requires restart to take effect)')
+			.setDesc('Enable auto-complete suggestions when inside a math codeblock. Will base suggestions on variables in current codeblock, as well as mathjs functions and constants if enabled below (Disabling requires restart to take effect)')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.provideSuggestions)
 				.onChange(async (value) => {
@@ -524,8 +527,17 @@ class NumeralsSettingTab extends PluginSettingTab {
 						this.plugin.registerEditorSuggest(new NumeralsSuggestor(this.plugin));
 					}
 					await this.plugin.saveSettings();
-				}));	
-
+				}));
+		new Setting(containerEl)
+			.setName('Include Functions and Constants in Suggestions')
+			.setDesc('Auto-complete suggestions will include mathjs functions, constants, and physical constants.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.suggestionsIncludeMathjsSymbols)
+				.onChange(async (value) => {
+					this.plugin.settings.suggestionsIncludeMathjsSymbols = value;
+					await this.plugin.saveSettings();
+				}));					
+			
 		containerEl.createEl('h2', {text: 'Styling Settings'});			
 		new Setting(containerEl)
 			.setName('Result Indicator')
@@ -690,8 +702,13 @@ class NumeralsSuggestor extends EditorSuggest<string> {
 		local_suggestions.sort((a, b) => a.slice(2).localeCompare(b.slice(2)));
 		
 		// case-insensitive filter mathjs suggestions based on query. Don't return value if full match
-		const mathjs_suggestions = getMathJsSymbols().filter((value) => value.slice(0, -1).toLowerCase().startsWith(query_lower, 2));
-		const suggestions = local_suggestions.concat(mathjs_suggestions);
+		let suggestions: string[] = [];
+		if (this.plugin.settings.suggestionsIncludeMathjsSymbols) {
+			const mathjs_suggestions = getMathJsSymbols().filter((value) => value.slice(0, -1).toLowerCase().startsWith(query_lower, 2));
+			suggestions = local_suggestions.concat(mathjs_suggestions);
+		} else { 
+			suggestions = local_suggestions;
+		}
 		
 		return suggestions;
 	}
