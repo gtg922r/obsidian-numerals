@@ -283,3 +283,15 @@ body {
     color: var(--text-muted);
     display:inline-block;
 }
+
+
+/***************************/
+/* ** Suggestion Style ** */
+
+/* .numerals-suggestion-icon {
+  --icon-size: 1em;
+} */
+.numerals-suggestion {
+    font-family: var(--numerals-font);
+    font-size: var(--numerals-size);
+}

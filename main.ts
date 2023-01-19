@@ -1,4 +1,8 @@
-import { App, finishRenderMath, Notice, Plugin, PluginSettingTab, renderMath, Setting, loadMathJax, sanitizeHTMLToDom} from 'obsidian';
+import { App, finishRenderMath, Notice, Plugin, PluginSettingTab, renderMath, Setting, loadMathJax, sanitizeHTMLToDom, MarkdownView, EditorSuggest, Editor, EditorPosition, EditorSuggestContext, EditorSuggestTriggerInfo, TFile, setIcon} from 'obsidian';
+
+// if use syntax tree directly will need "@codemirror/language": "^6.3.2", // Needed for accessing syntax tree
+// import {syntaxTree, tokenClassNodeProp} from '@codemirror/language';
+
 import * as math from 'mathjs';
 
 enum NumeralsLayout { 
@@ -357,6 +361,15 @@ export default class NumeralsPlugin extends Plugin {
 		// 	}
 		// });		
 
+		// // DEBUGGING PURPOSES ONLY: Add Development Commands
+		// this.addCommand({
+		// 	id: 'numerals-debug',
+		// 	name: 'Run Numerals Dev Test',
+		// 	callback: async () => {
+		// 		// Developme Functions Here
+		// 	}
+		// });				
+
 		// Load MathJax for TeX Rendering
 		await loadMathJax();
 
@@ -387,6 +400,7 @@ export default class NumeralsPlugin extends Plugin {
 			...this.currencyPreProcessors
 		];
 		
+		// Register Markdown Code Block Processors and pass in the render style
 		this.registerMarkdownCodeBlockProcessor("math", this.numeralsMathBlockHandler.bind(this, null));
 		this.registerMarkdownCodeBlockProcessor("Math", this.numeralsMathBlockHandler.bind(this, null));		
 		this.registerMarkdownCodeBlockProcessor("math-plain", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.Plain));		
@@ -396,6 +410,9 @@ export default class NumeralsPlugin extends Plugin {
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new NumeralsSettingTab(this.app, this));
+
+		// Register editor suggest handler
+		this.registerEditorSuggest(new NumeralsSuggestor(this));
 
 	}
 
@@ -486,12 +503,8 @@ class NumeralsSettingTab extends PluginSettingTab {
 				dropDown.addOption(NumeralsRenderStyle.SyntaxHighlight, 'Syntax Highlighting of Plain Text');
 				dropDown.setValue(this.plugin.settings.defaultRenderStyle);
 				dropDown.onChange(async (value) => {
-					console.log(value)
 					let renderStyleStr = value as keyof typeof NumeralsRenderStyle;
-					console.log(renderStyleStr)
 					this.plugin.settings.defaultRenderStyle = NumeralsRenderStyle[renderStyleStr]
-					console.log(NumeralsRenderStyle)
-					console.log(NumeralsRenderStyle[renderStyleStr])
 					await this.plugin.saveSettings();
 				});
 			});				
@@ -574,3 +587,218 @@ class NumeralsSettingTab extends PluginSettingTab {
 				
 	}
 }
+
+class NumeralsSuggestor extends EditorSuggest<string> {
+	plugin: NumeralsPlugin;
+	
+	/**
+	 * Time of last suggestion list update
+	 * @type {number}
+	 * @private */
+	private lastSuggestionListUpdate: number = 0;
+
+	/**
+	 * List of possible suggestions based on current code block
+	 * @type {string[]}
+	 * @private */
+	private localSuggestionCache: string[] = [];
+
+	//empty constructor
+	constructor(plugin: NumeralsPlugin) {
+		super(plugin.app);
+		this.plugin = plugin;
+	}
+
+	onTrigger(cursor: EditorPosition, editor: Editor, file: TFile): EditorSuggestTriggerInfo | null {
+		// time function
+		const time = performance.now();
+		// TODO Asses if this has any performance benefits over just looking to see if there is a ```math codeblock between the cursor and the start of the file
+		// let tree = syntaxTree(editor.cm?.state);
+		// let pos = editor?.posToOffset({...cursor, ch:0});
+		// const nodeProps = tree.resolveInner(pos, 1).type.prop(tokenClassNodeProp)
+
+		const currentFileToCursor = editor.getRange({line: 0, ch: 0}, cursor);
+		const indexOfLastCodeBlockStart = currentFileToCursor.lastIndexOf('```');
+		// check if the next 4 characters after the last ``` are math or MATH
+		const isMathBlock = currentFileToCursor.slice(indexOfLastCodeBlockStart + 3, indexOfLastCodeBlockStart + 7).toLowerCase() === 'math';
+
+		if (!isMathBlock) {
+			return null;
+		}
+
+		// Get last word in current line
+		let currentLineToCursor = editor.getLine(cursor.line).slice(0, cursor.ch);
+		let currentLineLastWordStart = currentLineToCursor.search(/\w+$/);
+		// if there is no word, return null
+		if (currentLineLastWordStart === -1) {
+			return null;
+		}
+
+		return {
+			start: {line: cursor.line, ch: currentLineLastWordStart},
+			end: cursor,
+			query: currentLineToCursor.slice(currentLineLastWordStart)
+		};
+	}
+
+	getSuggestions(context: EditorSuggestContext): string[] | Promise<string[]> {
+		let localSymbols: string [] = [];
+
+		// check if the last suggestion list update was less than 200ms ago
+		if (performance.now() - this.lastSuggestionListUpdate > 200) {
+			console.log('Updating suggestion list');
+		
+			const currentFileToStart = context.editor.getRange({line: 0, ch: 0}, context.start);
+			const indexOfLastCodeBlockStart = currentFileToStart.lastIndexOf('```');
+	
+			if (indexOfLastCodeBlockStart > -1) {
+				//technically there is a risk we aren't in a math block, but we shouldn't have been triggered if we weren't
+				const lastCodeBlockStart = currentFileToStart.lastIndexOf('```');
+				const lastCodeBlockStartToCursor = currentFileToStart.slice(lastCodeBlockStart);
+	
+				// Return all variable names in the last codeblock up to the cursor
+				const matches = lastCodeBlockStartToCursor.matchAll(/^\s*(\S*?)\s*=.*$/gm);
+				// create array from first capture group of matches and remove duplicates
+				localSymbols = [...new Set(Array.from(matches, (match) => 'v|' + match[1]))];
+			}
+			
+			this.localSuggestionCache = localSymbols;
+			this.lastSuggestionListUpdate = performance.now();
+		} else {
+			console.log(`Using cached suggestion list. Last update: ${this.lastSuggestionListUpdate}`);
+			localSymbols = this.localSuggestionCache
+		}
+
+		const query_lower = context.query.toLowerCase();
+
+		// case-insensitive filter local suggestions based on query. Don't return value if full match
+		const local_suggestions = localSymbols.filter((value) => value.slice(0, -1).toLowerCase().startsWith(query_lower, 2));
+		local_suggestions.sort((a, b) => a.slice(2).localeCompare(b.slice(2)));
+		
+		// case-insensitive filter mathjs suggestions based on query. Don't return value if full match
+		const mathjs_suggestions = getMathJsSymbols().filter((value) => value.slice(0, -1).toLowerCase().startsWith(query_lower, 2));
+		const suggestions = local_suggestions.concat(mathjs_suggestions);
+		
+		return suggestions;
+	}
+
+	renderSuggestion(value: string, el: HTMLElement): void {
+		
+		el.addClasses(['mod-complex', 'numerals-suggestion']);
+		let suggestionContent = el.createDiv({cls: 'suggestion-content'});
+		let suggestionTitle = suggestionContent.createDiv({cls: 'suggestion-title'});
+		let suggestionNote = suggestionContent.createDiv({cls: 'suggestion-note'});
+		let suggestionAux = el.createDiv({cls: 'suggestion-aux'});
+		let suggestionFlair = suggestionAux.createDiv({cls: 'suggestion-flair'});
+
+		let [iconType, suggestionText] = value.split('|');
+
+		let icon = el.createSpan({cls: 'numerals-suggestion-icon'});
+		if (iconType === 'f') {
+			setIcon(suggestionFlair, 'function-square');		
+		} else if (iconType === 'c') {
+			setIcon(suggestionFlair, 'locate-fixed');
+		} else if (iconType === 'v') {
+			setIcon(suggestionFlair, 'file-code');
+		} else if (iconType === 'p') {
+			setIcon(suggestionFlair, 'box');
+		}
+		suggestionTitle.setText(suggestionText);
+
+	}
+
+	selectSuggestion(value: string, evt: MouseEvent | KeyboardEvent): void {
+		if (this.context) {
+			let editor = this.context.editor;
+			let [suggestionType, suggestion] = value.split('|');
+			let additionText = suggestion.slice(this.context.query.length);
+			editor.replaceRange(suggestion, this.context.start, this.context.end);
+
+			let ch;
+			let line = this.context.end.line;
+
+			if (suggestionType === 'f') {
+				ch = this.context.start.ch + suggestion.length-1;
+			} else {
+				ch = this.context.start.ch + suggestion.length;
+			}
+
+			editor.setCursor({ch, line});			
+
+			this.close()
+		}
+	}
+
+}
+
+function getListFromString(input: string): string[] {
+	// Find all the lines that contain an `=` character
+	const matches = input.matchAll(/^\s*(.*?)\s*=\s*(.*?)\s*$/gm);
+  
+	// Create an array of strings from the matches, using the first capturing group of each match
+	const result: string[] = Array.from(matches, match => match[1]);
+  
+	// Return the result array
+	return result;
+}
+
+/**
+ * Returns an array of built-in mathjs symbols including functions, constants, and physical constants
+ * Also includes a prefix to indicate the type of symbol
+ * @returns {string[]} Array of mathjs built-in symbols
+ */
+function getMathJsSymbols(): string[] {
+	// TODO: include physical constants
+	// TODO: Add a setting to not show mathjs symbols in suggestions
+	const mathjsBuiltInSymbols: string[] = [
+		'f|abs()', 'f|acos()', 'f|acosh()', 'f|acot()', 'f|acoth()',
+		'f|acsc()', 'f|acsch()', 'f|add()', 'f|and()', 'f|apply()',
+		'f|arg()', 'f|asec()', 'f|asech()', 'f|asin()', 'f|asinh()',
+		'f|atan()', 'f|atan2()', 'f|atanh()', 'f|bellNumbers()', 'f|bin()',
+		'f|bitAnd()', 'f|bitNot()', 'f|bitOr()', 'f|bitXor()', 'f|catalan()',
+		'f|cbrt()', 'f|ceil()', 'f|clone()', 'f|column()', 'f|combinations()',
+		'f|combinationsWithRep()', 'f|compare()', 'f|compareNatural()', 'f|compareText()', 'f|compile()',
+		'f|composition()', 'f|concat()', 'f|conj()', 'f|cos()', 'f|cosh()',
+		'f|cot()', 'f|coth()', 'f|count()', 'f|cross()', 'f|csc()',
+		'f|csch()', 'f|ctranspose()', 'f|cube()', 'f|cumsum()', 'f|deepEqual()',
+		'f|derivative()', 'f|det()', 'f|diag()', 'f|diff()', 'f|distance()',
+		'f|divide()', 'f|dot()', 'f|dotDivide()', 'f|dotMultiply()', 'f|dotPow()',
+		'c|e', 'f|eigs()', 'f|equal()', 'f|equalText()', 'f|erf()',
+		'f|evaluate()', 'f|exp()', 'f|expm()', 'f|expm1()', 'f|factorial()',
+		'f|fft()', 'f|filter()', 'f|fix()', 'f|flatten()', 'f|floor()',
+		'f|forEach()', 'f|format()', 'f|gamma()', 'f|gcd()', 'f|getMatrixDataType()',
+		'f|hasNumericValue()', 'f|help()', 'f|hex()', 'f|hypot()', 'c|i',
+		'f|identity()', 'f|ifft()', 'f|im()', 'c|Infinity', 'f|intersect()',
+		'f|inv()', 'f|invmod()', 'f|isInteger()', 'f|isNaN()', 'f|isNegative()',
+		'f|isNumeric()', 'f|isPositive()', 'f|isPrime()', 'f|isZero()', 'f|kldivergence()',
+		'f|kron()', 'f|larger()', 'f|largerEq()', 'f|lcm()', 'f|leafCount()',
+		'f|leftShift()', 'f|lgamma()', 'c|LN10', 'c|LN2', 'f|log()',
+		'f|log10()', 'c|LOG10E', 'f|log1p()', 'f|log2()', 'c|LOG2E',
+		'f|lsolve()', 'f|lsolveAll()', 'f|lup()', 'f|lusolve()', 'f|lyap()',
+		'f|mad()', 'f|map()', 'f|matrixFromColumns()', 'f|matrixFromFunction()', 'f|matrixFromRows()',
+		'f|max()', 'f|mean()', 'f|median()', 'f|min()', 'f|mod()',
+		'f|mode()', 'f|multinomial()', 'f|multiply()', 'c|NaN', 'f|norm()',
+		'f|not()', 'f|nthRoot()', 'f|nthRoots()', 'c|null', 'f|numeric()',
+		'f|oct()', 'f|ones()', 'f|or()', 'f|parser()', 'f|partitionSelect()',
+		'f|permutations()', 'c|phi', 'c|pi', 'f|pickRandom()', 'f|pinv()',
+		'f|polynomialRoot()', 'f|pow()', 'f|print()', 'f|prod()', 'f|qr()',
+		'f|quantileSeq()', 'f|random()', 'f|randomInt()', 'f|range()', 'f|rationalize()',
+		'f|re()', 'f|reshape()', 'f|resize()', 'f|resolve()', 'f|rightArithShift()',
+		'f|rightLogShift()', 'f|rotate()', 'f|rotationMatrix()', 'f|round()', 'f|row()',
+		'f|schur()', 'f|sec()', 'f|sech()', 'f|setCartesian()', 'f|setDifference()',
+		'f|setDistinct()', 'f|setIntersect()', 'f|setIsSubset()', 'f|setMultiplicity()', 'f|setPowerset()',
+		'f|setSize()', 'f|setSymDifference()', 'f|setUnion()', 'f|sign()', 'f|simplify()',
+		'f|simplifyConstant()', 'f|simplifyCore()', 'f|sin()', 'f|sinh()', 'f|size()',
+		'f|slu()', 'f|smaller()', 'f|smallerEq()', 'f|sort()', 'p|speedOfLight',
+		'f|sqrt()', 'c|SQRT1_2', 'c|SQRT2', 'f|sqrtm()', 'f|square()',
+		'f|squeeze()', 'f|std()', 'f|stirlingS2()', 'f|subset()', 'f|subtract()',
+		'f|sum()', 'f|sylvester()', 'f|symbolicEqual()', 'f|tan()', 'f|tanh()',
+		'c|tau', 'f|to()', 'f|trace()', 'f|transpose()', 'f|typeOf()',
+		'f|unaryMinus()', 'f|unaryPlus()', 'f|unequal()', 'f|usolve()', 'f|usolveAll()',
+		'f|variance()', 'f|xgcd()', 'f|xor()', 'f|zeros()',
+	];
+
+	return mathjsBuiltInSymbols;
+}
+
+  
