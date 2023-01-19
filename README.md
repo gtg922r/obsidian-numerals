@@ -1,6 +1,6 @@
 # Numerals Obsidian Plugin
 
-*Numerals* gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can perform calculations inline with your notes, and see both the input and the evaluated result. *Numerals* works with Live Preview as well as Reader view, and offers TeX-style rendering and Syntax Highlighting. Comments or explanations can be added with `#`, and important results can be indicated with `=>` after the calculation. 
+*Numerals* gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can perform calculations inline with your notes, and see both the input and the evaluated result. *Numerals* works with Live Preview as well as Reader view, and offers TeX-style rendering or Syntax Highlighting as well as auto-completion suggestions. Comments or explanations can be added with `#`, and important results can be indicated with `=>` after the calculation. 
 ![Numerals Lemonade Stand - Side by Side](https://user-images.githubusercontent.com/1195174/200186757-a71b5e7a-df96-4350-b6a4-366d758e696d.png)
 ![Numerals Tex Example](https://user-images.githubusercontent.com/1195174/201516487-75bb7a08-76ab-4ff3-bf6b-d654aa284ab7.png)
 
@@ -20,6 +20,9 @@
 - Natural Constants
 	- `e`, `i`, `pi`, `speedOfLight`, `gravitationConstant`, `vacuumImpedance`, `avogadro`
 	- And many more (see [mathjs: Constants](https://mathjs.org/docs/reference/constants.html) and [mathjs: Units](https://mathjs.org/docs/datatypes/units.html) for more)
+- Auto-complete suggestions
+	- By default will offer auto-complete suggestions for any variables defined in a math codeblock being edited
+	- Optional setting to include all available functions, constants, and physical constants
 - Fractions:	
 	- `fraction(1/3) + fraction(1/4)` → `7/12`
 - Comments and Headings:

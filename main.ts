@@ -781,8 +781,7 @@ function getListFromString(input: string): string[] {
  * @returns {string[]} Array of mathjs built-in symbols
  */
 function getMathJsSymbols(): string[] {
-	// TODO: include physical constants
-	// TODO: Add a setting to not show mathjs symbols in suggestions
+
 	const mathjsBuiltInSymbols: string[] = [
 		'f|abs()', 'f|acos()', 'f|acosh()', 'f|acot()', 'f|acoth()',
 		'f|acsc()', 'f|acsch()', 'f|add()', 'f|and()', 'f|apply()',
