@@ -46,17 +46,19 @@ interface NumeralsSettings {
 	hideEmitterMarkupInInput: boolean;
 	dollarSymbolCurrency: CurrencySymbolMapping;
 	yenSymbolCurrency: CurrencySymbolMapping;
+	provideSuggestions: boolean;
 }
 
 const DEFAULT_SETTINGS: NumeralsSettings = {
-	resultSeparator: " → ",
-	layoutStyle: NumeralsLayout.TwoPanes,
-	alternateRowColor: true,
-	defaultRenderStyle: NumeralsRenderStyle.Plain,
-	hideLinesWithoutMarkupWhenEmitting: true,
-	hideEmitterMarkupInInput: true,
-	dollarSymbolCurrency: 	{symbol: "$", currency: "USD"},
-	yenSymbolCurrency: 		{symbol: "¥", currency: "JPY"},
+	resultSeparator: 					" → ",
+	layoutStyle:						NumeralsLayout.TwoPanes,
+	alternateRowColor: 					true,
+	defaultRenderStyle: 				NumeralsRenderStyle.Plain,
+	hideLinesWithoutMarkupWhenEmitting:	true,
+	hideEmitterMarkupInInput: 			true,
+	dollarSymbolCurrency: 				{symbol: "$", currency: "USD"},
+	yenSymbolCurrency: 					{symbol: "¥", currency: "JPY"},
+	provideSuggestions: 				true,
 }
 
 interface CurrencyType {
@@ -412,7 +414,9 @@ export default class NumeralsPlugin extends Plugin {
 		this.addSettingTab(new NumeralsSettingTab(this.app, this));
 
 		// Register editor suggest handler
-		this.registerEditorSuggest(new NumeralsSuggestor(this));
+		if (this.settings.provideSuggestions) {
+			this.registerEditorSuggest(new NumeralsSuggestor(this));
+		}
 
 	}
 
@@ -507,7 +511,20 @@ class NumeralsSettingTab extends PluginSettingTab {
 					this.plugin.settings.defaultRenderStyle = NumeralsRenderStyle[renderStyleStr]
 					await this.plugin.saveSettings();
 				});
-			});				
+			});
+			
+		new Setting(containerEl)
+			.setName('Provide Auto-Complete Suggestions')
+			.setDesc('Enable auto-complete suggestions when inside a math codeblock. Will base suggestions on variables in current codeblock, as well as mathjs functions and constants (Disabling requires restart to take effect)')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.provideSuggestions)
+				.onChange(async (value) => {
+					this.plugin.settings.provideSuggestions = value;
+					if (value) {
+						this.plugin.registerEditorSuggest(new NumeralsSuggestor(this.plugin));
+					}
+					await this.plugin.saveSettings();
+				}));	
 
 		containerEl.createEl('h2', {text: 'Styling Settings'});			
 		new Setting(containerEl)
@@ -611,7 +628,7 @@ class NumeralsSuggestor extends EditorSuggest<string> {
 
 	onTrigger(cursor: EditorPosition, editor: Editor, file: TFile): EditorSuggestTriggerInfo | null {
 		// time function
-		const time = performance.now();
+
 		// TODO Asses if this has any performance benefits over just looking to see if there is a ```math codeblock between the cursor and the start of the file
 		// let tree = syntaxTree(editor.cm?.state);
 		// let pos = editor?.posToOffset({...cursor, ch:0});
@@ -646,8 +663,6 @@ class NumeralsSuggestor extends EditorSuggest<string> {
 
 		// check if the last suggestion list update was less than 200ms ago
 		if (performance.now() - this.lastSuggestionListUpdate > 200) {
-			console.log('Updating suggestion list');
-		
 			const currentFileToStart = context.editor.getRange({line: 0, ch: 0}, context.start);
 			const indexOfLastCodeBlockStart = currentFileToStart.lastIndexOf('```');
 	
@@ -665,7 +680,6 @@ class NumeralsSuggestor extends EditorSuggest<string> {
 			this.localSuggestionCache = localSymbols;
 			this.lastSuggestionListUpdate = performance.now();
 		} else {
-			console.log(`Using cached suggestion list. Last update: ${this.lastSuggestionListUpdate}`);
 			localSymbols = this.localSuggestionCache
 		}
 
