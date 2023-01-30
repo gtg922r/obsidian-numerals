@@ -761,16 +761,22 @@ class NumeralsSuggestor extends EditorSuggest<string> {
 			this.close()
 		}
 	}
-
 }
 
+/**
+ * Takes a string containing lines of text, each of which is of the form
+ * "key = value". It finds all the lines that match this pattern, and returns an array
+ * containing the left-hand sides of these lines.
+ *  * @param {string} input String containing lines of text
+ * @returns {string[]} Array of strings
+ */
 function getListFromString(input: string): string[] {
 	// Find all the lines that contain an `=` character
 	const matches = input.matchAll(/^\s*(.*?)\s*=\s*(.*?)\s*$/gm);
   
 	// Create an array of strings from the matches, using the first capturing group of each match
 	const result: string[] = Array.from(matches, match => match[1]);
-  
+
 	// Return the result array
 	return result;
 }
