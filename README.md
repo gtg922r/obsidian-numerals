@@ -72,6 +72,12 @@ Choose between a consistent code block background color (left), or alternating r
 
 ![Numerals Alternating Row Style Comparison](https://user-images.githubusercontent.com/1195174/200187338-24912a83-eb1e-4188-a843-e189f33e7133.png)
 
+### Auto-completion Suggestions
+By default, _Numerals_ will provide auto-completiom suggestions for variables that have been defined in a particular `math` codeblock. Turning on _Include Functions and Constants in Suggestions_ will also provide suggestions for all functions, math constants, and physical constants supported in _Numerals_.
+
+![Auto-completion of Functions](https://user-images.githubusercontent.com/1195174/215416147-68110298-0e10-44e5-9351-83efc3a17bba.png)
+
+
 ## Installation
 *Numerals* can be found in the Obsidian community plugin list.
 
@@ -84,15 +90,17 @@ To try the latest features of *Numerals* before they are released, and provide h
 4. Activate *Numerals* plugin in community plugin list
 
 ## Features in progress and roadmap
-- [ ] Support for mapping currency symbols to different currencies, currently `$` maps to `USD` ([#17](https://github.com/gtg922r/obsidian-numerals/issues/17))
-- [ ] Style Settings support for all colors and other style options ([#13](https://github.com/gtg922r/obsidian-numerals/issues/13))
+- [x] Support for mapping currency symbols to different currencies ([#17](https://github.com/gtg922r/obsidian-numerals/issues/17))
+	both `$` and `¥` can be mapped to different currencies in settings 
+- [x] Style Settings support for all colors and other style options ([#13](https://github.com/gtg922r/obsidian-numerals/issues/13))
 	- Partial support added in 1.0.5
-- [ ] Result annotation, similar to Calca feature ([#4](https://github.com/gtg922r/obsidian-numerals/issues/4))
-	- Partial support added in 1.0.5
-- [ ] Autocompletion of functions and variable inside math code block ([#15](https://github.com/gtg922r/obsidian-numerals/issues/15))
+- [x] Result annotation, similar to Calca feature ([#4](https://github.com/gtg922r/obsidian-numerals/issues/4))
+	- Support added in 1.0.5
+- [x] Autocompletion of functions and variable inside math code block ([#15](https://github.com/gtg922r/obsidian-numerals/issues/15))
+	- Support added in 1.0.8
 - [ ] Inline calculation for inline code blocks ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5))
 
-Feel free to suggest additional features by creating an issue!
+Feel free to suggest additional features by creating an [issue](https://github.com/gtg922r/obsidian-numerals/issues)!
 
 ## Related
 There are a number of other plugins that address math and calculation use cases in Obsidian. 
