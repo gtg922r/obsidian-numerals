@@ -194,8 +194,7 @@ export default class NumeralsPlugin extends Plugin {
 		// find every line that ends with `=>` (ignore any whitespace or comments after it)
 		const emitter_lines: number[] = [];
 		for (let i = 0; i < rawRows.length; i++) {
-			// if (rawRows[i].match(/=>\s*(#.*)?$/)) { 
-			if (rawRows[i].match(/=>\s*(?<!#.*)(#.*)?$/)) { 				
+			if (rawRows[i].match(/^[^#\r\n]*=>.*$/)) {				 								
 				emitter_lines.push(i);
 			}
 		}
@@ -210,7 +209,7 @@ export default class NumeralsPlugin extends Plugin {
 		// TODO need to decide if want to change (or drop) the seperator if there is an emitter
 
 		// remove `=>` at the end of lines (preserve comments)
-		processedSource = processedSource.replace(/(=>)(?<!#.*)(\s*)(#.*)?$/gm,"$2$3") 
+		processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
 			
 		for (let processor of this.preProcessors ) {
 			processedSource = processedSource.replace(processor.regex, processor.replaceStr)
@@ -259,7 +258,7 @@ export default class NumeralsPlugin extends Plugin {
 
 			// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
 			if (this.settings.hideEmitterMarkupInInput) {
-				rawRows[i] = rawRows[i].replace(/(=>)(?<!#.*)(\s*)(#.*)?$/gm,"$2$3");
+				rawRows[i] = rawRows[i].replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
 			}
 	
 			let inputElement: HTMLElement, resultElement: HTMLElement;
