@@ -739,23 +739,28 @@ class NumeralsSuggestor extends EditorSuggest<string> {
 
 	}
 
+	/**
+	 * Called when a suggestion is selected. Replaces the current word with the selected suggestion
+	 * @param value The selected suggestion
+	 * @param evt The event that triggered the selection
+	 * @returns void
+	 */
 	selectSuggestion(value: string, evt: MouseEvent | KeyboardEvent): void {
 		if (this.context) {
 			let editor = this.context.editor;
 			let [suggestionType, suggestion] = value.split('|');
-			let additionText = suggestion.slice(this.context.query.length);
-			editor.replaceRange(suggestion, this.context.start, this.context.end);
-
-			let ch;
-			let line = this.context.end.line;
+			let start = this.context.start;
+			let end = editor.getCursor(); // get new end position in case cursor has moved
+			
+			editor.replaceRange(suggestion, start, end);
+			let newCursor = end;
 
 			if (suggestionType === 'f') {
-				ch = this.context.start.ch + suggestion.length-1;
+				newCursor.ch = start.ch + suggestion.length-1;
 			} else {
-				ch = this.context.start.ch + suggestion.length;
+				newCursor.ch = start.ch + suggestion.length;
 			}
-
-			editor.setCursor({ch, line});			
+			editor.setCursor(newCursor);			
 
 			this.close()
 		}
