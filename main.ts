@@ -144,15 +144,6 @@ function texCurrencyReplacement(input_tex:string) {
 }
 
 /**
- * Apply a consistant formatter to numbers
- * @param value Number to be formatted
- * @returns value as LocaleString
- */
-function numberFormatter(value:number) {
-	return value.toLocaleString();
-}
-
-/**
  * Converts a string of HTML into a DocumentFragment continaing a sanitized collection array of DOM elements.
  *
  * @param html The HTML string to convert.
@@ -176,6 +167,7 @@ export default class NumeralsPlugin extends Plugin {
 	private currencyMap: CurrencyType[] = defaultCurrencyMap;
 	private preProcessors: StringReplaceMap[];
 	private currencyPreProcessors: StringReplaceMap[];
+	private format_locale: Intl.LocalesArgument;
 
 	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: any): Promise<any> {		
 
@@ -268,7 +260,7 @@ export default class NumeralsPlugin extends Plugin {
 					let inputText = emptyLine ? rawRows[i] : rawInputSansComment;
 					inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
 					
-					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], numberFormatter) : '\xa0';
+					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], this.getNumberFormatter()) : '\xa0';
 					resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
 
 					break;
@@ -287,7 +279,7 @@ export default class NumeralsPlugin extends Plugin {
 
 						// Result to Tex
 						let resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
-						let processedResult:string = math.format(results[i], numberFormatter);
+						let processedResult:string = math.format(results[i], this.getNumberFormatter('en-US'));
 						for (let processor of this.preProcessors ) {
 							processedResult = processedResult.replace(processor.regex, processor.replaceStr)
 						}
@@ -304,7 +296,7 @@ export default class NumeralsPlugin extends Plugin {
 						inputElement.appendChild(input_elements);
 					}
 
-					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], numberFormatter) : '\xa0';
+					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], this.getNumberFormatter()) : '\xa0';
 					resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
 
 					break;
@@ -419,6 +411,9 @@ export default class NumeralsPlugin extends Plugin {
 			this.registerEditorSuggest(new NumeralsSuggestor(this));
 		}
 
+		// Setup locale for formatting
+		// this.format_locale = new Intl.Locale('en-US');
+		this.format_locale = navigator.language;		
 	}
 
 	async loadSettings() {
@@ -464,6 +459,21 @@ export default class NumeralsPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	/**
+	 * Return a formatting functon for numbers
+	 * @param locale Locale to be used. If null, use the global format_locale
+	 * @returns LocaleString function with a specified locale
+	 */
+	private getNumberFormatter(locale: Intl.LocalesArgument | null = null) {
+
+		// if locale is null, use the global format_locale			
+		return (value: number): string => value.toLocaleString(locale? locale : this.format_locale);
+		
+		// TODO: allow calling function to specify locale. And prior to parsing with mathjs only use en-us
+			// - could also consider custom format handler for numbers  (ConstantNode)
+			//     [math.js | an extensive math library for JavaScript and Node.js](https://mathjs.org/docs/expressions/customization.html#custom-html-latex-and-string-output)
 	}
 }
 
