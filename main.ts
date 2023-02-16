@@ -31,6 +31,13 @@ const numeralsRenderStyleClasses = {
 	[NumeralsRenderStyle.SyntaxHighlight]: 	"numerals-syntax",
 }
 
+// Locale Options
+enum numeralsNumberFormatLocale {
+	System = "System",
+	Numerals = "Numerals",
+	Custom = "Custom"
+}
+
 interface CurrencySymbolMapping {
 	symbol: string;
 	currency: string; // ISO 4217 Currency Code
@@ -48,6 +55,8 @@ interface NumeralsSettings {
 	yenSymbolCurrency: CurrencySymbolMapping;
 	provideSuggestions: boolean;
 	suggestionsIncludeMathjsSymbols: boolean;
+	numberFormattingLocale: numeralsNumberFormatLocale;
+	userSpecifiedLocale: string;
 }
 
 const DEFAULT_SETTINGS: NumeralsSettings = {
@@ -61,6 +70,9 @@ const DEFAULT_SETTINGS: NumeralsSettings = {
 	yenSymbolCurrency: 					{symbol: "¥", currency: "JPY"},
 	provideSuggestions: 				true,
 	suggestionsIncludeMathjsSymbols: 	false,
+	numberFormattingLocale: 			numeralsNumberFormatLocale.System,
+	userSpecifiedLocale: 				"en-US",
+	//TODO add default value for user specific locale. but what should it be? want to check at load time...
 }
 
 interface CurrencyType {
@@ -412,8 +424,8 @@ export default class NumeralsPlugin extends Plugin {
 		}
 
 		// Setup locale for formatting
-		// this.format_locale = new Intl.Locale('en-US');
-		this.format_locale = navigator.language;		
+		this.updateLocale();
+
 	}
 
 	async loadSettings() {
@@ -475,6 +487,22 @@ export default class NumeralsPlugin extends Plugin {
 			// - could also consider custom format handler for numbers  (ConstantNode)
 			//     [math.js | an extensive math library for JavaScript and Node.js](https://mathjs.org/docs/expressions/customization.html#custom-html-latex-and-string-output)
 	}
+
+	/**
+	 * Update the locale used for formatting numbers. Takes no arguments and returnings nothing
+	 */
+	updateLocale() {
+		switch (this.settings.numberFormattingLocale) {
+			case numeralsNumberFormatLocale.Custom:
+				this.format_locale = new Intl.Locale(this.settings.userSpecifiedLocale);
+				break;
+			case numeralsNumberFormatLocale.Numerals:
+				this.format_locale = new Intl.Locale('en-US');
+				break;
+			case numeralsNumberFormatLocale.System:
+				this.format_locale = new Intl.Locale(navigator.language);
+		}
+	}	
 }
 
 class NumeralsSettingTab extends PluginSettingTab {
@@ -588,8 +616,24 @@ class NumeralsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));					
 
-		containerEl.createEl('h2', {text: 'Currency Settings'});
-		
+		containerEl.createEl('h2', {text: 'Number Formatting'});
+		// Dropdown for number formatting locale setting
+		new Setting(containerEl)
+			.setName('Number Formatting')
+			.setDesc(`Choose how to format numbers in the results.\nUse System Setting: Use your local system settings for number formatting (Currently ${navigator.language})\nMatch Numerals Inputs: Match Numperals input expectations (period decimals, and comma thousands separator - i.e. 'en-US')\nUser-Specified Locale: Use the locale specified below`)
+			.addDropdown(dropDown => { 
+				dropDown.addOption(numeralsNumberFormatLocale.System, 'Use System Setting');
+				dropDown.addOption(numeralsNumberFormatLocale.Numerals, 'Match Numerals Inputs');
+				dropDown.addOption(numeralsNumberFormatLocale.Custom, 'User-Specified Locale');
+				dropDown.setValue(this.plugin.settings.numberFormattingLocale);
+				dropDown.onChange(async (value) => {
+					let layoutStyleStr = value as keyof typeof numeralsNumberFormatLocale;
+					this.plugin.settings.numberFormattingLocale = numeralsNumberFormatLocale[layoutStyleStr];
+					await this.plugin.saveSettings();
+					this.plugin.updateLocale();
+				});
+			})
+
 		new Setting(containerEl)
 			.setName('`$` symbol currency mapping')
 			.setDesc('Choose the currency the `$` symbol maps to (requires Obsidian reload to take effect)')
