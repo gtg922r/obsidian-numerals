@@ -170,7 +170,6 @@ export default class NumeralsPlugin extends Plugin {
 	private format_locale: Intl.LocalesArgument;
 
 	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: any): Promise<any> {		
-		console.log("here bro")
 
 		const blockRenderStyle: NumeralsRenderStyle = type ? type : this.settings.defaultRenderStyle;
 		
