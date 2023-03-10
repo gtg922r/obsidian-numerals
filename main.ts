@@ -170,6 +170,7 @@ export default class NumeralsPlugin extends Plugin {
 	private format_locale: Intl.LocalesArgument;
 
 	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: any): Promise<any> {		
+		console.log("here bro")
 
 		const blockRenderStyle: NumeralsRenderStyle = type ? type : this.settings.defaultRenderStyle;
 		
@@ -219,9 +220,13 @@ export default class NumeralsPlugin extends Plugin {
 		
 		for (let row of rows.slice(0,-1)) { // Last row may be empty
 			try {
-				results.push(math.evaluate(row, scope));
+				// These replaces are to avoid passing latex brackest to math js because it dont like them 
+				results.push(math.evaluate(row.replaceAll("{","").replaceAll("}",""), scope));
 				inputs.push(row); // Only pushes if evaluate is successful
 			} catch (error) {
+				console.log("ERROR HAPPENED HERE", error)
+				console.log("ERROR HAPPENED HERE", row)
+				console.log("ERROR HAPPENED HERE", row.replace("{","").replace("}",""))
 				errorMsg = error;
 				errorInput = row;
 				break;
@@ -231,7 +236,8 @@ export default class NumeralsPlugin extends Plugin {
 		const lastRow = rows.slice(-1)[0];
 		if (lastRow != '') { // Last row is always empty in reader view
 			try {
-				results.push(math.evaluate(lastRow, scope));
+				// These replaces are to avoid passing latex brackest to math js because it dont like them 
+				results.push(math.evaluate(lastRow.replaceAll("{","").replaceAll("}",""), scope));
 				inputs.push(lastRow); // Only pushes if evaluate is successful
 			} catch (error) {
 				errorMsg = error;
@@ -271,11 +277,12 @@ export default class NumeralsPlugin extends Plugin {
 					resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
 					if (!emptyLine) {
 						// Input to Tex
-						let input_tex:string = math.parse(inputs[i]).toTex();
+						// These replaces are to avoid passing latex brackest to math js because it dont like them 
+						let input_tex:string = math.parse(inputs[i].replaceAll("{","").replaceAll("}","")).toTex();
 						let inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
 
 						input_tex = texCurrencyReplacement(input_tex);
-						mathjaxLoop(inputTexElement, input_tex);
+						mathjaxLoop(inputTexElement, inputs[i]);
 
 						// Result to Tex
 						let resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
