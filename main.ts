@@ -223,9 +223,6 @@ export default class NumeralsPlugin extends Plugin {
 				results.push(math.evaluate(row.replaceAll("{","").replaceAll("}",""), scope));
 				inputs.push(row); // Only pushes if evaluate is successful
 			} catch (error) {
-				console.log("ERROR HAPPENED HERE", error)
-				console.log("ERROR HAPPENED HERE", row)
-				console.log("ERROR HAPPENED HERE", row.replace("{","").replace("}",""))
 				errorMsg = error;
 				errorInput = row;
 				break;
