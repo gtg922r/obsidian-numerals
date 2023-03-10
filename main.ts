@@ -281,6 +281,7 @@ export default class NumeralsPlugin extends Plugin {
 						let inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
 
 						input_tex = texCurrencyReplacement(input_tex);
+						//If you need to switch on/off this PR,  just use mathjaxLoop(inputTexElement, input_tex); instead of inputs[i]
 						mathjaxLoop(inputTexElement, inputs[i]);
 
 						// Result to Tex
