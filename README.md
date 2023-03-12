@@ -73,7 +73,7 @@ Choose between a consistent code block background color (left), or alternating r
 ![Numerals Alternating Row Style Comparison](https://user-images.githubusercontent.com/1195174/200187338-24912a83-eb1e-4188-a843-e189f33e7133.png)
 
 ### Auto-completion Suggestions
-By default, _Numerals_ will provide auto-completiom suggestions for variables that have been defined in a particular `math` codeblock. Turning on _Include Functions and Constants in Suggestions_ will also provide suggestions for all functions, math constants, and physical constants supported in _Numerals_.
+By default, _Numerals_ will provide auto-completion suggestions for variables that have been defined in a particular `math` codeblock. Turning on _Include Functions and Constants in Suggestions_ will also provide suggestions for all functions, math constants, and physical constants supported in _Numerals_.
 
 ![Auto-completion of Functions](https://user-images.githubusercontent.com/1195174/215416147-68110298-0e10-44e5-9351-83efc3a17bba.png)
 
