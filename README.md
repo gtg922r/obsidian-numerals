@@ -77,12 +77,23 @@ By default, _Numerals_ will provide auto-completiom suggestions for variables th
 
 ![Auto-completion of Functions](https://user-images.githubusercontent.com/1195174/215416147-68110298-0e10-44e5-9351-83efc3a17bba.png)
 
+### Format of Numbers in Rendered Results
+*Numerals* allows the user to specify the format of rendered results. 
+- **System Formatted** (Default): Use your local system settings for number formatting (including thousands and decimal separator)
+- **Fixed**: No thousands separator and full precision. Period as decimal separator (e.g. `100000.1`)
+- **Exponential**: Always use exponential notation. (e.g. `1.000001e5`)
+- **Engineering**: Exponential notation with exponent a multiple of 3. (e.g. `100.0001e3`)
+- **Formatted**: Forces a specific type of formatted notation.
+  - Style 1: `100,000.1`
+  - Style 2: `100.000,1`
+  - Style 3: `100 000,1`
+  - Style 4: `1,00,000.1`
 
 ## Installation
 *Numerals* can be found in the Obsidian community plugin list.
 
 ### Using BRAT
-To try the latest features of *Numerals* before they are released, and provide helpful feedback and testing, try *Numerals* by using the [Obsidian BRAT plugin](https://github.com/TfTHacker/obsidian42-brat). 
+To try the latest features of *Numerals* before they are released, and provide helpful feedback and testing, try *Numerals* by using the [Obsidian BRAT plugin](https://github.com/TfTHacker/obsidian42-brat). **All new *Numerals* features will be pushed to beta testers first.**
 
 1. Ensure BRAT is installed
 2. Trigger the command `Obsidian42 - BRAT: Add a beta plugin for testing` 
