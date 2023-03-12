@@ -6,7 +6,7 @@ settings:
     - 
         id: numerals-comment
         title: In-line Comment Color
-        description: Color of the text in in-line comments. Default is `--text-faint`.
+        description: Color of the text in in-line comments. Default is `--code-comment`.
         type: variable-themed-color
         format: hex
         opacity: false
@@ -15,7 +15,7 @@ settings:
     - 
         id: numerals-heading
         title: Heading / Comment Line Color
-        description: Color of lines with only a comment. Default is `--text-faint`.
+        description: Color of lines with only a comment. Default is `--code-comment`.
         type: variable-themed-color
         format: hex
         opacity: false
@@ -63,8 +63,8 @@ settings:
 /******** Non-setting specific   **/
 
 body {
-    --numerals-comment: var(--text-faint);
-    --numerals-heading: var(--text-faint);
+    --numerals-comment: var(--code-comment);
+    --numerals-heading: var(--code-comment);
     --numerals-background: var(--code-background);
     --numerals-font: var(--font-monospace);
     --numerals-size: var(--code-size);
@@ -123,6 +123,7 @@ body {
 }
 
 .numerals-block  {
+    color: var(--code-normal);
     background-color: var(--numerals-background);
     font-family: var(--numerals-font);    
     font-size: var(--numerals-size);    
@@ -184,7 +185,7 @@ body {
 
 .numerals-answer-right .numerals-result {
     float: right;
-    color: var(--text-muted);
+    color: var(--code-normal);
 }
 
 /**********************************/
@@ -204,7 +205,7 @@ body {
 }
 
 .numerals-panes .numerals-result {
-    color: var(--text-muted);
+    color: var(--code-normal);
     background-color: var(--background-modifier-hover);
     width: 25%;
     text-align: left;
@@ -230,7 +231,7 @@ body {
 }
 
 .numerals-answer-below .numerals-line .numerals-result {
-    color: var(--text-muted);
+    color: var(--code-normal);
     padding-left: var(--size-4-4);
     padding-bottom: var(--size-2-1);
 }
@@ -250,7 +251,7 @@ body {
 
 /* Don't show text in .numerals-result that and aren't descendents of .numerals-emitter */
 .numerals-emitters-present:not(.numerals-hide-non-emitters) .numerals-result:not(.numerals-emitter .numerals-result) {
-    color: var(--text-faint);
+    color: var(--code-comment);
 }
 
 .numerals-emitter .numerals-input {
@@ -280,7 +281,7 @@ body {
 
 .numerals-answer-inline .numerals-result {
     /* float: right; */
-    color: var(--text-muted);
+    color: var(--code-normal);
     display:inline-block;
 }
 
