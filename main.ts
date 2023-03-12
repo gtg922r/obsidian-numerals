@@ -31,17 +31,38 @@ const numeralsRenderStyleClasses = {
 	[NumeralsRenderStyle.SyntaxHighlight]: 	"numerals-syntax",
 }
 
-// Locale Options
-enum numeralsNumberFormatLocale {
-	System = "System",
-	Numerals = "Numerals",
-	Custom = "Custom"
-}
 
 interface CurrencySymbolMapping {
 	symbol: string;
 	currency: string; // ISO 4217 Currency Code
 }
+
+interface mathjsFormatOptions {
+	notation: string;
+}
+
+enum NumeralsNumberFormat {
+	System = "System",
+	Fixed = "Fixed",	
+	Exponential = "Exponential",
+	Engineering = "Engineering",
+	Format_CommaThousands_PeriodDecimal = "Format_CommaThousands_PeriodDecimal",
+	Format_PeriodThousands_CommaDecimal = "Format_PeriodThousands_CommaDecimal",
+	Format_SpaceThousands_CommaDecimal = "Format_SpaceThousands_CommaDecimal",
+	Format_Indian = "Format_Indian"
+}
+
+const NumberalsNumberFormatSettingsStrings = {
+	[NumeralsNumberFormat.System]: `System Formatted: ${(100000.1).toLocaleString()}`,
+	[NumeralsNumberFormat.Fixed]: "Fixed: 100000.1",
+	[NumeralsNumberFormat.Exponential]: "Exponential: 1.000001e+5",
+	[NumeralsNumberFormat.Engineering]: "Engineering: 100.0001e+3",
+	[NumeralsNumberFormat.Format_CommaThousands_PeriodDecimal]: "Formatted: 100,000.1",
+	[NumeralsNumberFormat.Format_PeriodThousands_CommaDecimal]: "Formatted: 100.000,1",
+	[NumeralsNumberFormat.Format_SpaceThousands_CommaDecimal]: "Formatted: 100 000,1",
+	[NumeralsNumberFormat.Format_Indian]: "Formatted: 1,00,000.1",
+}
+
 
 // TODO: Add a switch for only rendering input
 interface NumeralsSettings {
@@ -55,8 +76,7 @@ interface NumeralsSettings {
 	yenSymbolCurrency: CurrencySymbolMapping;
 	provideSuggestions: boolean;
 	suggestionsIncludeMathjsSymbols: boolean;
-	numberFormattingLocale: numeralsNumberFormatLocale;
-	userSpecifiedLocale: string;
+	numberFormat: NumeralsNumberFormat;
 }
 
 const DEFAULT_SETTINGS: NumeralsSettings = {
@@ -70,9 +90,7 @@ const DEFAULT_SETTINGS: NumeralsSettings = {
 	yenSymbolCurrency: 					{symbol: "¥", currency: "JPY"},
 	provideSuggestions: 				true,
 	suggestionsIncludeMathjsSymbols: 	false,
-	numberFormattingLocale: 			numeralsNumberFormatLocale.System,
-	userSpecifiedLocale: 				"en-US",
-	//TODO add default value for user specific locale. but what should it be? want to check at load time...
+	numberFormat: 						NumeralsNumberFormat.System,
 }
 
 interface CurrencyType {
@@ -174,12 +192,56 @@ async function mathjaxLoop(container: HTMLElement, value: string) {
 	container.append(html);
 }
 
+/**
+ * Return a function that formats a number according to the given locale
+ * @param locale Locale to use
+ * @returns Function that calls toLocaleString with given locale
+ */
+function getLocaleFormatter(locale: Intl.LocalesArgument|null = null): (value: number) => string {
+	if (locale === null) {
+		return (value: number): string => value.toLocaleString();
+	} else {
+		return (value: number): string => value.toLocaleString(locale);
+	}
+}
+	
+
+type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
+/**
+ * Map Numerals Number Format to mathjs format options
+ * @param format Numerals Number Format
+ * @returns mathjs format object
+ * @see https://mathjs.org/docs/reference/functions/format.html
+ */
+function getMathjsFormat(format: NumeralsNumberFormat): mathjsFormat {
+	switch (format) {
+		case NumeralsNumberFormat.System:
+			return getLocaleFormatter();			
+		case NumeralsNumberFormat.Fixed:
+			return {notation: "fixed"};
+		case NumeralsNumberFormat.Exponential:
+			return {notation: "exponential"};
+		case NumeralsNumberFormat.Engineering:
+			return {notation: "engineering"};
+		case NumeralsNumberFormat.Format_CommaThousands_PeriodDecimal:
+			return getLocaleFormatter('en-US');
+		case NumeralsNumberFormat.Format_PeriodThousands_CommaDecimal:
+			return getLocaleFormatter('de-DE');
+		case NumeralsNumberFormat.Format_SpaceThousands_CommaDecimal:
+			return getLocaleFormatter('fr-FR');
+		case NumeralsNumberFormat.Format_Indian:
+			return getLocaleFormatter('en-IN');
+		default:
+			return {notation: "fixed"};
+	}
+}
+
 export default class NumeralsPlugin extends Plugin {
 	settings: NumeralsSettings;
 	private currencyMap: CurrencyType[] = defaultCurrencyMap;
 	private preProcessors: StringReplaceMap[];
 	private currencyPreProcessors: StringReplaceMap[];
-	private format_locale: Intl.LocalesArgument;
+	private numberFormat: mathjsFormat;
 
 	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: any): Promise<any> {		
 
@@ -272,7 +334,7 @@ export default class NumeralsPlugin extends Plugin {
 					let inputText = emptyLine ? rawRows[i] : rawInputSansComment;
 					inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
 					
-					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], this.getNumberFormatter()) : '\xa0';
+					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], this.numberFormat) : '\xa0';
 					resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
 
 					break;
@@ -291,7 +353,9 @@ export default class NumeralsPlugin extends Plugin {
 
 						// Result to Tex
 						let resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
-						let processedResult:string = math.format(results[i], this.getNumberFormatter('en-US'));
+
+						// format result to string to get reasonable precision. Commas will be stripped
+						let processedResult:string = math.format(results[i], getLocaleFormatter('posix'));
 						for (let processor of this.preProcessors ) {
 							processedResult = processedResult.replace(processor.regex, processor.replaceStr)
 						}
@@ -308,7 +372,7 @@ export default class NumeralsPlugin extends Plugin {
 						inputElement.appendChild(input_elements);
 					}
 
-					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], this.getNumberFormatter()) : '\xa0';
+					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], this.numberFormat) : '\xa0';
 					resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
 
 					break;
@@ -423,7 +487,7 @@ export default class NumeralsPlugin extends Plugin {
 			this.registerEditorSuggest(new NumeralsSuggestor(this));
 		}
 
-		// Setup locale for formatting
+		// Setup number formatting
 		this.updateLocale();
 
 	}
@@ -474,35 +538,12 @@ export default class NumeralsPlugin extends Plugin {
 	}
 
 	/**
-	 * Return a formatting functon for numbers
-	 * @param locale Locale to be used. If null, use the global format_locale
-	 * @returns LocaleString function with a specified locale
-	 */
-	private getNumberFormatter(locale: Intl.LocalesArgument | null = null) {
-
-		// if locale is null, use the global format_locale			
-		return (value: number): string => value.toLocaleString(locale? locale : this.format_locale);
-		
-		// TODO: allow calling function to specify locale. And prior to parsing with mathjs only use en-us
-			// - could also consider custom format handler for numbers  (ConstantNode)
-			//     [math.js | an extensive math library for JavaScript and Node.js](https://mathjs.org/docs/expressions/customization.html#custom-html-latex-and-string-output)
-	}
-
-	/**
 	 * Update the locale used for formatting numbers. Takes no arguments and returnings nothing
+	 * @returns {void}
 	 */
-	updateLocale() {
-		switch (this.settings.numberFormattingLocale) {
-			case numeralsNumberFormatLocale.Custom:
-				this.format_locale = new Intl.Locale(this.settings.userSpecifiedLocale);
-				break;
-			case numeralsNumberFormatLocale.Numerals:
-				this.format_locale = new Intl.Locale('en-US');
-				break;
-			case numeralsNumberFormatLocale.System:
-				this.format_locale = new Intl.Locale(navigator.language);
-		}
-	}	
+	updateLocale(): void {
+		this.numberFormat = getMathjsFormat(this.settings.numberFormat);
+	}
 }
 
 class NumeralsSettingTab extends PluginSettingTab {
@@ -519,7 +560,10 @@ class NumeralsSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl('h1', {text: 'Numerals Plugin Settings'});
-		containerEl.createEl('h2', {text: 'Layout and Render Settings'});
+
+		new Setting(containerEl)
+		.setHeading()
+		.setName('Layout and Render Settings');	
 
 		new Setting(containerEl)
 			.setName('Numerals Layout Style')
@@ -552,7 +596,10 @@ class NumeralsSettingTab extends PluginSettingTab {
 				});
 			});
 
-		containerEl.createEl('h2', {text: 'Auto-Complete Suggestion Settings'});
+		new Setting(containerEl)
+		.setHeading()
+		.setName('Auto-Complete Suggestion Settings');		
+
 		new Setting(containerEl)
 			.setName('Provide Auto-Complete Suggestions')
 			.setDesc('Enable auto-complete suggestions when inside a math codeblock. Will base suggestions on variables in current codeblock, as well as mathjs functions and constants if enabled below (Disabling requires restart to take effect)')
@@ -575,7 +622,10 @@ class NumeralsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));					
 			
-		containerEl.createEl('h2', {text: 'Styling Settings'});			
+		new Setting(containerEl)
+			.setHeading()
+			.setName('Styling Settings');			
+
 		new Setting(containerEl)
 			.setName('Result Indicator')
 			.setDesc('String to show preceeding the calculation result')
@@ -606,6 +656,11 @@ class NumeralsSettingTab extends PluginSettingTab {
 					this.plugin.settings.hideLinesWithoutMarkupWhenEmitting = value;
 					await this.plugin.saveSettings();
 				}));			
+
+		// create new document fragment to be mult-line property text seperated by <br>
+		let resultAnnotationMarkupDesc = document.createDocumentFragment();
+		resultAnnotationMarkupDesc.append('Result Annotation markup (`=>`) is used to indicate which line is the result of the calculation. It can be used on any line, and can be used multiple times in a single block. If used, the result of the last line with the markup will be shown in the result column. If not used, the result of the last line will be shown in the result column.');
+		
 		new Setting(containerEl)
 			.setName('Hide Result Annotation Markup in Input')
 			.setDesc('Result Annotation markup (`=>`) will be hidden in the input when rendering the math block')
@@ -616,19 +671,32 @@ class NumeralsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));					
 
-		containerEl.createEl('h2', {text: 'Number Formatting'});
+		// containerEl.createEl('h2', {text: 'Number Formatting'});
 		// Dropdown for number formatting locale setting
 		new Setting(containerEl)
-			.setName('Number Formatting')
-			.setDesc(`Choose how to format numbers in the results.\nUse System Setting: Use your local system settings for number formatting (Currently ${navigator.language})\nMatch Numerals Inputs: Match Numperals input expectations (period decimals, and comma thousands separator - i.e. 'en-US')\nUser-Specified Locale: Use the locale specified below`)
+			.setHeading()
+			.setName("Number and Currency Formatting");
+
+		let customLocaleSetting: Setting;
+		new Setting(containerEl)
+			.setName('Rendered Number Format')
+			.setDesc(htmlToElements(`Choose how to format numbers in the results.<br>`
+				+ `<b>System Formatted:</b> Use your local system settings for number formatting (Currently <code>${navigator.language}</code>)<br>`
+				+ `<b>Fixed:</b> No thousands seperator and full precision.<br>`
+				+ `<b>Exponential:</b> Always use exponential notation.<br>`				
+				+ `<b>Engineering:</b> Exponential notation with exponent a multiple of 3.<br>`
+				+ `<b>Formatted:</b> Forces a specific type of formatted notation.<br><br>`								
+				+ `<i>Note:</i> <code>math-tex</code> mode will always use period as decimal seperator, regardless of locale.<br>`))
 			.addDropdown(dropDown => { 
-				dropDown.addOption(numeralsNumberFormatLocale.System, 'Use System Setting');
-				dropDown.addOption(numeralsNumberFormatLocale.Numerals, 'Match Numerals Inputs');
-				dropDown.addOption(numeralsNumberFormatLocale.Custom, 'User-Specified Locale');
-				dropDown.setValue(this.plugin.settings.numberFormattingLocale);
+				// addOption for every option in NumberalsNumberFormatSettingsStrings
+				for (const settingName in NumberalsNumberFormatSettingsStrings) {
+					dropDown.addOption(settingName, NumberalsNumberFormatSettingsStrings[settingName as NumeralsNumberFormat]);
+				}
+
+				dropDown.setValue(this.plugin.settings.numberFormat);
 				dropDown.onChange(async (value) => {
-					let layoutStyleStr = value as keyof typeof numeralsNumberFormatLocale;
-					this.plugin.settings.numberFormattingLocale = numeralsNumberFormatLocale[layoutStyleStr];
+					let formatStyleStr = value as keyof typeof NumeralsNumberFormat;
+					this.plugin.settings.numberFormat = NumeralsNumberFormat[formatStyleStr];
 					await this.plugin.saveSettings();
 					this.plugin.updateLocale();
 				});
