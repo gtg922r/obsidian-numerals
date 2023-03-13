@@ -185,7 +185,7 @@ body {
 
 .numerals-answer-right .numerals-result {
     float: right;
-    color: var(--code-normal);
+    color: var(--code-punctuation);
 }
 
 /**********************************/
@@ -205,7 +205,7 @@ body {
 }
 
 .numerals-panes .numerals-result {
-    color: var(--code-normal);
+    color: var(--code-punctuation);
     background-color: var(--background-modifier-hover);
     width: 25%;
     text-align: left;
@@ -231,7 +231,7 @@ body {
 }
 
 .numerals-answer-below .numerals-line .numerals-result {
-    color: var(--code-normal);
+    color: var(--code-punctuation);
     padding-left: var(--size-4-4);
     padding-bottom: var(--size-2-1);
 }
@@ -281,7 +281,7 @@ body {
 
 .numerals-answer-inline .numerals-result {
     /* float: right; */
-    color: var(--code-normal);
+    color: var(--code-punctuation);
     display:inline-block;
 }
 
