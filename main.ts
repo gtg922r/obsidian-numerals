@@ -173,6 +173,19 @@ function texCurrencyReplacement(input_tex:string) {
 	return input_tex
 }
 
+function unescapeSubscripts(input:string):string {
+	// Define the regex pattern
+	console.log("Unescaping subscripts")
+	const regex = /(?<varStart>[\p{L}\p{Nl}_$])(?<varBody>[\p{L}\p{Nl}_$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F\u{1D400}-\u{1D7FF}\d]*)(\\_)(?<varEnd>[\p{L}\p{Nl}_$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F\u{1D400}-\u{1D7FF}\d]+)/gu;
+
+	// Replace matching patterns with the desired format
+	const output = input.replace(regex, (match, varStart, varBody, _, varEnd) => {
+		return `${varStart}${varBody}_{${varEnd}}`;
+	});
+  
+	return output;
+  }
+
 /**
  * Converts a string of HTML into a DocumentFragment continaing a sanitized collection array of DOM elements.
  *
@@ -345,7 +358,11 @@ export default class NumeralsPlugin extends Plugin {
 					resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
 					if (!emptyLine) {
 						// Input to Tex
-						let input_tex:string = math.parse(inputs[i]).toTex();
+						let preprocess_input_tex:string = math.parse(inputs[i]).toTex();
+						let input_tex:string = unescapeSubscripts(preprocess_input_tex);
+						// log the text string and the input to consol
+						console.log(`inputs[i]: ${inputs[i]} | preprocess_input_tex: ${preprocess_input_tex} | input_tex: ${input_tex}`)
+						
 						let inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
 
 						input_tex = texCurrencyReplacement(input_tex);
