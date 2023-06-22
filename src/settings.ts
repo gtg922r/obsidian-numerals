@@ -1,3 +1,7 @@
+///////////////////////////////////////////
+// Imports
+///////////////////////////////////////////
+
 import NumeralsPlugin, {
     htmlToElements
 } from "./main";
@@ -8,6 +12,10 @@ import {
     App,
     Setting,
  } from "obsidian";
+
+///////////////////////////////////////////
+// Settings Enums and Interfaces
+///////////////////////////////////////////
 
 export enum NumeralsLayout { 
 	TwoPanes = "TwoPanes",
@@ -32,6 +40,43 @@ export enum NumeralsNumberFormat {
 	Format_SpaceThousands_CommaDecimal = "Format_SpaceThousands_CommaDecimal",
 	Format_Indian = "Format_Indian"
 }
+
+interface CurrencySymbolMapping {
+	symbol: string;
+	currency: string; // ISO 4217 Currency Code
+}
+
+export interface NumeralsSettings {
+	resultSeparator: string;
+	layoutStyle: NumeralsLayout;
+	alternateRowColor: boolean;
+	defaultRenderStyle: NumeralsRenderStyle;
+	hideLinesWithoutMarkupWhenEmitting: boolean; // "Emitting" is "result annotation"
+	hideEmitterMarkupInInput: boolean;
+	dollarSymbolCurrency: CurrencySymbolMapping;
+	yenSymbolCurrency: CurrencySymbolMapping;
+	provideSuggestions: boolean;
+	suggestionsIncludeMathjsSymbols: boolean;
+	numberFormat: NumeralsNumberFormat;
+}
+
+export const DEFAULT_SETTINGS: NumeralsSettings = {
+	resultSeparator: 					" → ",
+	layoutStyle:						NumeralsLayout.TwoPanes,
+	alternateRowColor: 					true,
+	defaultRenderStyle: 				NumeralsRenderStyle.Plain,
+	hideLinesWithoutMarkupWhenEmitting:	true,
+	hideEmitterMarkupInInput: 			true,
+	dollarSymbolCurrency: 				{symbol: "$", currency: "USD"},
+	yenSymbolCurrency: 					{symbol: "¥", currency: "JPY"},
+	provideSuggestions: 				true,
+	suggestionsIncludeMathjsSymbols: 	false,
+	numberFormat: 						NumeralsNumberFormat.System,
+}
+
+///////////////////////////////////////////
+// Settings Details
+///////////////////////////////////////////
 
 export const NumberalsNumberFormatSettingsStrings = {
 	[NumeralsNumberFormat.System]: `System Formatted: ${(100000.1).toLocaleString()}`,
@@ -80,6 +125,18 @@ export const currencyCodesForYenSign: {[key:string]: string} = {
     KRW: "Korean Won",
 };
 
+///////////////////////////////////////////
+// Settings Tab
+///////////////////////////////////////////
+
+/**
+ * Settings Tab for the Numerals Plugin
+ * 
+ * @export
+ * @class NumeralsSettingTab
+ * @extends {PluginSettingTab}
+ * @property {NumeralsPlugin} plugin
+ */
 export class NumeralsSettingTab extends PluginSettingTab {
 	plugin: NumeralsPlugin;
 
@@ -109,7 +166,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				dropDown.addOption(NumeralsLayout.AnswerInline, 'Answer inline, beside input');				
 				dropDown.setValue(this.plugin.settings.layoutStyle);
 				dropDown.onChange(async (value) => {
-					let layoutStyleStr = value as keyof typeof NumeralsLayout;
+					const layoutStyleStr = value as keyof typeof NumeralsLayout;
 					this.plugin.settings.layoutStyle = NumeralsLayout[layoutStyleStr];
 					await this.plugin.saveSettings();
 				});
@@ -124,7 +181,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				dropDown.addOption(NumeralsRenderStyle.SyntaxHighlight, 'Syntax Highlighting of Plain Text');
 				dropDown.setValue(this.plugin.settings.defaultRenderStyle);
 				dropDown.onChange(async (value) => {
-					let renderStyleStr = value as keyof typeof NumeralsRenderStyle;
+					const renderStyleStr = value as keyof typeof NumeralsRenderStyle;
 					this.plugin.settings.defaultRenderStyle = NumeralsRenderStyle[renderStyleStr]
 					await this.plugin.saveSettings();
 				});
@@ -192,7 +249,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				}));			
 
 		// create new document fragment to be mult-line property text seperated by <br>
-		let resultAnnotationMarkupDesc = document.createDocumentFragment();
+		const resultAnnotationMarkupDesc = document.createDocumentFragment();
 		resultAnnotationMarkupDesc.append('Result Annotation markup (`=>`) is used to indicate which line is the result of the calculation. It can be used on any line, and can be used multiple times in a single block. If used, the result of the last line with the markup will be shown in the result column. If not used, the result of the last line will be shown in the result column.');
 		
 		new Setting(containerEl)
@@ -211,7 +268,6 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setHeading()
 			.setName("Number and Currency Formatting");
 
-		let customLocaleSetting: Setting;
 		new Setting(containerEl)
 			.setName('Rendered Number Format')
 			.setDesc(htmlToElements(`Choose how to format numbers in the results.<br>`
@@ -229,7 +285,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 
 				dropDown.setValue(this.plugin.settings.numberFormat);
 				dropDown.onChange(async (value) => {
-					let formatStyleStr = value as keyof typeof NumeralsNumberFormat;
+					const formatStyleStr = value as keyof typeof NumeralsNumberFormat;
 					this.plugin.settings.numberFormat = NumeralsNumberFormat[formatStyleStr];
 					await this.plugin.saveSettings();
 					this.plugin.updateLocale();
@@ -241,7 +297,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setDesc('Choose the currency the `$` symbol maps to (requires Obsidian reload to take effect)')
 				.addDropdown(dropDown => {
 					// addOption for every currency in currencyCodesForDollarSign
-					for (let currencyCode in currencyCodesForDollarSign) {
+					for (const currencyCode in currencyCodesForDollarSign) {
 						dropDown.addOption(currencyCode, `${currencyCode} (${currencyCodesForDollarSign[currencyCode]})`);
 					}
 					dropDown.setValue(this.plugin.settings.dollarSymbolCurrency.currency);
@@ -255,7 +311,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setDesc('Choose the currency the `¥` symbol maps to (requires Obsidian reload to take effect)')
 				.addDropdown(dropDown => {
 					// addOption for every currency in currencyCodesForYenSign
-					for (let currencyCode in currencyCodesForYenSign) {
+					for (const currencyCode in currencyCodesForYenSign) {
 						dropDown.addOption(currencyCode, `${currencyCode} (${currencyCodesForYenSign[currencyCode]})`);
 					}
 					dropDown.setValue(this.plugin.settings.yenSymbolCurrency.currency);

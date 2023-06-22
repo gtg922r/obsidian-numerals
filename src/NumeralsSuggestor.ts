@@ -17,7 +17,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	 * Time of last suggestion list update
 	 * @type {number}
 	 * @private */
-	private lastSuggestionListUpdate: number = 0;
+	private lastSuggestionListUpdate = 0;
 
 	/**
 	 * List of possible suggestions based on current code block
@@ -49,8 +49,8 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		}
 
 		// Get last word in current line
-		let currentLineToCursor = editor.getLine(cursor.line).slice(0, cursor.ch);
-		let currentLineLastWordStart = currentLineToCursor.search(/\w+$/);
+		const currentLineToCursor = editor.getLine(cursor.line).slice(0, cursor.ch);
+		const currentLineLastWordStart = currentLineToCursor.search(/\w+$/);
 		// if there is no word, return null
 		if (currentLineLastWordStart === -1) {
 			return null;
@@ -82,6 +82,13 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 				localSymbols = [...new Set(Array.from(matches, (match) => 'v|' + match[1]))];
 			}
 			
+			const frontmatter:FrontMatterCache | undefined = app.metadataCache.getFileCache(context.file)?.frontmatter;
+			if (frontmatter) {
+				const frontmatterSymbols = processFrontmatter(frontmatter, undefined, this.plugin.settings.forceProcessAllFrontmatter);
+				// add frontmatter symbols to local symbols
+				localSymbols = localSymbols.concat(Array.from(frontmatterSymbols.keys()).map((symbol: any) => 'v|' + symbol));
+			}
+
 			this.localSuggestionCache = localSymbols;
 			this.lastSuggestionListUpdate = performance.now();
 		} else {
@@ -109,13 +116,13 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	renderSuggestion(value: string, el: HTMLElement): void {
 		
 		el.addClasses(['mod-complex', 'numerals-suggestion']);
-		let suggestionContent = el.createDiv({cls: 'suggestion-content'});
-		let suggestionTitle = suggestionContent.createDiv({cls: 'suggestion-title'});
-		let suggestionNote = suggestionContent.createDiv({cls: 'suggestion-note'});
-		let suggestionAux = el.createDiv({cls: 'suggestion-aux'});
-		let suggestionFlair = suggestionAux.createDiv({cls: 'suggestion-flair'});
+		const suggestionContent = el.createDiv({cls: 'suggestion-content'});
+		const suggestionTitle = suggestionContent.createDiv({cls: 'suggestion-title'});
+		const suggestionNote = suggestionContent.createDiv({cls: 'suggestion-note'});
+		const suggestionAux = el.createDiv({cls: 'suggestion-aux'});
+		const suggestionFlair = suggestionAux.createDiv({cls: 'suggestion-flair'});
 
-		let [iconType, suggestionText, noteText] = value.split('|');
+		const [iconType, suggestionText, noteText] = value.split('|');
 
 		if (iconType === 'f') {
 			setIcon(suggestionFlair, 'function-square');		
@@ -141,13 +148,13 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	 */
 	selectSuggestion(value: string, evt: MouseEvent | KeyboardEvent): void {
 		if (this.context) {
-			let editor = this.context.editor;
-			let [suggestionType, suggestion] = value.split('|');
-			let start = this.context.start;
-			let end = editor.getCursor(); // get new end position in case cursor has moved
+			const editor = this.context.editor;
+			const [suggestionType, suggestion] = value.split('|');
+			const start = this.context.start;
+			const end = editor.getCursor(); // get new end position in case cursor has moved
 			
 			editor.replaceRange(suggestion, start, end);
-			let newCursor = end;
+			const newCursor = end;
 
 			if (suggestionType === 'f') {
 				newCursor.ch = start.ch + suggestion.length-1;

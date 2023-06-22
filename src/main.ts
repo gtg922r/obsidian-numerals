@@ -19,6 +19,8 @@ import {
 	NumeralsNumberFormat,
 	currencyCodesForDollarSign,
 	currencyCodesForYenSign,
+	NumeralsSettings,
+	DEFAULT_SETTINGS,
  } from "./settings";
 
 const numeralsLayoutClasses = {
@@ -28,50 +30,13 @@ const numeralsLayoutClasses = {
 	[NumeralsLayout.AnswerInline]: 	"numerals-answer-inline",	
 }
 
-
-
 const numeralsRenderStyleClasses = {
 	[NumeralsRenderStyle.Plain]: 			"numerals-plain",
 	[NumeralsRenderStyle.TeX]: 			 	"numerals-tex",
 	[NumeralsRenderStyle.SyntaxHighlight]: 	"numerals-syntax",
 }
 
-
-interface CurrencySymbolMapping {
-	symbol: string;
-	currency: string; // ISO 4217 Currency Code
-}
-
-
 // TODO: Add a switch for only rendering input
-interface NumeralsSettings {
-	resultSeparator: string;
-	layoutStyle: NumeralsLayout;
-	alternateRowColor: boolean;
-	defaultRenderStyle: NumeralsRenderStyle;
-	hideLinesWithoutMarkupWhenEmitting: boolean; // "Emitting" is "result annotation"
-	hideEmitterMarkupInInput: boolean;
-	dollarSymbolCurrency: CurrencySymbolMapping;
-	yenSymbolCurrency: CurrencySymbolMapping;
-	provideSuggestions: boolean;
-	suggestionsIncludeMathjsSymbols: boolean;
-	numberFormat: NumeralsNumberFormat;
-}
-
-const DEFAULT_SETTINGS: NumeralsSettings = {
-	resultSeparator: 					" → ",
-	layoutStyle:						NumeralsLayout.TwoPanes,
-	alternateRowColor: 					true,
-	defaultRenderStyle: 				NumeralsRenderStyle.Plain,
-	hideLinesWithoutMarkupWhenEmitting:	true,
-	hideEmitterMarkupInInput: 			true,
-	dollarSymbolCurrency: 				{symbol: "$", currency: "USD"},
-	yenSymbolCurrency: 					{symbol: "¥", currency: "JPY"},
-	provideSuggestions: 				true,
-	suggestionsIncludeMathjsSymbols: 	false,
-	numberFormat: 						NumeralsNumberFormat.System,
-}
-
 interface CurrencyType {
 	symbol: string;
 	unicode: string;
@@ -103,6 +68,7 @@ math.parse.isAlpha = function (c, cPrev, cNext) {
 // 														@ts-ignore
 const isUnitAlphaOriginal = math.Unit.isValidAlpha; // 	@ts-ignore
 math.Unit.isValidAlpha =
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function (c: string, cPrev: any, cNext: any) {
 	return isUnitAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
 	};			
@@ -161,7 +127,7 @@ function getLocaleFormatter(locale: Intl.LocalesArgument|null = null): (value: n
 	}
 }
 	
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
 /**
  * Map Numerals Number Format to mathjs format options
@@ -243,11 +209,10 @@ export default class NumeralsPlugin extends Plugin {
 		let errorInput = '';
 
 		const rows: string[] = processedSource.split("\n");
-		let results: string[] = [];
-		let inputs: string[] = [];			
-		let scope = {};
+		const results: string[] = [];
+		const inputs: string[] = [];			
 		
-		for (let row of rows.slice(0,-1)) { // Last row may be empty
+		for (const row of rows.slice(0,-1)) { // Last row may be empty
 			try {
 				results.push(math.evaluate(row, scope));
 				inputs.push(row); // Only pushes if evaluate is successful
@@ -286,8 +251,8 @@ export default class NumeralsPlugin extends Plugin {
 			let inputElement: HTMLElement, resultElement: HTMLElement;
 			switch(blockRenderStyle) {
 				case NumeralsRenderStyle.Plain: {
-					let rawInputSansComment = rawRows[i].replace(/#.+$/, "")
-					let inputText = emptyLine ? rawRows[i] : rawInputSansComment;
+					const rawInputSansComment = rawRows[i].replace(/#.+$/, "")
+					const inputText = emptyLine ? rawRows[i] : rawInputSansComment;
 					inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
 					
 					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], this.numberFormat) : '\xa0';
@@ -295,28 +260,28 @@ export default class NumeralsPlugin extends Plugin {
 
 					break;
 				} case NumeralsRenderStyle.TeX: {
-					let inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
+					const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
 					inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
 					const resultContent = !emptyLine ? "" : '\xa0';
 					resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
 					if (!emptyLine) {
 						// Input to Tex
-						let preprocess_input_tex:string = math.parse(inputs[i]).toTex();
+						const preprocess_input_tex:string = math.parse(inputs[i]).toTex();
 						let input_tex:string = unescapeSubscripts(preprocess_input_tex);
 						// log the text string and the input to consol
-						console.log(`inputs[i]: ${inputs[i]} | preprocess_input_tex: ${preprocess_input_tex} | input_tex: ${input_tex}`)
+						// console.log(`inputs[i]: ${inputs[i]} | preprocess_input_tex: ${preprocess_input_tex} | input_tex: ${input_tex}`)
 						
-						let inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
+						const inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
 
 						input_tex = texCurrencyReplacement(input_tex);
 						mathjaxLoop(inputTexElement, input_tex);
 
 						// Result to Tex
-						let resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
+						const resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
 
 						// format result to string to get reasonable precision. Commas will be stripped
 						let processedResult:string = math.format(results[i], getLocaleFormatter('posix'));
-						for (let processor of this.preProcessors ) {
+						for (const processor of this.preProcessors ) {
 							processedResult = processedResult.replace(processor.regex, processor.replaceStr)
 						}
 						let texResult = math.parse(processedResult).toTex() // TODO: Add custom handler for numbers to get good localeString formatting
@@ -325,7 +290,7 @@ export default class NumeralsPlugin extends Plugin {
 					}
 					break;
 				} case NumeralsRenderStyle.SyntaxHighlight: {
-					let inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
+					const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
 					inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
 					if (!emptyLine) {
 						const input_elements:DocumentFragment = htmlToElements(math.parse(inputs[i]).toHTML())
@@ -340,7 +305,7 @@ export default class NumeralsPlugin extends Plugin {
 			}
 	
 			if (!emptyLine) {
-				let inlineComment = rawRows[i].match(/#.+$/);
+				const inlineComment = rawRows[i].match(/#.+$/);
 				if (inlineComment){
 					inputElement.createEl("span", {cls: "numerals-inline-comment", text:inlineComment[0]})
 				}
@@ -360,7 +325,7 @@ export default class NumeralsPlugin extends Plugin {
 			resultElement.createEl("span", {cls:"numerals-error-message", text: errorMsg.message});		
 		}
 	
-	};
+	}
 
 	private createCurrencyMap(dollarCurrency: string, yenCurrency: string): CurrencyType[] {
 		const currencyMap: CurrencyType[] = defaultCurrencyMap.map(m => {
@@ -417,7 +382,7 @@ export default class NumeralsPlugin extends Plugin {
 
 		// TODO: Once mathjs support removing units (josdejong/mathjs#2081),
 		//       rerun unit creation and regex preprocessors on settings change
-		for (let moneyType of this.currencyMap) {
+		for (const moneyType of this.currencyMap) {
 			math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
 		}
 		
@@ -454,7 +419,7 @@ export default class NumeralsPlugin extends Plugin {
 
 	async loadSettings() {
 
-		let loadData = await this.loadData();
+		const loadData = await this.loadData();
 		if (loadData) {
 			// Check for signature of old setting format, then port to new setting format
 			if (loadData.layoutStyle == undefined) {
