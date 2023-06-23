@@ -1,4 +1,5 @@
 import NumeralsPlugin from "./main";
+import { processFrontmatter } from "./numeralsUtilities";
 import {
     EditorSuggest,
     EditorPosition,
@@ -7,8 +8,10 @@ import {
     EditorSuggestTriggerInfo,
     EditorSuggestContext,
     setIcon,
+	FrontMatterCache
  } from "obsidian";
 import { getMathJsSymbols } from "./mathjsUtilities";
+
 
 export class NumeralsSuggestor extends EditorSuggest<string> {
 	plugin: NumeralsPlugin;
@@ -64,7 +67,9 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): string[] | Promise<string[]> {
-		let localSymbols: string [] = [];
+		// console.log('getSuggestions called');
+		// TODO: front matter not showing up consistnely. Need to figure out why
+		let localSymbols: string [] = [];	
 
 		// check if the last suggestion list update was less than 200ms ago
 		if (performance.now() - this.lastSuggestionListUpdate > 200) {
@@ -81,7 +86,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 				// create array from first capture group of matches and remove duplicates
 				localSymbols = [...new Set(Array.from(matches, (match) => 'v|' + match[1]))];
 			}
-			
+
 			const frontmatter:FrontMatterCache | undefined = app.metadataCache.getFileCache(context.file)?.frontmatter;
 			if (frontmatter) {
 				const frontmatterSymbols = processFrontmatter(frontmatter, undefined, this.plugin.settings.forceProcessAllFrontmatter);

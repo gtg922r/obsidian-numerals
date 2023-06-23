@@ -58,6 +58,7 @@ export interface NumeralsSettings {
 	provideSuggestions: boolean;
 	suggestionsIncludeMathjsSymbols: boolean;
 	numberFormat: NumeralsNumberFormat;
+	forceProcessAllFrontmatter: boolean;
 }
 
 export const DEFAULT_SETTINGS: NumeralsSettings = {
@@ -72,6 +73,7 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	provideSuggestions: 				true,
 	suggestionsIncludeMathjsSymbols: 	false,
 	numberFormat: 						NumeralsNumberFormat.System,
+	forceProcessAllFrontmatter: 		false,
 }
 
 ///////////////////////////////////////////
@@ -306,7 +308,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});	
-			new Setting(containerEl)
+		new Setting(containerEl)
 			.setName('`¥` symbol currency mapping')
 			.setDesc('Choose the currency the `¥` symbol maps to (requires Obsidian reload to take effect)')
 				.addDropdown(dropDown => {
@@ -319,6 +321,23 @@ export class NumeralsSettingTab extends PluginSettingTab {
 						this.plugin.settings.yenSymbolCurrency.currency = value;
 						await this.plugin.saveSettings();
 					});
-			});					
+				});
+			
+		new Setting(containerEl)
+		.setHeading()
+		.setName('Obsidian Integration');	
+
+		new Setting(containerEl)
+			.setName('Always Process All Frontmatter')
+			.setDesc(htmlToElements(`Always process all frontmatter values and make them available as variables in <code>\`math\`</code> blocks<br>`
+				+ `<br><b><i>Note:</i></b> To process frontmatter values on a per file and/or per property basis, set a value for the <code>\`numerals\`</code> property in a file's frontmatter.`
+				+ ` Supported values are:<ul><li><code>all</code></li><li>specific property to process</li><li>a list/array of properties to process</li></ul><br>`))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.forceProcessAllFrontmatter)
+				.onChange(async (value) => {
+					this.plugin.settings.forceProcessAllFrontmatter = value;
+					await this.plugin.saveSettings();
+				}
+			));
 	}
 }

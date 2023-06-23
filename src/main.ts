@@ -1,4 +1,5 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
+import { unescapeSubscripts, processFrontmatter } from "./numeralsUtilities";
 
 import {
 	finishRenderMath,
@@ -6,6 +7,7 @@ import {
 	renderMath,
 	loadMathJax,
 	sanitizeHTMLToDom,
+	MarkdownPostProcessorContext,
 } from "obsidian";
 // if use syntax tree directly will need "@codemirror/language": "^6.3.2", // Needed for accessing syntax tree
 // import {syntaxTree, tokenClassNodeProp} from '@codemirror/language';
@@ -82,18 +84,7 @@ function texCurrencyReplacement(input_tex:string) {
 	return input_tex
 }
 
-function unescapeSubscripts(input:string):string {
-	// Define the regex pattern
-	console.log("Unescaping subscripts")
-	const regex = /(?<varStart>[\p{L}\p{Nl}_$])(?<varBody>[\p{L}\p{Nl}_$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F\u{1D400}-\u{1D7FF}\d]*)(\\_)(?<varEnd>[\p{L}\p{Nl}_$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F\u{1D400}-\u{1D7FF}\d]+)/gu;
 
-	// Replace matching patterns with the desired format
-	const output = input.replace(regex, (match, varStart, varBody, _, varEnd) => {
-		return `${varStart}${varBody}_{${varEnd}}`;
-	});
-  
-	return output;
-  }
 
 /**
  * Converts a string of HTML into a DocumentFragment continaing a sanitized collection array of DOM elements.
@@ -211,7 +202,15 @@ export default class NumeralsPlugin extends Plugin {
 		const rows: string[] = processedSource.split("\n");
 		const results: string[] = [];
 		const inputs: string[] = [];			
-		
+		// eslint-disable-next-line prefer-const
+		let scope:Map<string, unknown> = new Map<string, unknown>();
+
+		// Add numeric frontmatter to scope
+		if (ctx.frontmatter) {
+			// TODO add option to process all frontmatter keys
+			scope = processFrontmatter(ctx.frontmatter, scope, this.settings.forceProcessAllFrontmatter);
+		}
+				
 		for (const row of rows.slice(0,-1)) { // Last row may be empty
 			try {
 				results.push(math.evaluate(row, scope));
@@ -319,7 +318,7 @@ export default class NumeralsPlugin extends Plugin {
 	
 		if (errorMsg) {			
 			const line = el.createEl("div", {cls: "numerals-error-line"});
-			const inputElement = line.createEl("span", { text: errorInput, cls: "numerals-input"});
+			line.createEl("span", { text: errorInput, cls: "numerals-input"});
 			const resultElement = line.createEl("span", {cls: "numerals-result" });
 			resultElement.createEl("span", {cls:"numerals-error-name", text: errorMsg.name + ":"});
 			resultElement.createEl("span", {cls:"numerals-error-message", text: errorMsg.message});		
@@ -377,7 +376,7 @@ export default class NumeralsPlugin extends Plugin {
 
 		// Configure currency commands in MathJax
 		const configureCurrencyStr = this.currencyMap.map(m => '\\def\\' + m.name + '{\\unicode{' + m.unicode + '}}').join('\n');
-		const currencyTex = renderMath(configureCurrencyStr, true);
+		renderMath(configureCurrencyStr, true);
 
 
 		// TODO: Once mathjs support removing units (josdejong/mathjs#2081),
@@ -470,25 +469,3 @@ export default class NumeralsPlugin extends Plugin {
 		this.numberFormat = getMathjsFormat(this.settings.numberFormat);
 	}
 }
-
-
-/**
- * Takes a string containing lines of text, each of which is of the form
- * "key = value". It finds all the lines that match this pattern, and returns an array
- * containing the left-hand sides of these lines.
- *  * @param {string} input String containing lines of text
- * @returns {string[]} Array of strings
- */
-function getListFromString(input: string): string[] {
-	// Find all the lines that contain an `=` character
-	const matches = input.matchAll(/^\s*(.*?)\s*=\s*(.*?)\s*$/gm);
-  
-	// Create an array of strings from the matches, using the first capturing group of each match
-	const result: string[] = Array.from(matches, match => match[1]);
-
-	// Return the result array
-	return result;
-}
-
-
-  
