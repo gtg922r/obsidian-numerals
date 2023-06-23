@@ -176,7 +176,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Default Numerals Rendering Style')
-			.setDesc('Choose how the input and results are rendered by default. Note that you can specify the rendering style on a per block basis, by using \`math-plain\`, \`math-tex\`, or \`math-highlight\`')
+			.setDesc('Choose how the input and results are rendered by default. Note that you can specify the rendering style on a per block basis, by using `math-plain`, ``math-tex``, or ``math-highlight``')
 			.addDropdown(dropDown => {
 				dropDown.addOption(NumeralsRenderStyle.Plain, 'Plain Text');
 				dropDown.addOption(NumeralsRenderStyle.TeX, 'TeX Style');

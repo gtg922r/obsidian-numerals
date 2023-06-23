@@ -156,7 +156,7 @@ export default class NumeralsPlugin extends Plugin {
 	private currencyPreProcessors: StringReplaceMap[];
 	private numberFormat: mathjsFormat;
 
-	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: any): Promise<any> {		
+	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {		
 
 		const blockRenderStyle: NumeralsRenderStyle = type ? type : this.settings.defaultRenderStyle;
 		

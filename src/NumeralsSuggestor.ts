@@ -91,7 +91,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			if (frontmatter) {
 				const frontmatterSymbols = processFrontmatter(frontmatter, undefined, this.plugin.settings.forceProcessAllFrontmatter);
 				// add frontmatter symbols to local symbols
-				localSymbols = localSymbols.concat(Array.from(frontmatterSymbols.keys()).map((symbol: any) => 'v|' + symbol));
+				localSymbols = localSymbols.concat(Array.from(frontmatterSymbols.keys()).map((symbol: string) => 'v|' + symbol));
 			}
 
 			this.localSuggestionCache = localSymbols;
@@ -123,10 +123,11 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		el.addClasses(['mod-complex', 'numerals-suggestion']);
 		const suggestionContent = el.createDiv({cls: 'suggestion-content'});
 		const suggestionTitle = suggestionContent.createDiv({cls: 'suggestion-title'});
-		const suggestionNote = suggestionContent.createDiv({cls: 'suggestion-note'});
+		// const suggestionNote = suggestionContent.createDiv({cls: 'suggestion-note'});
 		const suggestionAux = el.createDiv({cls: 'suggestion-aux'});
 		const suggestionFlair = suggestionAux.createDiv({cls: 'suggestion-flair'});
 
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const [iconType, suggestionText, noteText] = value.split('|');
 
 		if (iconType === 'f') {
