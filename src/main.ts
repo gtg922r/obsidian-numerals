@@ -1,5 +1,5 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
-import { unescapeSubscripts, processFrontmatter } from "./numeralsUtilities";
+import { unescapeSubscripts, processFrontmatter, StringReplaceMap } from "./numeralsUtilities";
 
 import {
 	finishRenderMath,
@@ -8,6 +8,7 @@ import {
 	loadMathJax,
 	sanitizeHTMLToDom,
 	MarkdownPostProcessorContext,
+	TFile,
 } from "obsidian";
 // if use syntax tree directly will need "@codemirror/language": "^6.3.2", // Needed for accessing syntax tree
 // import {syntaxTree, tokenClassNodeProp} from '@codemirror/language';
@@ -46,10 +47,7 @@ interface CurrencyType {
 	currency: string;
 }
 
-interface StringReplaceMap {
-	regex: RegExp;
-	replaceStr: string;
-}
+
 
 const defaultCurrencyMap: CurrencyType[] = [
 	{	symbol: "$", unicode: "x024", 	name: "dollar", currency: "USD"},
@@ -206,9 +204,17 @@ export default class NumeralsPlugin extends Plugin {
 		let scope:Map<string, unknown> = new Map<string, unknown>();
 
 		// Add numeric frontmatter to scope
-		if (ctx.frontmatter) {
+
+		// const frontmatter:FrontMatterCache | undefined = app.metadataCache.getFileCache(context.file)?.frontmatter;
+		const f_handle = app.vault.getAbstractFileByPath(ctx.sourcePath);
+		const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle as TFile) : undefined;
+		if (f_cache?.frontmatter) {
 			// TODO add option to process all frontmatter keys
-			scope = processFrontmatter(ctx.frontmatter, scope, this.settings.forceProcessAllFrontmatter);
+			scope = processFrontmatter(
+				f_cache.frontmatter,
+				scope,
+				this.settings.forceProcessAllFrontmatter,
+				this.preProcessors);
 		}
 				
 		for (const row of rows.slice(0,-1)) { // Last row may be empty

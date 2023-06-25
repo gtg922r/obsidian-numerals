@@ -16,7 +16,12 @@ import * as math from 'mathjs';
  * @returns Updated scope object
  * TODO: Does scope thats passed in get updated???
  */
-export function processFrontmatter(frontmatter: { [key: string]: unknown }, scope: Map<string, unknown>|undefined,  forceAll=false): Map<string, unknown> {
+export function processFrontmatter(
+	frontmatter: { [key: string]: unknown },
+	scope: Map<string, unknown>|undefined,
+	forceAll=false,
+	stringReplaceMap: StringReplaceMap[] = []
+): Map<string, unknown> {
 	
 	if (!scope) {
 		scope = new Map<string, unknown>();
@@ -28,7 +33,12 @@ export function processFrontmatter(frontmatter: { [key: string]: unknown }, scop
 			if (frontmatter["numerals"] === "none") {
 				frontmatter_process = {};
 			} else if (frontmatter.hasOwnProperty("numerals") && frontmatter["numerals"] === "all") {
-				frontmatter_process = frontmatter;
+				// Build frontmatter_process from all keys in frontmatter
+				for (const [key, value] of Object.entries(frontmatter)) {
+					if (key !== "numerals") {
+						frontmatter_process[key] = value;
+					}
+				}
 			} else if (typeof frontmatter["numerals"] === "string") {
 				if (frontmatter.hasOwnProperty(frontmatter["numerals"])) {
 					frontmatter_process[frontmatter["numerals"]] = frontmatter[frontmatter["numerals"]];
@@ -40,16 +50,16 @@ export function processFrontmatter(frontmatter: { [key: string]: unknown }, scop
 					}
 				}
 			}
-			// Remove numerals key from frontmatter_process
-			delete frontmatter_process["numerals"];
+
 		} else if (forceAll) {
 			frontmatter_process = frontmatter;
 		}
 
-		for (const [key, value] of Object.entries(frontmatter_process)) {
+		for (let [key, value] of Object.entries(frontmatter_process)) {
 			if (typeof value === "number") {
 				scope.set(key, math.number(value));
 			} else if (typeof value === "string") {
+				value = processTextForReplacements(value, stringReplaceMap);
 				scope.set(key, math.evaluate(value));
 			}
 		}
@@ -99,3 +109,20 @@ export function unescapeSubscripts(input: string): string {
     return output;
 }
 
+export interface StringReplaceMap {
+	regex: RegExp;
+	replaceStr: string;
+}
+
+/**
+ * Process a block of text to convert from Numerals syntax to MathJax syntax
+ * @param text Text to process
+ * @param stringReplaceMap Array of StringReplaceMap objects to use for replacement
+ * @returns Processed text
+ */
+export function processTextForReplacements(text: string, stringReplaceMap: StringReplaceMap[]): string {
+	for (const processor of stringReplaceMap ) {
+		text = text.replace(processor.regex, processor.replaceStr)
+	}
+	return text;
+}
