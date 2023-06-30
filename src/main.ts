@@ -10,6 +10,8 @@ import {
 	MarkdownPostProcessorContext,
 	TFile,
 } from "obsidian";
+
+import { getAPI } from "obsidian-dataview";
 // if use syntax tree directly will need "@codemirror/language": "^6.3.2", // Needed for accessing syntax tree
 // import {syntaxTree, tokenClassNodeProp} from '@codemirror/language';
 
@@ -206,16 +208,30 @@ export default class NumeralsPlugin extends Plugin {
 		// Add numeric frontmatter to scope
 
 		// const frontmatter:FrontMatterCache | undefined = app.metadataCache.getFileCache(context.file)?.frontmatter;
-		const f_handle = app.vault.getAbstractFileByPath(ctx.sourcePath);
+		const f_path:string = ctx.sourcePath;
+		const f_handle = app.vault.getAbstractFileByPath(f_path);
 		const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle as TFile) : undefined;
-		if (f_cache?.frontmatter) {
+		const frontmatter:{[key: string]: unknown} | undefined = f_cache?.frontmatter;
+
+		const dataviewAPI = getAPI();
+		let dataviewMetadata:{[key: string]: unknown} | undefined;
+		if (dataviewAPI) {
+			const dataviewPage = dataviewAPI.page(f_path)
+			dataviewMetadata = {...dataviewPage, file: undefined}
+		}
+
+		// combine frontmatter and dataview metadata, with dataview metadata taking precedence
+		const metadata = {...frontmatter, ...dataviewMetadata};
+
+		if (metadata) {
 			// TODO add option to process all frontmatter keys
 			scope = processFrontmatter(
-				f_cache.frontmatter,
+				metadata,
 				scope,
 				this.settings.forceProcessAllFrontmatter,
 				this.preProcessors);
 		}
+
 				
 		for (const row of rows.slice(0,-1)) { // Last row may be empty
 			try {
