@@ -55,12 +55,12 @@ export function processFrontmatter(
 			frontmatter_process = frontmatter;
 		}
 
-		for (let [key, value] of Object.entries(frontmatter_process)) {
+		for (const [key, value] of Object.entries(frontmatter_process)) {
 			if (typeof value === "number") {
 				scope.set(key, math.number(value));
 			} else if (typeof value === "string") {
-				value = processTextForReplacements(value, stringReplaceMap);
-				scope.set(key, math.evaluate(value));
+				const processedValue = processTextForReplacements(value, stringReplaceMap);
+				scope.set(key, math.evaluate(processedValue));
 			}
 		}
 

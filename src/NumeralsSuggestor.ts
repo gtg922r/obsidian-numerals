@@ -114,7 +114,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		} else { 
 			suggestions = local_suggestions;
 		}
-		
+
 		return suggestions;
 	}
 
