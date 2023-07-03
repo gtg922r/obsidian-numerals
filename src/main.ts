@@ -209,7 +209,8 @@ export default class NumeralsPlugin extends Plugin {
 
 		// const frontmatter:FrontMatterCache | undefined = app.metadataCache.getFileCache(context.file)?.frontmatter;
 		const f_path:string = ctx.sourcePath;
-		const f_handle = app.vault.getAbstractFileByPath(f_path);
+		const handle = app.vault.getAbstractFileByPath(f_path);
+		const f_handle = (handle instanceof TFile) ? handle : undefined;
 		const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle as TFile) : undefined;
 		const frontmatter:{[key: string]: unknown} | undefined = f_cache?.frontmatter;
 

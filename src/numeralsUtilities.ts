@@ -55,7 +55,13 @@ export function processFrontmatter(
 			frontmatter_process = frontmatter;
 		}
 
-		for (const [key, value] of Object.entries(frontmatter_process)) {
+		for (const [key, rawValue] of Object.entries(frontmatter_process)) {
+			let value = rawValue;
+			// if processedValue is array-like, take the last element
+			if (Array.isArray(value)) {
+				value = value[value.length - 1];
+			}
+
 			if (typeof value === "number") {
 				scope.set(key, math.number(value));
 			} else if (typeof value === "string") {
