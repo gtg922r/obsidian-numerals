@@ -8,9 +8,9 @@ import {
     EditorSuggestTriggerInfo,
     EditorSuggestContext,
     setIcon,
-	FrontMatterCache
  } from "obsidian";
 import { getMathJsSymbols } from "./mathjsUtilities";
+import { getAPI } from "obsidian-dataview";
 
 
 export class NumeralsSuggestor extends EditorSuggest<string> {
@@ -87,9 +87,21 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 				localSymbols = [...new Set(Array.from(matches, (match) => 'v|' + match[1]))];
 			}
 
-			const frontmatter:FrontMatterCache | undefined = app.metadataCache.getFileCache(context.file)?.frontmatter;
-			if (frontmatter) {
-				const frontmatterSymbols = processFrontmatter(frontmatter, undefined, this.plugin.settings.forceProcessAllFrontmatter);
+			const frontmatter:{[key: string]: unknown} | undefined = app.metadataCache.getFileCache(context.file)?.frontmatter;
+
+			const dataviewAPI = getAPI();
+			let dataviewMetadata:{[key: string]: unknown} | undefined;
+			if (dataviewAPI) {
+				const dataviewPage = dataviewAPI.page(context.file.path);
+				dataviewMetadata = {...dataviewPage, file: undefined};
+			}
+	
+			// combine frontmatter and dataview metadata, with dataview metadata taking precedence
+			const metadata = {...frontmatter, ...dataviewMetadata};			
+
+
+			if (metadata) {
+				const frontmatterSymbols = processFrontmatter(metadata, undefined, this.plugin.settings.forceProcessAllFrontmatter);
 				// add frontmatter symbols to local symbols
 				localSymbols = localSymbols.concat(Array.from(frontmatterSymbols.keys()).map((symbol: string) => 'v|' + symbol));
 			}
