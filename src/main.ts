@@ -1,17 +1,16 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
-import { unescapeSubscripts, processFrontmatter, StringReplaceMap } from "./numeralsUtilities";
-
+import { StringReplaceMap, defaultCurrencyMap, CurrencyType, renderNumeralsBlockFromSource, getLocaleFormatter, getMetadataForFileAtPath, NumeralsCodeBlockType} from "./numeralsUtilities";
+import equal from 'fast-deep-equal';
 import {
-	finishRenderMath,
 	Plugin,
 	renderMath,
 	loadMathJax,
-	sanitizeHTMLToDom,
 	MarkdownPostProcessorContext,
-	TFile,
+	MarkdownRenderChild,
 } from "obsidian";
 
-import { getAPI } from "obsidian-dataview";
+import { getAPI } from 'obsidian-dataview';
+
 // if use syntax tree directly will need "@codemirror/language": "^6.3.2", // Needed for accessing syntax tree
 // import {syntaxTree, tokenClassNodeProp} from '@codemirror/language';
 
@@ -27,37 +26,6 @@ import {
 	NumeralsSettings,
 	DEFAULT_SETTINGS,
  } from "./settings";
-
-const numeralsLayoutClasses = {
-	[NumeralsLayout.TwoPanes]: 		"numerals-panes",
-	[NumeralsLayout.AnswerRight]: 	"numerals-answer-right",
-	[NumeralsLayout.AnswerBelow]: 	"numerals-answer-below",
-	[NumeralsLayout.AnswerInline]: 	"numerals-answer-inline",	
-}
-
-const numeralsRenderStyleClasses = {
-	[NumeralsRenderStyle.Plain]: 			"numerals-plain",
-	[NumeralsRenderStyle.TeX]: 			 	"numerals-tex",
-	[NumeralsRenderStyle.SyntaxHighlight]: 	"numerals-syntax",
-}
-
-// TODO: Add a switch for only rendering input
-interface CurrencyType {
-	symbol: string;
-	unicode: string;
-	name: string;
-	currency: string;
-}
-
-
-
-const defaultCurrencyMap: CurrencyType[] = [
-	{	symbol: "$", unicode: "x024", 	name: "dollar", currency: "USD"},
-	{	symbol: "€", unicode: "x20AC",	name: "euro", 	currency: "EUR"},
-	{	symbol: "£", unicode: "x00A3",	name: "pound", 	currency: "GBP"},
-	{	symbol: "¥", unicode: "x00A5",	name: "yen", 	currency: "JPY"},
-	{	symbol: "₹", unicode: "x20B9",	name: "rupee", 	currency: "INR"}	
-];
 
 
 // Modify mathjs internal functions to allow for use of currency symbols
@@ -76,50 +44,12 @@ function (c: string, cPrev: any, cNext: any) {
 	};			
 
 
-// TODO: see if would be faster to return a single set of RegEx to get executed, rather than re-computing regex each time
-function texCurrencyReplacement(input_tex:string) {
-	for (const symbolType of defaultCurrencyMap) {
-		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name);
-	}
-	return input_tex
-}
 
 
 
-/**
- * Converts a string of HTML into a DocumentFragment continaing a sanitized collection array of DOM elements.
- *
- * @param html The HTML string to convert.
- * @returns A DocumentFragment contaning DOM elements.
- */
-export function htmlToElements(html: string): DocumentFragment {
-	const sanitizedHTML = sanitizeHTMLToDom(html);
-	return sanitizedHTML;
-  }
-
-async function mathjaxLoop(container: HTMLElement, value: string) {
-	const html = renderMath(value, true);
-	await finishRenderMath()
-
-	// container.empty();
-	container.append(html);
-}
-
-/**
- * Return a function that formats a number according to the given locale
- * @param locale Locale to use
- * @returns Function that calls toLocaleString with given locale
- */
-function getLocaleFormatter(locale: Intl.LocalesArgument|null = null): (value: number) => string {
-	if (locale === null) {
-		return (value: number): string => value.toLocaleString();
-	} else {
-		return (value: number): string => value.toLocaleString(locale);
-	}
-}
 	
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
+export type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
 /**
  * Map Numerals Number Format to mathjs format options
  * @param format Numerals Number Format
@@ -149,6 +79,19 @@ function getMathjsFormat(format: NumeralsNumberFormat): mathjsFormat {
 	}
 }
 
+// Function to find the differences between two objects
+const getDifference = (obj1: any, obj2: any): Record<string, any> => {
+	const diff: Record<string, any> = {};
+
+	for (const key in obj1) {
+		if (obj1[key] !== obj2[key]) {
+			diff[key] = obj2[key];
+		}
+	}
+
+	return diff;
+};
+
 export default class NumeralsPlugin extends Plugin {
 	settings: NumeralsSettings;
 	private currencyMap: CurrencyType[] = defaultCurrencyMap;
@@ -157,196 +100,89 @@ export default class NumeralsPlugin extends Plugin {
 	private numberFormat: mathjsFormat;
 
 	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {		
+		// TODO: Rendering is getting called twice. Once without newline at the end of the code block and once with.
+		//       This is causing the code block to be rendered twice. Need to figure out why and fix it.
 
-		const blockRenderStyle: NumeralsRenderStyle = type ? type : this.settings.defaultRenderStyle;
-		
-		el.toggleClass("numerals-block", true);
-		el.toggleClass(numeralsLayoutClasses[this.settings.layoutStyle], true);
-		el.toggleClass(numeralsRenderStyleClasses[blockRenderStyle], true);			
-		el.toggleClass("numerals-alt-row-color", this.settings.alternateRowColor)
-	
-		// Pre-process input
-	
-		const rawRows: string[] = source.split("\n");
-		let processedSource:string = source;
 
-		// find every line that ends with `=>` (ignore any whitespace or comments after it)
-		const emitter_lines: number[] = [];
-		for (let i = 0; i < rawRows.length; i++) {
-			if (rawRows[i].match(/^[^#\r\n]*=>.*$/)) {				 								
-				emitter_lines.push(i);
-			}
-		}
-
-		// if there are any emitter lines then add the class `numerals-emitters-present` to the block
-		if (emitter_lines.length > 0) {
-			el.toggleClass("numerals-emitters-present", true);
-			el.toggleClass("numerals-hide-non-emitters", this.settings.hideLinesWithoutMarkupWhenEmitting);
-		}
-
-		// TODO Need to decide if want to remove emitter indicator from input text
-		// TODO need to decide if want to change (or drop) the seperator if there is an emitter
-
-		// remove `=>` at the end of lines (preserve comments)
-		processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
-			
-		for (const processor of this.preProcessors ) {
-			processedSource = processedSource.replace(processor.regex, processor.replaceStr)
-		}
-		
-		// Process input through mathjs
-
-		let errorMsg = null;
-		let errorInput = '';
-
-		const rows: string[] = processedSource.split("\n");
-		const results: string[] = [];
-		const inputs: string[] = [];			
-		// eslint-disable-next-line prefer-const
-		let scope:Map<string, unknown> = new Map<string, unknown>();
-
-		// Add numeric frontmatter to scope
+		// Add text that says loading, wait one second, then render
+		// const loading = el.createEl("div", {cls: "numerals-loading", text:"Loading..."});
+		// await new Promise(resolve => setTimeout(resolve, 1000));
+		// loading.remove();
 
 		// const frontmatter:FrontMatterCache | undefined = app.metadataCache.getFileCache(context.file)?.frontmatter;
-		const f_path:string = ctx.sourcePath;
-		const handle = app.vault.getAbstractFileByPath(f_path);
-		const f_handle = (handle instanceof TFile) ? handle : undefined;
-		const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle as TFile) : undefined;
-		const frontmatter:{[key: string]: unknown} | undefined = f_cache?.frontmatter;
+
+
+		let metadata = getMetadataForFileAtPath(ctx.sourcePath);
+		
+		renderNumeralsBlockFromSource(
+			el, 
+			source,
+			metadata,
+			type,
+			this.settings,
+			this.numberFormat,
+			this.preProcessors,
+		)
+
+		// // Append child element to el that increments counter when metadata is changed. Child element removes callback when removed from DOM
+		// const counter = el.createEl("div", {text: "0"});
+		// const counterRenderChild = new MarkdownRenderChild(counter);
+
+		// const callback = () => {
+		// 	counter.setText((parseInt(counter.getText()) + 1).toString());
+		// }
+		// this.registerEvent(this.app.metadataCache.on("changed", callback));
+
+		// counterRenderChild.onunload = () => {
+		// 	this.app.metadataCache.off("changed", callback);
+		// 	console.log("Numerals: Counter Render Child Unloaded");
+		// };
+
+		// ctx.addChild(counterRenderChild);
+
+		// Wait 2 seconds or for metadata `changed` callback to fire, then remove loading text
+		// await new Promise(resolve => setTimeout(resolve, 2000));
+
+		const numeralsBlockChild = new MarkdownRenderChild(el);
+		// numeralsBlockChild.metadata = metadata;
+		const numeralsBlockCallback = (_callbackType: unknown, _file: unknown, _oldPath?: unknown) => {
+			console.log("Numerals: Metadata Changed Callback Fired");
+			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath);
+			// TODO: if dataview api exists, only register for dataview callback
+			if (equal(currentMetadata, metadata)) {
+				// console.log("Numerals: Metadata unchanged. Skipping render");
+				return;
+			} else {
+				// console.log("Numerals: Metadata changed. Rendering");
+				metadata = currentMetadata;
+			}
+
+			el.empty();
+			renderNumeralsBlockFromSource(
+				el,
+				source,
+				metadata,
+				type,
+				this.settings,
+				this.numberFormat,
+				this.preProcessors,
+			);
+		}
 
 		const dataviewAPI = getAPI();
-		let dataviewMetadata:{[key: string]: unknown} | undefined;
 		if (dataviewAPI) {
-			const dataviewPage = dataviewAPI.page(f_path)
-			dataviewMetadata = {...dataviewPage, file: undefined}
+			this.registerEvent(this.app.metadataCache.on("dataview:metadata-change", numeralsBlockCallback));
+		} else {
+			this.registerEvent(this.app.metadataCache.on("changed", numeralsBlockCallback));
 		}
 
-		// combine frontmatter and dataview metadata, with dataview metadata taking precedence
-		const metadata = {...frontmatter, ...dataviewMetadata};
-
-		if (metadata) {
-			// TODO add option to process all frontmatter keys
-			scope = processFrontmatter(
-				metadata,
-				scope,
-				this.settings.forceProcessAllFrontmatter,
-				this.preProcessors);
+		numeralsBlockChild.onunload = () => {
+			this.app.metadataCache.off("changed", numeralsBlockCallback);
+			this.app.metadataCache.off("dataview:metadata-change", numeralsBlockCallback);
+			console.log("Numerals: Numerals Block Render Child Unloaded");
 		}
+		ctx.addChild(numeralsBlockChild);
 
-				
-		for (const row of rows.slice(0,-1)) { // Last row may be empty
-			try {
-				results.push(math.evaluate(row, scope));
-				inputs.push(row); // Only pushes if evaluate is successful
-			} catch (error) {
-				errorMsg = error;
-				errorInput = row;
-				break;
-			}
-		}
-
-		const lastRow = rows.slice(-1)[0];
-		if (lastRow != '') { // Last row is always empty in reader view
-			try {
-				results.push(math.evaluate(lastRow, scope));
-				inputs.push(lastRow); // Only pushes if evaluate is successful
-			} catch (error) {
-				errorMsg = error;
-				errorInput = lastRow;
-			}
-		}	
-						
-		for (let i = 0; i < inputs.length; i++) {
-			const line = el.createEl("div", {cls: "numerals-line"});
-			const emptyLine = (results[i] === undefined)
-
-			// if line is an emitter lines, add numerals-emitter class	
-			if (emitter_lines.includes(i)) {
-				line.toggleClass("numerals-emitter", true);
-			}
-
-			// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
-			if (this.settings.hideEmitterMarkupInInput) {
-				rawRows[i] = rawRows[i].replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
-			}
-	
-			let inputElement: HTMLElement, resultElement: HTMLElement;
-			switch(blockRenderStyle) {
-				case NumeralsRenderStyle.Plain: {
-					const rawInputSansComment = rawRows[i].replace(/#.+$/, "")
-					const inputText = emptyLine ? rawRows[i] : rawInputSansComment;
-					inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
-					
-					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], this.numberFormat) : '\xa0';
-					resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
-
-					break;
-				} case NumeralsRenderStyle.TeX: {
-					const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
-					inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
-					const resultContent = !emptyLine ? "" : '\xa0';
-					resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
-					if (!emptyLine) {
-						// Input to Tex
-						const preprocess_input_tex:string = math.parse(inputs[i]).toTex();
-						let input_tex:string = unescapeSubscripts(preprocess_input_tex);
-						// log the text string and the input to consol
-						// console.log(`inputs[i]: ${inputs[i]} | preprocess_input_tex: ${preprocess_input_tex} | input_tex: ${input_tex}`)
-						
-						const inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
-
-						input_tex = texCurrencyReplacement(input_tex);
-						mathjaxLoop(inputTexElement, input_tex);
-
-						// Result to Tex
-						const resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
-
-						// format result to string to get reasonable precision. Commas will be stripped
-						let processedResult:string = math.format(results[i], getLocaleFormatter('posix'));
-						for (const processor of this.preProcessors ) {
-							processedResult = processedResult.replace(processor.regex, processor.replaceStr)
-						}
-						let texResult = math.parse(processedResult).toTex() // TODO: Add custom handler for numbers to get good localeString formatting
-						texResult = texCurrencyReplacement(texResult);
-						mathjaxLoop(resultTexElement, texResult);
-					}
-					break;
-				} case NumeralsRenderStyle.SyntaxHighlight: {
-					const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
-					inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
-					if (!emptyLine) {
-						const input_elements:DocumentFragment = htmlToElements(math.parse(inputs[i]).toHTML())
-						inputElement.appendChild(input_elements);
-					}
-
-					const formattedResult = !emptyLine ? this.settings.resultSeparator + math.format(results[i], this.numberFormat) : '\xa0';
-					resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
-
-					break;
-				}
-			}
-	
-			if (!emptyLine) {
-				const inlineComment = rawRows[i].match(/#.+$/);
-				if (inlineComment){
-					inputElement.createEl("span", {cls: "numerals-inline-comment", text:inlineComment[0]})
-				}
-			} else {
-				resultElement.toggleClass("numerals-empty", true);
-				inputElement.toggleClass("numerals-empty", true);
-				resultElement.setText('\xa0');
-			}
-		}
-	
-	
-		if (errorMsg) {			
-			const line = el.createEl("div", {cls: "numerals-error-line"});
-			line.createEl("span", { text: errorInput, cls: "numerals-input"});
-			const resultElement = line.createEl("span", {cls: "numerals-result" });
-			resultElement.createEl("span", {cls:"numerals-error-name", text: errorMsg.name + ":"});
-			resultElement.createEl("span", {cls:"numerals-error-message", text: errorMsg.message});		
-		}
-	
 	}
 
 	private createCurrencyMap(dollarCurrency: string, yenCurrency: string): CurrencyType[] {
@@ -419,12 +255,13 @@ export default class NumeralsPlugin extends Plugin {
 		];
 		
 		// Register Markdown Code Block Processors and pass in the render style
-		this.registerMarkdownCodeBlockProcessor("math", this.numeralsMathBlockHandler.bind(this, null));
-		this.registerMarkdownCodeBlockProcessor("Math", this.numeralsMathBlockHandler.bind(this, null));		
-		this.registerMarkdownCodeBlockProcessor("math-plain", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.Plain));		
-		this.registerMarkdownCodeBlockProcessor("math-tex", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX));
-		this.registerMarkdownCodeBlockProcessor("math-TeX", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX));
-		this.registerMarkdownCodeBlockProcessor("math-highlight", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.SyntaxHighlight));
+		const priority = 100;
+		this.registerMarkdownCodeBlockProcessor("math", this.numeralsMathBlockHandler.bind(this, null), priority);  
+		this.registerMarkdownCodeBlockProcessor("Math", this.numeralsMathBlockHandler.bind(this, null), priority);		  
+		this.registerMarkdownCodeBlockProcessor("math-plain", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.Plain), priority);		  
+		this.registerMarkdownCodeBlockProcessor("math-tex", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);  
+		this.registerMarkdownCodeBlockProcessor("math-TeX", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);  
+		this.registerMarkdownCodeBlockProcessor("math-highlight", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.SyntaxHighlight), priority); 
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new NumeralsSettingTab(this.app, this));
@@ -436,6 +273,19 @@ export default class NumeralsPlugin extends Plugin {
 
 		// Setup number formatting
 		this.updateLocale();
+
+		// DEBUGGING
+		// Callback and print to console when metadata is changed
+		this.registerEvent(this.app.metadataCache.on("changed", (e) => {
+				console.log("Numerals: Metadata Changed");
+			}
+		));
+
+		// Callback and print to console when dataview metadata is changed
+		this.registerEvent(this.app.metadataCache.on("dataview:metadata-change", (e) => {
+				console.log("Numerals: Dataview Metadata Changed");
+			}
+		));
 
 	}
 

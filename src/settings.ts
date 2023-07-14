@@ -2,10 +2,9 @@
 // Imports
 ///////////////////////////////////////////
 
-import NumeralsPlugin, {
-    htmlToElements
-} from "./main";
+import NumeralsPlugin from "./main";
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
+import { htmlToElements } from "./numeralsUtilities";
 
 import {
     PluginSettingTab,

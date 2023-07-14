@@ -1,5 +1,5 @@
 import NumeralsPlugin from "./main";
-import { processFrontmatter } from "./numeralsUtilities";
+import { getMetadataForFileAtPath, processFrontmatter } from "./numeralsUtilities";
 import {
     EditorSuggest,
     EditorPosition,
@@ -10,7 +10,6 @@ import {
     setIcon,
  } from "obsidian";
 import { getMathJsSymbols } from "./mathjsUtilities";
-import { getAPI } from "obsidian-dataview";
 
 
 export class NumeralsSuggestor extends EditorSuggest<string> {
@@ -67,8 +66,6 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): string[] | Promise<string[]> {
-		// console.log('getSuggestions called');
-		// TODO: front matter not showing up consistnely. Need to figure out why
 		let localSymbols: string [] = [];	
 
 		// check if the last suggestion list update was less than 200ms ago
@@ -87,21 +84,12 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 				localSymbols = [...new Set(Array.from(matches, (match) => 'v|' + match[1]))];
 			}
 
-			const frontmatter:{[key: string]: unknown} | undefined = app.metadataCache.getFileCache(context.file)?.frontmatter;
-
-			const dataviewAPI = getAPI();
-			let dataviewMetadata:{[key: string]: unknown} | undefined;
-			if (dataviewAPI) {
-				const dataviewPage = dataviewAPI.page(context.file.path);
-				dataviewMetadata = {...dataviewPage, file: undefined};
-			}
-	
 			// combine frontmatter and dataview metadata, with dataview metadata taking precedence
-			const metadata = {...frontmatter, ...dataviewMetadata};			
+			const metadata = getMetadataForFileAtPath(context.file.path);
 
 
 			if (metadata) {
-				const frontmatterSymbols = processFrontmatter(metadata, undefined, this.plugin.settings.forceProcessAllFrontmatter);
+				const frontmatterSymbols = processFrontmatter(metadata, undefined, this.plugin.settings.forceProcessAllFrontmatter, undefined, true);
 				// add frontmatter symbols to local symbols
 				localSymbols = localSymbols.concat(Array.from(frontmatterSymbols.keys()).map((symbol: string) => 'v|' + symbol));
 			}

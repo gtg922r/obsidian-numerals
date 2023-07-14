@@ -1,5 +1,13 @@
 
 import * as math from 'mathjs';
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings } from './settings';
+import { mathjsFormat } from './main';
+import { getAPI } from 'obsidian-dataview';
+import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
+
+// expot type NumeralsCodeBlockType = 
+
+
 
 /**
  * Process frontmatter and return updated scope object
@@ -20,7 +28,8 @@ export function processFrontmatter(
 	frontmatter: { [key: string]: unknown },
 	scope: Map<string, unknown>|undefined,
 	forceAll=false,
-	stringReplaceMap: StringReplaceMap[] = []
+	stringReplaceMap: StringReplaceMap[] = [],
+	keysOnly=false
 ): Map<string, unknown> {
 	
 	if (!scope) {
@@ -55,18 +64,25 @@ export function processFrontmatter(
 			frontmatter_process = frontmatter;
 		}
 
-		for (const [key, rawValue] of Object.entries(frontmatter_process)) {
-			let value = rawValue;
-			// if processedValue is array-like, take the last element
-			if (Array.isArray(value)) {
-				value = value[value.length - 1];
-			}
+		// if keysOnly is true, only add keys to scope. Otherwise, add values to scope
+		if (keysOnly === false) {
+			for (const [key, rawValue] of Object.entries(frontmatter_process)) {
+				let value = rawValue;
+				// if processedValue is array-like, take the last element
+				if (Array.isArray(value)) {
+					value = value[value.length - 1];
+				}
 
-			if (typeof value === "number") {
-				scope.set(key, math.number(value));
-			} else if (typeof value === "string") {
-				const processedValue = processTextForReplacements(value, stringReplaceMap);
-				scope.set(key, math.evaluate(processedValue));
+				if (typeof value === "number") {
+					scope.set(key, math.number(value));
+				} else if (typeof value === "string") {
+					const processedValue = processTextForReplacements(value, stringReplaceMap);
+					scope.set(key, math.evaluate(processedValue));
+				}
+			}
+		} else {
+			for (const key of Object.keys(frontmatter_process)) {
+				scope.set(key, undefined);
 			}
 		}
 
@@ -131,4 +147,275 @@ export function processTextForReplacements(text: string, stringReplaceMap: Strin
 		text = text.replace(processor.regex, processor.replaceStr)
 	}
 	return text;
+}
+
+const numeralsLayoutClasses = {
+	[NumeralsLayout.TwoPanes]: 		"numerals-panes",
+	[NumeralsLayout.AnswerRight]: 	"numerals-answer-right",
+	[NumeralsLayout.AnswerBelow]: 	"numerals-answer-below",
+	[NumeralsLayout.AnswerInline]: 	"numerals-answer-inline",	
+}
+
+const numeralsRenderStyleClasses = {
+	[NumeralsRenderStyle.Plain]: 			"numerals-plain",
+	[NumeralsRenderStyle.TeX]: 			 	"numerals-tex",
+	[NumeralsRenderStyle.SyntaxHighlight]: 	"numerals-syntax",
+}
+
+
+// TODO: see if would be faster to return a single set of RegEx to get executed, rather than re-computing regex each time
+function texCurrencyReplacement(input_tex:string) {
+	for (const symbolType of defaultCurrencyMap) {
+		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name);
+	}
+	return input_tex
+}
+
+// TODO: Add a switch for only rendering input
+export interface CurrencyType {
+	symbol: string;
+	unicode: string;
+	name: string;
+	currency: string;
+}
+
+export const defaultCurrencyMap: CurrencyType[] = [
+	{	symbol: "$", unicode: "x024", 	name: "dollar", currency: "USD"},
+	{	symbol: "€", unicode: "x20AC",	name: "euro", 	currency: "EUR"},
+	{	symbol: "£", unicode: "x00A3",	name: "pound", 	currency: "GBP"},
+	{	symbol: "¥", unicode: "x00A5",	name: "yen", 	currency: "JPY"},
+	{	symbol: "₹", unicode: "x20B9",	name: "rupee", 	currency: "INR"}	
+];
+
+/**
+ * Converts a string of HTML into a DocumentFragment continaing a sanitized collection array of DOM elements.
+ *
+ * @param html The HTML string to convert.
+ * @returns A DocumentFragment contaning DOM elements.
+ */
+export function htmlToElements(html: string): DocumentFragment {
+	const sanitizedHTML = sanitizeHTMLToDom(html);
+	return sanitizedHTML;
+  }
+
+async function mathjaxLoop(container: HTMLElement, value: string) {
+	const html = renderMath(value, true);
+	await finishRenderMath()
+
+	// container.empty();
+	container.append(html);
+}
+
+/**
+ * Return a function that formats a number according to the given locale
+ * @param locale Locale to use
+ * @returns Function that calls toLocaleString with given locale
+ */
+export function getLocaleFormatter(locale: Intl.LocalesArgument|null = null): (value: number) => string {
+	if (locale === null) {
+		return (value: number): string => value.toLocaleString();
+	} else {
+		return (value: number): string => value.toLocaleString(locale);
+	}
+}
+
+export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unknown} | undefined {
+	const f_path:string = sourcePath;
+	const handle = app.vault.getAbstractFileByPath(f_path);
+	const f_handle = (handle instanceof TFile) ? handle : undefined;
+	const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle as TFile) : undefined;
+	const frontmatter:{[key: string]: unknown} | undefined = f_cache?.frontmatter;
+
+	const dataviewAPI = getAPI();
+	let dataviewMetadata:{[key: string]: unknown} | undefined;
+	if (dataviewAPI) {
+		const dataviewPage = dataviewAPI.page(f_path)
+		dataviewMetadata = {...dataviewPage, file: undefined}
+	}
+
+	// combine frontmatter and dataview metadata, with dataview metadata taking precedence
+	const metadata = {...frontmatter, ...dataviewMetadata};		
+	return metadata;
+}	
+
+export function renderNumeralsBlockFromSource(
+	el: HTMLElement,
+	source: string,
+	metadata: {[key: string]: unknown} | undefined,
+	type: NumeralsRenderStyle,
+	settings: NumeralsSettings,
+	numberFormat: mathjsFormat,
+	preProcessors: StringReplaceMap[]
+): void {
+	const blockRenderStyle: NumeralsRenderStyle = type ? type : settings.defaultRenderStyle;
+		
+	el.toggleClass("numerals-block", true);
+	el.toggleClass(numeralsLayoutClasses[settings.layoutStyle], true);
+	el.toggleClass(numeralsRenderStyleClasses[blockRenderStyle], true);			
+	el.toggleClass("numerals-alt-row-color", settings.alternateRowColor)
+
+
+	// Pre-process input
+
+	const rawRows: string[] = source.split("\n");
+	let processedSource:string = source;
+
+	// find every line that ends with `=>` (ignore any whitespace or comments after it)
+	const emitter_lines: number[] = [];
+	for (let i = 0; i < rawRows.length; i++) {
+		if (rawRows[i].match(/^[^#\r\n]*=>.*$/)) {				 								
+			emitter_lines.push(i);
+		}
+	}
+
+	// if there are any emitter lines then add the class `numerals-emitters-present` to the block
+	if (emitter_lines.length > 0) {
+		el.toggleClass("numerals-emitters-present", true);
+		el.toggleClass("numerals-hide-non-emitters", settings.hideLinesWithoutMarkupWhenEmitting);
+	}
+
+	// TODO Need to decide if want to remove emitter indicator from input text
+	// TODO need to decide if want to change (or drop) the seperator if there is an emitter
+
+	// remove `=>` at the end of lines (preserve comments)
+	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
+		
+	for (const processor of preProcessors ) {
+		processedSource = processedSource.replace(processor.regex, processor.replaceStr)
+	}
+	
+	// Process input through mathjs
+
+	let errorMsg = null;
+	let errorInput = '';
+
+	const rows: string[] = processedSource.split("\n");
+	const results: string[] = [];
+	const inputs: string[] = [];			
+	// eslint-disable-next-line prefer-const
+	let scope:Map<string, unknown> = new Map<string, unknown>();
+
+	// Add numeric frontmatter to scope
+
+	if (metadata) {
+		// TODO add option to process all frontmatter keys
+		scope = processFrontmatter(
+			metadata,
+			scope,
+			settings.forceProcessAllFrontmatter,
+			preProcessors);
+	}
+
+			
+	for (const row of rows.slice(0,-1)) { // Last row may be empty
+		try {
+			results.push(math.evaluate(row, scope));
+			inputs.push(row); // Only pushes if evaluate is successful
+		} catch (error) {
+			errorMsg = error;
+			errorInput = row;
+			break;
+		}
+	}
+
+	const lastRow = rows.slice(-1)[0];
+	if (lastRow != '') { // Last row is always empty in reader view
+		try {
+			results.push(math.evaluate(lastRow, scope));
+			inputs.push(lastRow); // Only pushes if evaluate is successful
+		} catch (error) {
+			errorMsg = error;
+			errorInput = lastRow;
+		}
+	}	
+					
+	for (let i = 0; i < inputs.length; i++) {
+		const line = el.createEl("div", {cls: "numerals-line"});
+		const emptyLine = (results[i] === undefined)
+
+		// if line is an emitter lines, add numerals-emitter class	
+		if (emitter_lines.includes(i)) {
+			line.toggleClass("numerals-emitter", true);
+		}
+
+		// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
+		if (settings.hideEmitterMarkupInInput) {
+			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
+		}
+
+		let inputElement: HTMLElement, resultElement: HTMLElement;
+		switch(blockRenderStyle) {
+			case NumeralsRenderStyle.Plain: {
+				const rawInputSansComment = rawRows[i].replace(/#.+$/, "")
+				const inputText = emptyLine ? rawRows[i] : rawInputSansComment;
+				inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
+				
+				const formattedResult = !emptyLine ? settings.resultSeparator + math.format(results[i], numberFormat) : '\xa0';
+				resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
+
+				break;
+			} case NumeralsRenderStyle.TeX: {
+				const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
+				inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
+				const resultContent = !emptyLine ? "" : '\xa0';
+				resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
+				if (!emptyLine) {
+					// Input to Tex
+					const preprocess_input_tex:string = math.parse(inputs[i]).toTex();
+					let input_tex:string = unescapeSubscripts(preprocess_input_tex);
+					
+					const inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
+
+					input_tex = texCurrencyReplacement(input_tex);
+					mathjaxLoop(inputTexElement, input_tex);
+
+					// Result to Tex
+					const resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
+
+					// format result to string to get reasonable precision. Commas will be stripped
+					let processedResult:string = math.format(results[i], getLocaleFormatter('posix'));
+					for (const processor of preProcessors ) {
+						processedResult = processedResult.replace(processor.regex, processor.replaceStr)
+					}
+					let texResult = math.parse(processedResult).toTex() // TODO: Add custom handler for numbers to get good localeString formatting
+					texResult = texCurrencyReplacement(texResult);
+					mathjaxLoop(resultTexElement, texResult);
+				}
+				break;
+			} case NumeralsRenderStyle.SyntaxHighlight: {
+				const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
+				inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
+				if (!emptyLine) {
+					const input_elements:DocumentFragment = htmlToElements(math.parse(inputs[i]).toHTML())
+					inputElement.appendChild(input_elements);
+				}
+
+				const formattedResult = !emptyLine ? settings.resultSeparator + math.format(results[i], numberFormat) : '\xa0';
+				resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
+
+				break;
+			}
+		}
+
+		if (!emptyLine) {
+			const inlineComment = rawRows[i].match(/#.+$/);
+			if (inlineComment){
+				inputElement.createEl("span", {cls: "numerals-inline-comment", text:inlineComment[0]})
+			}
+		} else {
+			resultElement.toggleClass("numerals-empty", true);
+			inputElement.toggleClass("numerals-empty", true);
+			resultElement.setText('\xa0');
+		}
+	}
+
+
+	if (errorMsg) {			
+		const line = el.createEl("div", {cls: "numerals-error-line"});
+		line.createEl("span", { text: errorInput, cls: "numerals-input"});
+		const resultElement = line.createEl("span", {cls: "numerals-result" });
+		resultElement.createEl("span", {cls:"numerals-error-name", text: errorMsg.name + ":"});
+		resultElement.createEl("span", {cls:"numerals-error-message", text: errorMsg.message});		
+	}
+
 }
