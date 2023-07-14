@@ -1,5 +1,5 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
-import { StringReplaceMap, defaultCurrencyMap, CurrencyType, renderNumeralsBlockFromSource, getLocaleFormatter, getMetadataForFileAtPath, NumeralsCodeBlockType} from "./numeralsUtilities";
+import { StringReplaceMap, defaultCurrencyMap, CurrencyType, renderNumeralsBlockFromSource, getLocaleFormatter, getMetadataForFileAtPath} from "./numeralsUtilities";
 import equal from 'fast-deep-equal';
 import {
 	Plugin,
@@ -79,19 +79,6 @@ function getMathjsFormat(format: NumeralsNumberFormat): mathjsFormat {
 	}
 }
 
-// Function to find the differences between two objects
-const getDifference = (obj1: any, obj2: any): Record<string, any> => {
-	const diff: Record<string, any> = {};
-
-	for (const key in obj1) {
-		if (obj1[key] !== obj2[key]) {
-			diff[key] = obj2[key];
-		}
-	}
-
-	return diff;
-};
-
 export default class NumeralsPlugin extends Plugin {
 	settings: NumeralsSettings;
 	private currencyMap: CurrencyType[] = defaultCurrencyMap;
@@ -148,7 +135,6 @@ export default class NumeralsPlugin extends Plugin {
 		const numeralsBlockCallback = (_callbackType: unknown, _file: unknown, _oldPath?: unknown) => {
 			console.log("Numerals: Metadata Changed Callback Fired");
 			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath);
-			// TODO: if dataview api exists, only register for dataview callback
 			if (equal(currentMetadata, metadata)) {
 				// console.log("Numerals: Metadata unchanged. Skipping render");
 				return;
@@ -171,6 +157,7 @@ export default class NumeralsPlugin extends Plugin {
 
 		const dataviewAPI = getAPI();
 		if (dataviewAPI) {
+			// @ts-ignore
 			this.registerEvent(this.app.metadataCache.on("dataview:metadata-change", numeralsBlockCallback));
 		} else {
 			this.registerEvent(this.app.metadataCache.on("changed", numeralsBlockCallback));
@@ -273,19 +260,6 @@ export default class NumeralsPlugin extends Plugin {
 
 		// Setup number formatting
 		this.updateLocale();
-
-		// DEBUGGING
-		// Callback and print to console when metadata is changed
-		this.registerEvent(this.app.metadataCache.on("changed", (e) => {
-				console.log("Numerals: Metadata Changed");
-			}
-		));
-
-		// Callback and print to console when dataview metadata is changed
-		this.registerEvent(this.app.metadataCache.on("dataview:metadata-change", (e) => {
-				console.log("Numerals: Dataview Metadata Changed");
-			}
-		));
 
 	}
 
