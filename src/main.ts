@@ -43,10 +43,6 @@ function (c: string, cPrev: any, cNext: any) {
 	return isUnitAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
 	};			
 
-
-
-
-
 	
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
@@ -111,35 +107,14 @@ export default class NumeralsPlugin extends Plugin {
 			this.preProcessors,
 		)
 
-		// // Append child element to el that increments counter when metadata is changed. Child element removes callback when removed from DOM
-		// const counter = el.createEl("div", {text: "0"});
-		// const counterRenderChild = new MarkdownRenderChild(counter);
-
-		// const callback = () => {
-		// 	counter.setText((parseInt(counter.getText()) + 1).toString());
-		// }
-		// this.registerEvent(this.app.metadataCache.on("changed", callback));
-
-		// counterRenderChild.onunload = () => {
-		// 	this.app.metadataCache.off("changed", callback);
-		// 	console.log("Numerals: Counter Render Child Unloaded");
-		// };
-
-		// ctx.addChild(counterRenderChild);
-
-		// Wait 2 seconds or for metadata `changed` callback to fire, then remove loading text
-		// await new Promise(resolve => setTimeout(resolve, 2000));
-
 		const numeralsBlockChild = new MarkdownRenderChild(el);
 		// numeralsBlockChild.metadata = metadata;
 		const numeralsBlockCallback = (_callbackType: unknown, _file: unknown, _oldPath?: unknown) => {
 			console.log("Numerals: Metadata Changed Callback Fired");
 			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath);
 			if (equal(currentMetadata, metadata)) {
-				// console.log("Numerals: Metadata unchanged. Skipping render");
 				return;
 			} else {
-				// console.log("Numerals: Metadata changed. Rendering");
 				metadata = currentMetadata;
 			}
 
@@ -202,19 +177,10 @@ export default class NumeralsPlugin extends Plugin {
 		// 	}
 		// });		
 
-		// // DEBUGGING PURPOSES ONLY: Add Development Commands
-		// this.addCommand({
-		// 	id: 'numerals-debug',
-		// 	name: 'Run Numerals Dev Test',
-		// 	callback: async () => {
-		// 		// Developme Functions Here
-		// 	}
-		// });				
 
 		// Load MathJax for TeX Rendering
 		await loadMathJax();
 
-		// this.currencyMap = this.createMoneyMap(this.settings.dollarCurrency, this.settings.yenCurrency);
 		this.currencyMap = this.createCurrencyMap(
 			this.settings.dollarSymbolCurrency.currency,
 			this.settings.yenSymbolCurrency.currency
