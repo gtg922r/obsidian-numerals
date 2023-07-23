@@ -86,15 +86,6 @@ export default class NumeralsPlugin extends Plugin {
 		// TODO: Rendering is getting called twice. Once without newline at the end of the code block and once with.
 		//       This is causing the code block to be rendered twice. Need to figure out why and fix it.
 
-
-		// Add text that says loading, wait one second, then render
-		// const loading = el.createEl("div", {cls: "numerals-loading", text:"Loading..."});
-		// await new Promise(resolve => setTimeout(resolve, 1000));
-		// loading.remove();
-
-		// const frontmatter:FrontMatterCache | undefined = app.metadataCache.getFileCache(context.file)?.frontmatter;
-
-
 		let metadata = getMetadataForFileAtPath(ctx.sourcePath);
 		
 		renderNumeralsBlockFromSource(
@@ -108,7 +99,7 @@ export default class NumeralsPlugin extends Plugin {
 		)
 
 		const numeralsBlockChild = new MarkdownRenderChild(el);
-		// numeralsBlockChild.metadata = metadata;
+
 		const numeralsBlockCallback = (_callbackType: unknown, _file: unknown, _oldPath?: unknown) => {
 			console.log("Numerals: Metadata Changed Callback Fired");
 			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath);
@@ -132,7 +123,7 @@ export default class NumeralsPlugin extends Plugin {
 
 		const dataviewAPI = getAPI();
 		if (dataviewAPI) {
-			// @ts-ignore
+			//@ts-expect-error: "No overload matches this call"
 			this.registerEvent(this.app.metadataCache.on("dataview:metadata-change", numeralsBlockCallback));
 		} else {
 			this.registerEvent(this.app.metadataCache.on("changed", numeralsBlockCallback));

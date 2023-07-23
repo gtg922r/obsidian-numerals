@@ -34,13 +34,6 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, file: TFile): EditorSuggestTriggerInfo | null {
-		// time function
-
-		// TODO Asses if this has any performance benefits over just looking to see if there is a ```math codeblock between the cursor and the start of the file
-		// let tree = syntaxTree(editor.cm?.state);
-		// let pos = editor?.posToOffset({...cursor, ch:0});
-		// const nodeProps = tree.resolveInner(pos, 1).type.prop(tokenClassNodeProp)
-
 		const currentFileToCursor = editor.getRange({line: 0, ch: 0}, cursor);
 		const indexOfLastCodeBlockStart = currentFileToCursor.lastIndexOf('```');
 		// check if the next 4 characters after the last ``` are math or MATH
@@ -140,9 +133,6 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			setIcon(suggestionFlair, 'box');
 		}
 		suggestionTitle.setText(suggestionText);
-		// if (noteText) {
-		// 	suggestionNote.setText(noteText);
-		// }
 
 	}
 

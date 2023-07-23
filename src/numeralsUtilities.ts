@@ -22,7 +22,6 @@ import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian
  * @param scope Numerals scope object (Map)
  * @param frontmatter Frontmatter object
  * @returns Updated scope object
- * TODO: Does scope thats passed in get updated???
  */
 export function processFrontmatter(
 	frontmatter: { [key: string]: unknown },
@@ -238,6 +237,30 @@ export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unk
 	return metadata;
 }	
 
+/**  
+ * Renders a Numerals block from a given source string, using provided metadata and settings.  
+ *   
+ * This function takes a source string, which represents a block of Numerals code, and processes it   
+ * to generate a rendered Numerals block. The block is appended to a given HTML element. The function   
+ * also uses provided metadata and settings to control the rendering process.  
+ *  
+ * @param el - The HTML element to which the rendered Numerals block is appended.  
+ * @param source - The source string representing the Numerals block to be rendered.  
+ * @param metadata - An object containing metadata that is used during the rendering process. This   
+ * metadata can include information about the Numerals block, such as frontmatter keys and values.  
+ * @param type - A NumeralsRenderStyle value that specifies the rendering style to be used for the   
+ * Numerals block.  
+ * @param settings - A NumeralsSettings object that provides settings for the rendering process. These   
+ * settings can control aspects such as the layout style, whether to alternate row colors, and whether   
+ * to hide lines without markup when emitting.  
+ * @param numberFormat - A mathjsFormat function that is used to format numbers in the Numerals block.  
+ * @param preProcessors - An array of StringReplaceMap objects that specify text replacements to be   
+ * made in the source string before it is processed.  
+ *  
+ * @returns void  
+ *
+ */  
+
 export function renderNumeralsBlockFromSource(
 	el: HTMLElement,
 	source: string,
@@ -274,9 +297,6 @@ export function renderNumeralsBlockFromSource(
 		el.toggleClass("numerals-hide-non-emitters", settings.hideLinesWithoutMarkupWhenEmitting);
 	}
 
-	// TODO Need to decide if want to remove emitter indicator from input text
-	// TODO need to decide if want to change (or drop) the seperator if there is an emitter
-
 	// remove `=>` at the end of lines (preserve comments)
 	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
 		
@@ -298,7 +318,6 @@ export function renderNumeralsBlockFromSource(
 	// Add numeric frontmatter to scope
 
 	if (metadata) {
-		// TODO add option to process all frontmatter keys
 		scope = processFrontmatter(
 			metadata,
 			scope,
