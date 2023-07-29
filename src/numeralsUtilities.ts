@@ -5,9 +5,8 @@ import { mathjsFormat } from './main';
 import { getAPI } from 'obsidian-dataview';
 import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
 
-// expot type NumeralsCodeBlockType = 
 
-
+// TODO: Addition of variables not adding up
 
 /**
  * Process frontmatter and return updated scope object
@@ -37,6 +36,8 @@ export function processFrontmatter(
 
 	if (frontmatter && typeof frontmatter === "object") {
 		let frontmatter_process:{ [key: string]: unknown } = {}
+
+		// Determine which metadata keys to process
 		if (frontmatter.hasOwnProperty("numerals")) {
 			if (frontmatter["numerals"] === "none") {
 				frontmatter_process = {};
@@ -58,7 +59,6 @@ export function processFrontmatter(
 					}
 				}
 			}
-
 		} else if (forceAll) {
 			frontmatter_process = frontmatter;
 		}
@@ -76,7 +76,23 @@ export function processFrontmatter(
 					scope.set(key, math.number(value));
 				} else if (typeof value === "string") {
 					const processedValue = processTextForReplacements(value, stringReplaceMap);
-					scope.set(key, math.evaluate(processedValue));
+					// const evaluatedValue = math.evaluate(processedValue);
+					// try to evaluate processedValue as a mathjs expression, otherwise drop console error and move on
+					let evaluatedValue;
+					try {
+						evaluatedValue = math.evaluate(processedValue);
+					} catch (error) {
+						console.error(`Error evaluating frontmatter value for key ${key}: ${error}`);
+						evaluatedValue = undefined;
+					}
+					if (evaluatedValue !== undefined) {
+						scope.set(key, evaluatedValue);
+					}
+				} else if (typeof value === "object") { // TODO this is only a problem with Dataview. Can we only use dataview for inline?
+					// ignore objects
+					// TODO. RIght now this means data objects just get dropped. If we could instead use the data from obsidian we could handle it
+					console.error(`Frontmatter value for key ${key} is an object and will be ignored. ` +
+						`Considering surrounding the value with quotes (eg \`${key}: "value"\`) to treat it as a string.`);
 				}
 			}
 		} else {
@@ -223,13 +239,13 @@ export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unk
 	const handle = app.vault.getAbstractFileByPath(f_path);
 	const f_handle = (handle instanceof TFile) ? handle : undefined;
 	const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle as TFile) : undefined;
-	const frontmatter:{[key: string]: unknown} | undefined = f_cache?.frontmatter;
+	const frontmatter:{[key: string]: unknown} | undefined = {...(f_cache?.frontmatter), position: undefined};
 
 	const dataviewAPI = getAPI();
 	let dataviewMetadata:{[key: string]: unknown} | undefined;
 	if (dataviewAPI) {
 		const dataviewPage = dataviewAPI.page(f_path)
-		dataviewMetadata = {...dataviewPage, file: undefined}
+		dataviewMetadata = {...dataviewPage, file: undefined, position: undefined}
 	}
 
 	// combine frontmatter and dataview metadata, with dataview metadata taking precedence
