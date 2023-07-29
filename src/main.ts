@@ -101,7 +101,6 @@ export default class NumeralsPlugin extends Plugin {
 		const numeralsBlockChild = new MarkdownRenderChild(el);
 
 		const numeralsBlockCallback = (_callbackType: unknown, _file: unknown, _oldPath?: unknown) => {
-			console.log("Numerals: Metadata Changed Callback Fired");
 			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath);
 			if (equal(currentMetadata, metadata)) {
 				return;
@@ -132,7 +131,6 @@ export default class NumeralsPlugin extends Plugin {
 		numeralsBlockChild.onunload = () => {
 			this.app.metadataCache.off("changed", numeralsBlockCallback);
 			this.app.metadataCache.off("dataview:metadata-change", numeralsBlockCallback);
-			console.log("Numerals: Numerals Block Render Child Unloaded");
 		}
 		ctx.addChild(numeralsBlockChild);
 
