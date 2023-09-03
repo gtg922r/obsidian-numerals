@@ -33,6 +33,16 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		this.plugin = plugin;
 	}
 
+	/**
+	 * This function is triggered when the user starts typing in the editor. It checks if the user is in a math block and if there is a word in the current line.
+	 * If these conditions are met, it returns an object with the start and end positions of the word and the word itself as the query.
+	 * If not, it returns null.
+	 *
+	 * @param cursor - The current position of the cursor in the editor.
+	 * @param editor - The current editor instance.
+	 * @param file - The current file being edited.
+	 * @returns An object with the start and end positions of the word and the word itself as the query, or null if the conditions are not met.
+	 */
 	onTrigger(cursor: EditorPosition, editor: Editor, file: TFile): EditorSuggestTriggerInfo | null {
 		const currentFileToCursor = editor.getRange({line: 0, ch: 0}, cursor);
 		const indexOfLastCodeBlockStart = currentFileToCursor.lastIndexOf('```');

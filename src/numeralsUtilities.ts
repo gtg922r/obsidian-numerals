@@ -179,6 +179,18 @@ const numeralsRenderStyleClasses = {
 
 
 // TODO: see if would be faster to return a single set of RegEx to get executed, rather than re-computing regex each time
+/**
+ * Replaces currency symbols in a given TeX string with their corresponding TeX command.
+ *
+ * This function takes a TeX string as input, and replaces all occurrences of currency symbols
+ * (e.g., "$", "€", "£", "¥", "₹") with their corresponding TeX command (e.g., "\dollar", "\euro",
+ * "\pound", "\yen", "\rupee"). The mapping between symbols and commands is defined by the
+ * `defaultCurrencyMap` array.
+ *
+ * @param input_tex - The input TeX string, potentially containing currency symbols.
+ *
+ * @returns The input string with all currency symbols replaced with their corresponding TeX command.
+ */
 function texCurrencyReplacement(input_tex:string) {
 	for (const symbolType of defaultCurrencyMap) {
 		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name);
@@ -276,7 +288,6 @@ export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unk
  * @returns void  
  *
  */  
-
 export function renderNumeralsBlockFromSource(
 	el: HTMLElement,
 	source: string,
