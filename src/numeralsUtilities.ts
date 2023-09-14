@@ -236,13 +236,19 @@ async function mathjaxLoop(container: HTMLElement, value: string) {
 /**
  * Return a function that formats a number according to the given locale
  * @param locale Locale to use
+ * @param options Options to use (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat)
  * @returns Function that calls toLocaleString with given locale
  */
-export function getLocaleFormatter(locale: Intl.LocalesArgument|null = null): (value: number) => string {
-	if (locale === null) {
+export function getLocaleFormatter(
+	locale: Intl.LocalesArgument | undefined = undefined,
+	options: Intl.NumberFormatOptions | undefined = undefined
+): (value: number) => string {
+	if (locale === undefined) {
 		return (value: number): string => value.toLocaleString();
-	} else {
+	} else if (options === undefined) {
 		return (value: number): string => value.toLocaleString(locale);
+	} else {
+		return (value: number): string => value.toLocaleString(locale, options);
 	}
 }
 
@@ -419,7 +425,7 @@ export function renderNumeralsBlockFromSource(
 					const resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
 
 					// format result to string to get reasonable precision. Commas will be stripped
-					let processedResult:string = math.format(results[i], getLocaleFormatter('posix'));
+					let processedResult:string = math.format(results[i], getLocaleFormatter('en-US', {useGrouping: false}));
 					for (const processor of preProcessors ) {
 						processedResult = processedResult.replace(processor.regex, processor.replaceStr)
 					}
