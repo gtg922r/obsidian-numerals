@@ -8,6 +8,8 @@ import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian
 
 // TODO: Addition of variables not adding up
 
+export class NumeralsScope extends Map<string, unknown>{}
+
 /**
  * Process frontmatter and return updated scope object
  * - Numbers are converted to mathjs numbers. Strings are processed as mathjs expressions.
@@ -24,14 +26,14 @@ import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian
  */
 export function processFrontmatter(
 	frontmatter: { [key: string]: unknown },
-	scope: Map<string, unknown>|undefined,
+	scope: NumeralsScope|undefined,
 	forceAll=false,
 	stringReplaceMap: StringReplaceMap[] = [],
 	keysOnly=false
-): Map<string, unknown> {
+): NumeralsScope {
 	
 	if (!scope) {
-		scope = new Map<string, unknown>();
+		scope = new NumeralsScope();
 	}
 
 	if (frontmatter && typeof frontmatter === "object") {
@@ -61,6 +63,14 @@ export function processFrontmatter(
 			}
 		} else if (forceAll) {
 			frontmatter_process = frontmatter;
+		}
+
+		// Iterate through frontmatter and add any key/value pair to frontmatter_process if the key starts with `$`
+		//   These keys are assumed to be numerals globals that are to be added to the scope regardless of the `numerals` key
+		for (const [key, value] of Object.entries(frontmatter)) {
+			if (key.startsWith('$')) {
+				frontmatter_process[key] = value;
+			}
 		}
 
 		// if keysOnly is true, only add keys to scope. Otherwise, add values to scope
@@ -106,6 +116,30 @@ export function processFrontmatter(
 		return scope;
 	}
 }	
+
+/** 
+ * Add globals from a scope to the Numerals page cache
+ * 
+ * Globals are keys in the scope Map that start with `$`
+ * @param sourcePath Path of the source file
+ * @param scope Scope object
+ * @returns void
+ */
+export function maybeAddScopeToPageCache(sourcePath: string, scope: NumeralsScope, scopeCache: Map<string, NumeralsScope>) {
+	for (const [key, value] of scope.entries()) {
+		if (key.startsWith('$')) {
+			if (scopeCache.has(sourcePath)) {
+				scopeCache.get(sourcePath)?.set(key, value);
+			} else {
+				const newScope = new NumeralsScope();
+				newScope.set(key, value);
+				scopeCache.set(sourcePath, newScope);
+			}
+		}
+	}
+
+
+}
 
 /**
  * Regular expression for matching variables with subscript notation 
@@ -276,9 +310,14 @@ export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unk
 		const dataviewPage = dataviewAPI.page(f_path)
 		dataviewMetadata = {...dataviewPage, file: undefined, position: undefined}
 	}
-
-	// combine frontmatter and dataview metadata, with dataview metadata taking precedence
-	const metadata = {...frontmatter, ...dataviewMetadata};		
+ 
+	//@ts-expect-error
+	const numeralsCache:Map<string, NumeralsScope> = app.plugins.plugins.numerals.scopeCache;
+	const numeralsPageScope = numeralsCache.get(f_path) as Map<string,unknown>;
+	const numeralsPageScopeMetadata:{[key: string]: unknown} = numeralsPageScope ? Object.fromEntries(numeralsPageScope) : {};
+  
+	// combine frontmatter and dataview metadata, with dataview metadata taking precedence and numerals scope taking precedence over both
+	const metadata = {...frontmatter, ...dataviewMetadata, ...numeralsPageScopeMetadata};		
 	return metadata;
 }	
 
@@ -305,7 +344,7 @@ export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unk
  * @returns void  
  *
  */  
-export function renderNumeralsBlockFromSource(
+export function processAndRenderNumeralsBlockFromSource(
 	el: HTMLElement,
 	source: string,
 	metadata: {[key: string]: unknown} | undefined,
@@ -313,7 +352,7 @@ export function renderNumeralsBlockFromSource(
 	settings: NumeralsSettings,
 	numberFormat: mathjsFormat,
 	preProcessors: StringReplaceMap[]
-): void {
+): NumeralsScope {
 	const blockRenderStyle: NumeralsRenderStyle = type ? type : settings.defaultRenderStyle;
 		
 	el.toggleClass("numerals-block", true);
@@ -342,7 +381,7 @@ export function renderNumeralsBlockFromSource(
 	}
 
 	// remove `=>` at the end of lines (preserve comments)
-	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
+	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
 		
 	for (const processor of preProcessors ) {
 		processedSource = processedSource.replace(processor.regex, processor.replaceStr)
@@ -357,7 +396,7 @@ export function renderNumeralsBlockFromSource(
 	const results: string[] = [];
 	const inputs: string[] = [];			
 	// eslint-disable-next-line prefer-const
-	let scope:Map<string, unknown> = new Map<string, unknown>();
+	let scope:NumeralsScope = new NumeralsScope();
 
 	// Add numeric frontmatter to scope
 
@@ -403,7 +442,7 @@ export function renderNumeralsBlockFromSource(
 
 		// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
 		if (settings.hideEmitterMarkupInInput) {
-			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
+			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1$4") 
 		}
 
 		let inputElement: HTMLElement, resultElement: HTMLElement;
@@ -480,5 +519,7 @@ export function renderNumeralsBlockFromSource(
 		resultElement.createEl("span", {cls:"numerals-error-name", text: errorMsg.name + ":"});
 		resultElement.createEl("span", {cls:"numerals-error-message", text: errorMsg.message});		
 	}
+
+	return scope;
 
 }

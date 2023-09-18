@@ -1,5 +1,13 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
-import { StringReplaceMap, defaultCurrencyMap, CurrencyType, renderNumeralsBlockFromSource, getLocaleFormatter, getMetadataForFileAtPath} from "./numeralsUtilities";
+import {
+	StringReplaceMap,
+	defaultCurrencyMap,
+	CurrencyType,
+	processAndRenderNumeralsBlockFromSource,
+	getLocaleFormatter,
+	getMetadataForFileAtPath,
+	NumeralsScope,
+	maybeAddScopeToPageCache } from "./numeralsUtilities";
 import equal from 'fast-deep-equal';
 import {
 	Plugin,
@@ -81,6 +89,7 @@ export default class NumeralsPlugin extends Plugin {
 	private preProcessors: StringReplaceMap[];
 	private currencyPreProcessors: StringReplaceMap[];
 	private numberFormat: mathjsFormat;
+	private scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
 
 	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {		
 		// TODO: Rendering is getting called twice. Once without newline at the end of the code block and once with.
@@ -88,7 +97,7 @@ export default class NumeralsPlugin extends Plugin {
 
 		let metadata = getMetadataForFileAtPath(ctx.sourcePath);
 		
-		renderNumeralsBlockFromSource(
+		const scope = processAndRenderNumeralsBlockFromSource(
 			el, 
 			source,
 			metadata,
@@ -96,7 +105,9 @@ export default class NumeralsPlugin extends Plugin {
 			this.settings,
 			this.numberFormat,
 			this.preProcessors,
-		)
+		);
+
+		maybeAddScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
 
 		const numeralsBlockChild = new MarkdownRenderChild(el);
 
@@ -109,7 +120,8 @@ export default class NumeralsPlugin extends Plugin {
 			}
 
 			el.empty();
-			renderNumeralsBlockFromSource(
+
+			const scope = processAndRenderNumeralsBlockFromSource(
 				el,
 				source,
 				metadata,
@@ -118,6 +130,8 @@ export default class NumeralsPlugin extends Plugin {
 				this.numberFormat,
 				this.preProcessors,
 			);
+
+			maybeAddScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
 		}
 
 		const dataviewAPI = getAPI();
