@@ -252,6 +252,17 @@ export function getLocaleFormatter(
 	}
 }
 
+/**
+ * Retrieves metadata for a file at the specified path.
+ * 
+ * This function takes a source path as input and retrieves the metadata associated with the file at that path. 
+ * It first checks the metadata cache for the file and retrieves the frontmatter. 
+ * If the file is a Dataview file, it also retrieves the Dataview metadata. 
+ * The function then combines the frontmatter and Dataview metadata, with the Dataview metadata taking precedence.
+ * 
+ * @param sourcePath - The path of the file for which to retrieve metadata.
+ * @returns The metadata for the file, including both frontmatter and Dataview metadata.
+ */
 export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unknown} | undefined {
 	const f_path:string = sourcePath;
 	const handle = app.vault.getAbstractFileByPath(f_path);
