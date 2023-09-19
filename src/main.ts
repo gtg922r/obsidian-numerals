@@ -100,6 +100,7 @@ export default class NumeralsPlugin extends Plugin {
 		const scope = processAndRenderNumeralsBlockFromSource(
 			el, 
 			source,
+			ctx,
 			metadata,
 			type,
 			this.settings,
@@ -124,6 +125,7 @@ export default class NumeralsPlugin extends Plugin {
 			const scope = processAndRenderNumeralsBlockFromSource(
 				el,
 				source,
+				ctx,
 				metadata,
 				type,
 				this.settings,

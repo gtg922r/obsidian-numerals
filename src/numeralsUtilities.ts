@@ -3,7 +3,7 @@ import * as math from 'mathjs';
 import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings } from './settings';
 import { mathjsFormat } from './main';
 import { getAPI } from 'obsidian-dataview';
-import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
+import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownSectionInformation, MarkdownView } from 'obsidian';
 
 
 // TODO: Addition of variables not adding up
@@ -347,6 +347,7 @@ export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unk
 export function processAndRenderNumeralsBlockFromSource(
 	el: HTMLElement,
 	source: string,
+	ctx: MarkdownPostProcessorContext,
 	metadata: {[key: string]: unknown} | undefined,
 	type: NumeralsRenderStyle,
 	settings: NumeralsSettings,
@@ -368,9 +369,17 @@ export function processAndRenderNumeralsBlockFromSource(
 
 	// find every line that ends with `=>` (ignore any whitespace or comments after it)
 	const emitter_lines: number[] = [];
+	const insertion_lines: number[] = [];
+	const insertion_variables: string[] = [];
 	for (let i = 0; i < rawRows.length; i++) {
 		if (rawRows[i].match(/^[^#\r\n]*=>.*$/)) {				 								
 			emitter_lines.push(i);
+		}
+
+		const insertionMatch = rawRows[i].match(/@\s*\[([^\]]+)\].*$/);
+		if (insertionMatch) {
+			insertion_lines.push(i)
+			insertion_variables.push(insertionMatch[1]);
 		}
 	}
 
@@ -379,9 +388,12 @@ export function processAndRenderNumeralsBlockFromSource(
 		el.toggleClass("numerals-emitters-present", true);
 		el.toggleClass("numerals-hide-non-emitters", settings.hideLinesWithoutMarkupWhenEmitting);
 	}
-
+ 
 	// remove `=>` at the end of lines (preserve comments)
 	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
+
+	// Check for result insertion directive `@[variable::result]`,and replace with only variable
+	processedSource = processedSource.replace(/@\s*\[([^\]]+)\].*$/gm, "$1")
 		
 	for (const processor of preProcessors ) {
 		processedSource = processedSource.replace(processor.regex, processor.replaceStr)
@@ -440,6 +452,26 @@ export function processAndRenderNumeralsBlockFromSource(
 			line.toggleClass("numerals-emitter", true);
 		}
 
+		if (insertion_lines.includes(i)) {
+			const sectionInfo = ctx.getSectionInfo(el);
+			const lineStart = sectionInfo?.lineStart;
+
+			if (lineStart !== undefined) {
+				const editor = app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+				const curLine = lineStart + i + 1;
+				const sourceLine = editor?.getLine(curLine);
+				const insertionValue = math.format(results[i], numberFormat);
+				const modifiedSource = sourceLine?.replace(/(@\s*\[)([^\]]+)(\].*)$/gm, `$1$2::${insertionValue}$3`)
+				if (modifiedSource) {
+					editor?.setLine(curLine, modifiedSource)
+				}
+
+				console.log(`Source Line: \`${sourceLine}\``);
+				console.log(`Replace Value: \`${modifiedSource}\``);
+				console.log(`[${insertion_variables[insertion_lines.indexOf(i)]}::${insertionValue}]`);
+			}
+		}
+ 
 		// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
 		if (settings.hideEmitterMarkupInInput) {
 			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1$4") 
