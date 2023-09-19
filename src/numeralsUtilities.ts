@@ -376,12 +376,12 @@ export function processAndRenderNumeralsBlockFromSource(
 			emitter_lines.push(i);
 		}
 
-		const insertionMatch = rawRows[i].match(/@\s*\[([^\]:]+)(::)?([^\]])?\].*$/);
+		const insertionMatch = rawRows[i].match(/@\s*\[([^\]:]+)(::)?([^\]]*)\].*$/);
 		if (insertionMatch) {
 			insertion_lines.push(i)
 			insertion_variables.push(insertionMatch[1]);
 		}
-	}
+	} 
 
 	// if there are any emitter lines then add the class `numerals-emitters-present` to the block
 	if (emitter_lines.length > 0) {
@@ -393,7 +393,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
 
 	// Check for result insertion directive `@[variable::result]`,and replace with only variable
-	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::)?([^\]])?\].*$/gm, "$1")
+	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")
 		
 	for (const processor of preProcessors ) {
 		processedSource = processedSource.replace(processor.regex, processor.replaceStr)
@@ -461,7 +461,7 @@ export function processAndRenderNumeralsBlockFromSource(
 				const curLine = lineStart + i + 1;
 				const sourceLine = editor?.getLine(curLine);
 				const insertionValue = math.format(results[i], numberFormat);
-				const modifiedSource = sourceLine?.replace(/(@\s*\[)([^\]:]+)(::)?([^\]])?(\].*)$/gm, `$1$2::${insertionValue}$5`)
+				const modifiedSource = sourceLine?.replace(/(@\s*\[)([^\]:]+)(::([^\]]*))?(\].*)$/gm, `$1$2::${insertionValue}$5`)
 				if (modifiedSource && modifiedSource !== sourceLine) {
 					setTimeout(() => {
 						editor?.setLine(curLine, modifiedSource)
@@ -479,7 +479,7 @@ export function processAndRenderNumeralsBlockFromSource(
 			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1$4") 
 		}
 
-		rawRows[i] = rawRows[i].replace(/@\s*\[([^\]:]+)(::)?([^\]])?\].*$/gm, "$1")
+		rawRows[i] = rawRows[i].replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")
 
 		let inputElement: HTMLElement, resultElement: HTMLElement;
 		switch(blockRenderStyle) {
