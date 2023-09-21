@@ -4,12 +4,13 @@
 
 import NumeralsPlugin from "./main";
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
-import { htmlToElements } from "./numeralsUtilities";
+import { CurrencyType, htmlToElements } from "./numeralsUtilities";
 
 import {
     PluginSettingTab,
     App,
     Setting,
+	ButtonComponent, TextComponent
  } from "obsidian";
 
 ///////////////////////////////////////////
@@ -58,6 +59,7 @@ export interface NumeralsSettings {
 	suggestionsIncludeMathjsSymbols: boolean;
 	numberFormat: NumeralsNumberFormat;
 	forceProcessAllFrontmatter: boolean;
+	customCurrencySymbol: CurrencyType | null;
 }
 
 export const DEFAULT_SETTINGS: NumeralsSettings = {
@@ -73,6 +75,7 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	suggestionsIncludeMathjsSymbols: 	false,
 	numberFormat: 						NumeralsNumberFormat.System,
 	forceProcessAllFrontmatter: 		false,
+	customCurrencySymbol: 				null,
 }
 
 ///////////////////////////////////////////
@@ -307,6 +310,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});	
+			
 		new Setting(containerEl)
 			.setName('`¥` symbol currency mapping')
 			.setDesc('Choose the currency the `¥` symbol maps to (requires Obsidian reload to take effect)')
@@ -321,6 +325,111 @@ export class NumeralsSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 				});
+
+				let currencySaveButton: ButtonComponent | null;
+				let currencySymbolInput: TextComponent | null;
+				let currencyCodeInput: TextComponent | null;
+				new Setting(containerEl)
+					.setName('Custom currency mapping')
+					.setDesc('Specify a custom currency. Note that this may be used for custom mapping of `$` and `¥`. Requires Obsidian reload to take effect')
+					.addText(text => { text
+						.setPlaceholder('symbol')
+						.setValue(this.plugin.settings.customCurrencySymbol?.symbol ?? "")
+						.onChange(async (value) => {
+							if(
+								(
+									(value.length == 0 && !currencyCodeInput?.getValue())
+								||
+									(value.length >= 1 && currencyCodeInput?.getValue())
+								) && currencySaveButton) {
+								if (value.match(/^\p{Sc}$/u) || value.length == 0) {
+									currencySaveButton.setDisabled(false);
+									currencySaveButton.buttonEl.style.color = "var(--text-normal)";
+									currencySaveButton.setButtonText('Save');
+								} else {
+									currencySaveButton.setDisabled(true);
+									currencySaveButton.buttonEl.style.color = "var(--text-error)";
+									currencySaveButton.setButtonText('Error');
+								}
+							} else if (currencySaveButton) {
+								currencySaveButton.setDisabled(true);
+								currencySaveButton.buttonEl.style.color = "var(--text-faint)";
+								currencySaveButton.setButtonText('Save');
+							}		
+						});					
+						text.inputEl.setAttribute("maxlength", "1");
+						text.inputEl.style.width = "5em";
+						text.inputEl.style.textAlign = "center";
+						currencySymbolInput = text;
+					})
+					.addText(text => { text
+						.setPlaceholder('code')				
+						.setValue(this.plugin.settings.customCurrencySymbol?.currency ?? "")
+						.onChange(async (value) => {
+							if(
+								(
+									(value.length == 0 && !currencySymbolInput?.getValue())
+								||
+									(value.length >= 1 && currencySymbolInput?.getValue())
+								) && currencySaveButton) {
+								if (currencySymbolInput?.getValue().match(/^\p{Sc}$/u) || value.length == 0) {
+									currencySaveButton.setDisabled(false);
+									currencySaveButton.buttonEl.style.color = "var(--text-normal)";
+									currencySaveButton.setButtonText('Save');
+								} else {
+									currencySaveButton.setDisabled(true);
+									currencySaveButton.buttonEl.style.color = "var(--text-error)";
+									currencySaveButton.setButtonText('Error');
+								}
+							} else if (currencySaveButton) {
+								currencySaveButton.setDisabled(true);
+								currencySaveButton.buttonEl.style.color = "var(--text-faint)";
+								currencySaveButton.setButtonText('Save');
+							}		
+						});				
+						text.inputEl.setAttribute("maxlength", "3");
+						text.inputEl.style.width = "6em";
+						text.inputEl.style.textAlign = "center";
+						currencyCodeInput = text;					
+					})		
+					.addButton(button => { button
+						.setButtonText('Save')
+						.setDisabled(true)
+						.setTooltip('Save custom currency mapping')
+						.onClick(async (evt) => {
+							if (currencySymbolInput && currencyCodeInput) {
+								const currencySymbol = currencySymbolInput.getValue();
+								const currencyCode = currencyCodeInput.getValue();
+								if(currencySymbol.match(/^\p{Sc}$/u)) {
+									this.plugin.settings.customCurrencySymbol = {
+										symbol: currencySymbol,
+										currency: currencyCode,
+										unicode: "x" + currencySymbol
+															.charCodeAt(0)
+															.toString(16)
+															.toUpperCase()
+															.padStart(4, '0'),
+										name: "custom",
+									}
+								} else if (currencySymbol.length == 0) {
+									this.plugin.settings.customCurrencySymbol = null;
+								}
+								await this.plugin.saveSettings();
+								console.log(this.plugin.settings.customCurrencySymbol);
+								button.setDisabled(true);
+								button.buttonEl.style.color = "var(--text-faint)";
+								button.setButtonText('✓');
+								setTimeout(() => {
+									button.setButtonText('Save');
+								}, 1000);
+								this.plugin.updateCurrencyMap();
+							}
+						});
+						button.buttonEl.style.color = "var(--text-faint)";
+						button.buttonEl.style.width = "4em";				
+						currencySaveButton = button;
+									
+					});				
 			
 		new Setting(containerEl)
 		.setHeading()
