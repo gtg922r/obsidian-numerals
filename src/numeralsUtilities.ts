@@ -3,7 +3,7 @@ import * as math from 'mathjs';
 import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings } from './settings';
 import { mathjsFormat } from './main';
 import { getAPI } from 'obsidian-dataview';
-import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownSectionInformation, MarkdownView } from 'obsidian';
+import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
 
 
 // TODO: Addition of variables not adding up
@@ -77,7 +77,11 @@ export function processFrontmatter(
 		if (keysOnly === false) {
 			for (const [key, rawValue] of Object.entries(frontmatter_process)) {
 				let value = rawValue;
-				// if processedValue is array-like, take the last element
+				
+				// If value is a mathjs unit, convert to string representation
+				value = math.isUnit(value) ? value.valueOf() : value;
+
+				// if processedValue is array-like, take the last element. For inline dataview fields, this generally means the most recent line will be used
 				if (Array.isArray(value)) {
 					value = value[value.length - 1];
 				}
@@ -100,6 +104,7 @@ export function processFrontmatter(
 					}
 				} else if (typeof value === "object") { // TODO this is only a problem with Dataview. Can we only use dataview for inline?
 					// ignore objects
+
 					// TODO. RIght now this means data objects just get dropped. If we could instead use the data from obsidian we could handle it
 					console.error(`Frontmatter value for key ${key} is an object and will be ignored. ` +
 						`Considering surrounding the value with quotes (eg \`${key}: "value"\`) to treat it as a string.`);
@@ -137,8 +142,6 @@ export function maybeAddScopeToPageCache(sourcePath: string, scope: NumeralsScop
 			}
 		}
 	}
-
-
 }
 
 /**
@@ -467,10 +470,6 @@ export function processAndRenderNumeralsBlockFromSource(
 						editor?.setLine(curLine, modifiedSource)
 					}, 0);
 				}
-
-				console.log(`Source Line: \`${sourceLine}\``);
-				console.log(`Replace Value: \`${modifiedSource}\``);
-				console.log(`[${insertion_variables[insertion_lines.indexOf(i)]}::${insertionValue}]`);
 			}
 		}
  
