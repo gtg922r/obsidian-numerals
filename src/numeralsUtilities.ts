@@ -3,10 +3,12 @@ import * as math from 'mathjs';
 import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings } from './settings';
 import { mathjsFormat } from './main';
 import { getAPI } from 'obsidian-dataview';
-import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
+import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
 
 
 // TODO: Addition of variables not adding up
+
+export class NumeralsScope extends Map<string, unknown>{}
 
 /**
  * Process frontmatter and return updated scope object
@@ -24,14 +26,14 @@ import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian
  */
 export function processFrontmatter(
 	frontmatter: { [key: string]: unknown },
-	scope: Map<string, unknown>|undefined,
+	scope: NumeralsScope|undefined,
 	forceAll=false,
 	stringReplaceMap: StringReplaceMap[] = [],
 	keysOnly=false
-): Map<string, unknown> {
+): NumeralsScope {
 	
 	if (!scope) {
-		scope = new Map<string, unknown>();
+		scope = new NumeralsScope();
 	}
 
 	if (frontmatter && typeof frontmatter === "object") {
@@ -63,11 +65,23 @@ export function processFrontmatter(
 			frontmatter_process = frontmatter;
 		}
 
+		// Iterate through frontmatter and add any key/value pair to frontmatter_process if the key starts with `$`
+		//   These keys are assumed to be numerals globals that are to be added to the scope regardless of the `numerals` key
+		for (const [key, value] of Object.entries(frontmatter)) {
+			if (key.startsWith('$')) {
+				frontmatter_process[key] = value;
+			}
+		}
+
 		// if keysOnly is true, only add keys to scope. Otherwise, add values to scope
 		if (keysOnly === false) {
 			for (const [key, rawValue] of Object.entries(frontmatter_process)) {
 				let value = rawValue;
-				// if processedValue is array-like, take the last element
+				
+				// If value is a mathjs unit, convert to string representation
+				value = math.isUnit(value) ? value.valueOf() : value;
+
+				// if processedValue is array-like, take the last element. For inline dataview fields, this generally means the most recent line will be used
 				if (Array.isArray(value)) {
 					value = value[value.length - 1];
 				}
@@ -90,6 +104,7 @@ export function processFrontmatter(
 					}
 				} else if (typeof value === "object") { // TODO this is only a problem with Dataview. Can we only use dataview for inline?
 					// ignore objects
+
 					// TODO. RIght now this means data objects just get dropped. If we could instead use the data from obsidian we could handle it
 					console.error(`Frontmatter value for key ${key} is an object and will be ignored. ` +
 						`Considering surrounding the value with quotes (eg \`${key}: "value"\`) to treat it as a string.`);
@@ -106,6 +121,28 @@ export function processFrontmatter(
 		return scope;
 	}
 }	
+
+/** 
+ * Add globals from a scope to the Numerals page cache
+ * 
+ * Globals are keys in the scope Map that start with `$`
+ * @param sourcePath Path of the source file
+ * @param scope Scope object
+ * @returns void
+ */
+export function maybeAddScopeToPageCache(sourcePath: string, scope: NumeralsScope, scopeCache: Map<string, NumeralsScope>) {
+	for (const [key, value] of scope.entries()) {
+		if (key.startsWith('$')) {
+			if (scopeCache.has(sourcePath)) {
+				scopeCache.get(sourcePath)?.set(key, value);
+			} else {
+				const newScope = new NumeralsScope();
+				newScope.set(key, value);
+				scopeCache.set(sourcePath, newScope);
+			}
+		}
+	}
+}
 
 /**
  * Regular expression for matching variables with subscript notation 
@@ -276,9 +313,14 @@ export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unk
 		const dataviewPage = dataviewAPI.page(f_path)
 		dataviewMetadata = {...dataviewPage, file: undefined, position: undefined}
 	}
-
-	// combine frontmatter and dataview metadata, with dataview metadata taking precedence
-	const metadata = {...frontmatter, ...dataviewMetadata};		
+ 
+	//@ts-expect-error
+	const numeralsCache:Map<string, NumeralsScope> = app.plugins.plugins.numerals.scopeCache;
+	const numeralsPageScope = numeralsCache.get(f_path) as Map<string,unknown>;
+	const numeralsPageScopeMetadata:{[key: string]: unknown} = numeralsPageScope ? Object.fromEntries(numeralsPageScope) : {};
+  
+	// combine frontmatter and dataview metadata, with dataview metadata taking precedence and numerals scope taking precedence over both
+	const metadata = {...frontmatter, ...dataviewMetadata, ...numeralsPageScopeMetadata};		
 	return metadata;
 }	
 
@@ -305,15 +347,16 @@ export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unk
  * @returns void  
  *
  */  
-export function renderNumeralsBlockFromSource(
+export function processAndRenderNumeralsBlockFromSource(
 	el: HTMLElement,
 	source: string,
+	ctx: MarkdownPostProcessorContext,
 	metadata: {[key: string]: unknown} | undefined,
 	type: NumeralsRenderStyle,
 	settings: NumeralsSettings,
 	numberFormat: mathjsFormat,
 	preProcessors: StringReplaceMap[]
-): void {
+): NumeralsScope {
 	const blockRenderStyle: NumeralsRenderStyle = type ? type : settings.defaultRenderStyle;
 		
 	el.toggleClass("numerals-block", true);
@@ -329,20 +372,31 @@ export function renderNumeralsBlockFromSource(
 
 	// find every line that ends with `=>` (ignore any whitespace or comments after it)
 	const emitter_lines: number[] = [];
+	const insertion_lines: number[] = [];
+	const insertion_variables: string[] = [];
 	for (let i = 0; i < rawRows.length; i++) {
 		if (rawRows[i].match(/^[^#\r\n]*=>.*$/)) {				 								
 			emitter_lines.push(i);
 		}
-	}
+
+		const insertionMatch = rawRows[i].match(/@\s*\[([^\]:]+)(::)?([^\]]*)\].*$/);
+		if (insertionMatch) {
+			insertion_lines.push(i)
+			insertion_variables.push(insertionMatch[1]);
+		}
+	} 
 
 	// if there are any emitter lines then add the class `numerals-emitters-present` to the block
 	if (emitter_lines.length > 0) {
 		el.toggleClass("numerals-emitters-present", true);
 		el.toggleClass("numerals-hide-non-emitters", settings.hideLinesWithoutMarkupWhenEmitting);
 	}
-
+ 
 	// remove `=>` at the end of lines (preserve comments)
-	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
+	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
+
+	// Check for result insertion directive `@[variable::result]`,and replace with only variable
+	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")
 		
 	for (const processor of preProcessors ) {
 		processedSource = processedSource.replace(processor.regex, processor.replaceStr)
@@ -357,7 +411,7 @@ export function renderNumeralsBlockFromSource(
 	const results: string[] = [];
 	const inputs: string[] = [];			
 	// eslint-disable-next-line prefer-const
-	let scope:Map<string, unknown> = new Map<string, unknown>();
+	let scope:NumeralsScope = new NumeralsScope();
 
 	// Add numeric frontmatter to scope
 
@@ -401,10 +455,30 @@ export function renderNumeralsBlockFromSource(
 			line.toggleClass("numerals-emitter", true);
 		}
 
+		if (insertion_lines.includes(i)) {
+			const sectionInfo = ctx.getSectionInfo(el);
+			const lineStart = sectionInfo?.lineStart;
+
+			if (lineStart !== undefined) {
+				const editor = app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+				const curLine = lineStart + i + 1;
+				const sourceLine = editor?.getLine(curLine);
+				const insertionValue = math.format(results[i], numberFormat);
+				const modifiedSource = sourceLine?.replace(/(@\s*\[)([^\]:]+)(::([^\]]*))?(\].*)$/gm, `$1$2::${insertionValue}$5`)
+				if (modifiedSource && modifiedSource !== sourceLine) {
+					setTimeout(() => {
+						editor?.setLine(curLine, modifiedSource)
+					}, 0);
+				}
+			}
+		}
+ 
 		// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
 		if (settings.hideEmitterMarkupInInput) {
-			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*)(=>[\t ]*)(.*)$/gm,"$1$3") 
+			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1$4") 
 		}
+
+		rawRows[i] = rawRows[i].replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")
 
 		let inputElement: HTMLElement, resultElement: HTMLElement;
 		switch(blockRenderStyle) {
@@ -480,5 +554,7 @@ export function renderNumeralsBlockFromSource(
 		resultElement.createEl("span", {cls:"numerals-error-name", text: errorMsg.name + ":"});
 		resultElement.createEl("span", {cls:"numerals-error-message", text: errorMsg.message});		
 	}
+
+	return scope;
 
 }
