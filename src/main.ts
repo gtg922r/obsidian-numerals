@@ -152,8 +152,12 @@ export default class NumeralsPlugin extends Plugin {
 
 	}
 
-	private createCurrencyMap(dollarCurrency: string, yenCurrency: string): CurrencyType[] {
-		const currencyMap: CurrencyType[] = defaultCurrencyMap.map(m => {
+	private createCurrencyMap(
+			dollarCurrency: string,
+			yenCurrency: string,
+			customCurrency: CurrencyType | null
+		): CurrencyType[] {
+		let currencyMap: CurrencyType[] = defaultCurrencyMap.map(m => {
 			if (m.symbol === "$") {
 				if (Object.keys(currencyCodesForDollarSign).includes(dollarCurrency)) {
 					m.currency = dollarCurrency;
@@ -165,7 +169,28 @@ export default class NumeralsPlugin extends Plugin {
 			}
 			return m;
 		})
+		if (customCurrency && customCurrency.symbol != "" && customCurrency.currency != "") {
+			const customCurrencyType: CurrencyType = {
+				name: customCurrency.name,
+				symbol: customCurrency.symbol,
+				unicode: customCurrency.unicode,
+				currency: customCurrency.currency,
+			}
+			// add custom currency to currency map if it doesn't already exist. if it does, replace it
+			currencyMap = currencyMap.map(m => m.symbol === customCurrencyType.symbol ? customCurrencyType : m);
+			if (!currencyMap.some(m => m.symbol === customCurrencyType.symbol)) {
+				currencyMap.push(customCurrencyType);
+			}					
+		}
 		return currencyMap;
+	}
+
+	updateCurrencyMap() {
+		this.currencyMap = this.createCurrencyMap(
+			this.settings.dollarSymbolCurrency.currency,
+			this.settings.yenSymbolCurrency.currency,
+			this.settings.customCurrencySymbol
+		);
 	}
 
 	async onload() {
@@ -186,10 +211,7 @@ export default class NumeralsPlugin extends Plugin {
 		// Load MathJax for TeX Rendering
 		await loadMathJax();
 
-		this.currencyMap = this.createCurrencyMap(
-			this.settings.dollarSymbolCurrency.currency,
-			this.settings.yenSymbolCurrency.currency
-		);
+		this.updateCurrencyMap();
 
 		// Configure currency commands in MathJax
 		const configureCurrencyStr = this.currencyMap.map(m => '\\def\\' + m.name + '{\\unicode{' + m.unicode + '}}').join('\n');
@@ -199,9 +221,11 @@ export default class NumeralsPlugin extends Plugin {
 		// TODO: Once mathjs support removing units (josdejong/mathjs#2081),
 		//       rerun unit creation and regex preprocessors on settings change
 		for (const moneyType of this.currencyMap) {
-			math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
+			if (moneyType.currency != '') {
+				math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
+			}
 		}
-		
+		// TODO: Incorporate this in a setup function that can be called when settings change, which should reduce need for restart after change
 		this.currencyPreProcessors = this.currencyMap.map(m => {
 			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
 		})
