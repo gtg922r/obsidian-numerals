@@ -55,7 +55,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 
 		// Get last word in current line
 		const currentLineToCursor = editor.getLine(cursor.line).slice(0, cursor.ch);
-		const currentLineLastWordStart = currentLineToCursor.search(/\w+$/);
+		const currentLineLastWordStart = currentLineToCursor.search(/[$\w]+$/);
 		// if there is no word, return null
 		if (currentLineLastWordStart === -1) {
 			return null;

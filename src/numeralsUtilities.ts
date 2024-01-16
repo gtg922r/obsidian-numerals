@@ -230,7 +230,7 @@ const numeralsRenderStyleClasses = {
  */
 function texCurrencyReplacement(input_tex:string) {
 	for (const symbolType of defaultCurrencyMap) {
-		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name);
+		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name  + " ");
 	}
 	return input_tex
 }
