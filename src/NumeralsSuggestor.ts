@@ -94,7 +94,8 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			if (metadata) {
 				const frontmatterSymbols = processFrontmatter(metadata, undefined, this.plugin.settings.forceProcessAllFrontmatter, undefined, true);
 				// add frontmatter symbols to local symbols
-				localSymbols = localSymbols.concat(Array.from(frontmatterSymbols.keys()).map((symbol: string) => 'v|' + symbol));
+				const frontmatterSymbolsArray = Array.from(frontmatterSymbols.keys()).map(symbol => 'v|' + symbol);
+				localSymbols = [...new Set([...localSymbols, ...frontmatterSymbolsArray])];
 			}
 
 			this.localSuggestionCache = localSymbols;
