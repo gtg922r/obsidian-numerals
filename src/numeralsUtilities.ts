@@ -548,7 +548,8 @@ export function processAndRenderNumeralsBlockFromSource(
 
 
 	if (errorMsg) {			
-		const line = el.createEl("div", {cls: "numerals-error-line"});
+		const line = el.createEl("div", {cls: "numerals-line"});
+		line.toggleClass("numerals-error-line", true);
 		line.createEl("span", { text: errorInput, cls: "numerals-input"});
 		const resultElement = line.createEl("span", {cls: "numerals-result" });
 		resultElement.createEl("span", {cls:"numerals-error-name", text: errorMsg.name + ":"});
