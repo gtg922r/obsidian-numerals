@@ -25,7 +25,7 @@ export class NumeralsScope extends Map<string, unknown>{}
  * @returns Updated scope object
  */
 export function processFrontmatter(
-	frontmatter: { [key: string]: unknown },
+	frontmatter: { [key: string]: unknown } | undefined,
 	scope: NumeralsScope|undefined,
 	forceAll=false,
 	stringReplaceMap: StringReplaceMap[] = [],
@@ -144,45 +144,6 @@ export function maybeAddScopeToPageCache(sourcePath: string, scope: NumeralsScop
 	}
 }
 
-/**
- * Regular expression for matching variables with subscript notation 
- * using `\_`.
- */
-const subscriptRegex = /(?<varStart>[\p{L}\p{Nl}_$])(?<varBody>[\p{L}\p{Nl}_$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F\u{1D400}-\u{1D7FF}\d]*)(\\_)(?<varEnd>[\p{L}\p{Nl}_$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F\u{1D400}-\u{1D7FF}\d]+)/gu;
-
-/**
- * Transforms a given string by unescaping and reformatting subscript notation.
- *
- * This function takes a string that contains variables with subscript notation, 
- * where the subscript is written as `\_` followed by the subscript characters 
- * (e.g. `var\_subscript`), and reformat it to use underscore and curly braces 
- * (e.g. `var_{subscript}`).
- *
- * The function is useful for processing strings that represent mathematical 
- * notation or code, and need to be reformatted into a more standardized or 
- * readable subscript notation.
- *
- * @param input - A string potentially containing variables with subscript 
- * notation using `\_`.
- *
- * @returns The input string with the subscript notation reformatted, where each
- * `var\_subscript` is replaced with `var_{subscript}`.
- *
- * @example
- * ```typescript
- * const input = "a\_1 + b\_2 = c\_3";
- * const output = unescapeSubscripts(input);
- * console.log(output); // "a_{1} + b_{2} = c_{3}"
- * ```
- */
-export function unescapeSubscripts(input: string): string {
-    const output = input.replace(subscriptRegex, (match, varStart, varBody, _, varEnd) => {
-        return `${varStart}${varBody}_{${varEnd}}`;
-    });
-  
-    return output;
-}
-
 export interface StringReplaceMap {
 	regex: RegExp;
 	replaceStr: string;
@@ -212,81 +173,6 @@ const numeralsRenderStyleClasses = {
 	[NumeralsRenderStyle.Plain]: 			"numerals-plain",
 	[NumeralsRenderStyle.TeX]: 			 	"numerals-tex",
 	[NumeralsRenderStyle.SyntaxHighlight]: 	"numerals-syntax",
-}
-
-
-// TODO: see if would be faster to return a single set of RegEx to get executed, rather than re-computing regex each time
-/**
- * Replaces currency symbols in a given TeX string with their corresponding TeX command.
- *
- * This function takes a TeX string as input, and replaces all occurrences of currency symbols
- * (e.g., "$", "€", "£", "¥", "₹") with their corresponding TeX command (e.g., "\dollar", "\euro",
- * "\pound", "\yen", "\rupee"). The mapping between symbols and commands is defined by the
- * `defaultCurrencyMap` array.
- *
- * @param input_tex - The input TeX string, potentially containing currency symbols.
- *
- * @returns The input string with all currency symbols replaced with their corresponding TeX command.
- */
-function texCurrencyReplacement(input_tex:string) {
-	for (const symbolType of defaultCurrencyMap) {
-		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name  + " ");
-	}
-	return input_tex
-}
-
-// TODO: Add a switch for only rendering input
-export interface CurrencyType {
-	symbol: string;
-	unicode: string;
-	name: string;
-	currency: string;
-}
-
-export const defaultCurrencyMap: CurrencyType[] = [
-	{	symbol: "$", unicode: "x024", 	name: "dollar", currency: "USD"},
-	{	symbol: "€", unicode: "x20AC",	name: "euro", 	currency: "EUR"},
-	{	symbol: "£", unicode: "x00A3",	name: "pound", 	currency: "GBP"},
-	{	symbol: "¥", unicode: "x00A5",	name: "yen", 	currency: "JPY"},
-	{	symbol: "₹", unicode: "x20B9",	name: "rupee", 	currency: "INR"}	
-];
-
-/**
- * Converts a string of HTML into a DocumentFragment continaing a sanitized collection array of DOM elements.
- *
- * @param html The HTML string to convert.
- * @returns A DocumentFragment contaning DOM elements.
- */
-export function htmlToElements(html: string): DocumentFragment {
-	const sanitizedHTML = sanitizeHTMLToDom(html);
-	return sanitizedHTML;
-  }
-
-async function mathjaxLoop(container: HTMLElement, value: string) {
-	const html = renderMath(value, true);
-	await finishRenderMath()
-
-	// container.empty();
-	container.append(html);
-}
-
-/**
- * Return a function that formats a number according to the given locale
- * @param locale Locale to use
- * @param options Options to use (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat)
- * @returns Function that calls toLocaleString with given locale
- */
-export function getLocaleFormatter(
-	locale: Intl.LocalesArgument | undefined = undefined,
-	options: Intl.NumberFormatOptions | undefined = undefined
-): (value: number) => string {
-	if (locale === undefined) {
-		return (value: number): string => value.toLocaleString();
-	} else if (options === undefined) {
-		return (value: number): string => value.toLocaleString(locale);
-	} else {
-		return (value: number): string => value.toLocaleString(locale, options);
-	}
 }
 
 /**
@@ -357,95 +243,33 @@ export function processAndRenderNumeralsBlockFromSource(
 	numberFormat: mathjsFormat,
 	preProcessors: StringReplaceMap[]
 ): NumeralsScope {
-	const blockRenderStyle: NumeralsRenderStyle = type ? type : settings.defaultRenderStyle;
-		
-	el.toggleClass("numerals-block", true);
-	el.toggleClass(numeralsLayoutClasses[settings.layoutStyle], true);
-	el.toggleClass(numeralsRenderStyleClasses[blockRenderStyle], true);			
-	el.toggleClass("numerals-alt-row-color", settings.alternateRowColor)
+	const blockRenderStyle: NumeralsRenderStyle = type
+		? type
+		: settings.defaultRenderStyle;
 
+	const { rawRows, processedSource, emitter_lines, insertion_lines } =
+		preProcessBlockForNumeralsDirectives(source, preProcessors);
 
-	// Pre-process input
+	applyBlockStyles({
+		el,
+		settings,
+		blockRenderStyle,
+		hasEmitters: emitter_lines.length > 0,
+	});
 
-	const rawRows: string[] = source.split("\n");
-	let processedSource:string = source;
+	const scope = processFrontmatter(
+		metadata,
+		undefined,
+		settings.forceProcessAllFrontmatter,
+		preProcessors
+	);
 
-	// find every line that ends with `=>` (ignore any whitespace or comments after it)
-	const emitter_lines: number[] = [];
-	const insertion_lines: number[] = [];
-	const insertion_variables: string[] = [];
-	for (let i = 0; i < rawRows.length; i++) {
-		if (rawRows[i].match(/^[^#\r\n]*=>.*$/)) {				 								
-			emitter_lines.push(i);
-		}
-
-		const insertionMatch = rawRows[i].match(/@\s*\[([^\]:]+)(::)?([^\]]*)\].*$/);
-		if (insertionMatch) {
-			insertion_lines.push(i)
-			insertion_variables.push(insertionMatch[1]);
-		}
-	} 
-
-	// if there are any emitter lines then add the class `numerals-emitters-present` to the block
-	if (emitter_lines.length > 0) {
-		el.toggleClass("numerals-emitters-present", true);
-		el.toggleClass("numerals-hide-non-emitters", settings.hideLinesWithoutMarkupWhenEmitting);
-	}
- 
-	// remove `=>` at the end of lines (preserve comments)
-	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
-
-	// Check for result insertion directive `@[variable::result]`,and replace with only variable
-	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")
-		
-	for (const processor of preProcessors ) {
-		processedSource = processedSource.replace(processor.regex, processor.replaceStr)
-	}
+	const { results, inputs, errorMsg, errorInput } = evaluateMathFromSource(
+		processedSource,
+		scope
+	);
 	
-	// Process input through mathjs
-
-	let errorMsg = null;
-	let errorInput = '';
-
-	const rows: string[] = processedSource.split("\n");
-	const results: string[] = [];
-	const inputs: string[] = [];			
-	// eslint-disable-next-line prefer-const
-	let scope:NumeralsScope = new NumeralsScope();
-
-	// Add numeric frontmatter to scope
-
-	if (metadata) {
-		scope = processFrontmatter(
-			metadata,
-			scope,
-			settings.forceProcessAllFrontmatter,
-			preProcessors);
-	}
-
-			
-	for (const row of rows.slice(0,-1)) { // Last row may be empty
-		try {
-			results.push(math.evaluate(row, scope));
-			inputs.push(row); // Only pushes if evaluate is successful
-		} catch (error) {
-			errorMsg = error;
-			errorInput = row;
-			break;
-		}
-	}
-
-	const lastRow = rows.slice(-1)[0];
-	if (lastRow != '') { // Last row is always empty in reader view
-		try {
-			results.push(math.evaluate(lastRow, scope));
-			inputs.push(lastRow); // Only pushes if evaluate is successful
-		} catch (error) {
-			errorMsg = error;
-			errorInput = lastRow;
-		}
-	}	
-					
+	// Render each line
 	for (let i = 0; i < inputs.length; i++) {
 		const line = el.createEl("div", {cls: "numerals-line"});
 		const emptyLine = (results[i] === undefined)
@@ -557,4 +381,265 @@ export function processAndRenderNumeralsBlockFromSource(
 
 	return scope;
 
+}
+
+/**
+ * Regular expression for matching variables with subscript notation 
+ * using `\_`.
+ */
+const subscriptRegex = /(?<varStart>[\p{L}\p{Nl}_$])(?<varBody>[\p{L}\p{Nl}_$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F\u{1D400}-\u{1D7FF}\d]*)(\\_)(?<varEnd>[\p{L}\p{Nl}_$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F\u{1D400}-\u{1D7FF}\d]+)/gu;
+
+/**
+ * Transforms a given string by unescaping and reformatting subscript notation.
+ *
+ * This function takes a string that contains variables with subscript notation, 
+ * where the subscript is written as `\_` followed by the subscript characters 
+ * (e.g. `var\_subscript`), and reformat it to use underscore and curly braces 
+ * (e.g. `var_{subscript}`).
+ *
+ * The function is useful for processing strings that represent mathematical 
+ * notation or code, and need to be reformatted into a more standardized or 
+ * readable subscript notation.
+ *
+ * @param input - A string potentially containing variables with subscript 
+ * notation using `\_`.
+ *
+ * @returns The input string with the subscript notation reformatted, where each
+ * `var\_subscript` is replaced with `var_{subscript}`.
+ *
+ * @example
+ * ```typescript
+ * const input = "a\_1 + b\_2 = c\_3";
+ * const output = unescapeSubscripts(input);
+ * console.log(output); // "a_{1} + b_{2} = c_{3}"
+ * ```
+ */
+export function unescapeSubscripts(input: string): string {
+    const output = input.replace(subscriptRegex, (match, varStart, varBody, _, varEnd) => {
+        return `${varStart}${varBody}_{${varEnd}}`;
+    });
+  
+    return output;
+}
+
+
+// TODO: Add a switch for only rendering input
+export interface CurrencyType {
+	symbol: string;
+	unicode: string;
+	name: string;
+	currency: string;
+}
+
+export const defaultCurrencyMap: CurrencyType[] = [
+	{	symbol: "$", unicode: "x024", 	name: "dollar", currency: "USD"},
+	{	symbol: "€", unicode: "x20AC",	name: "euro", 	currency: "EUR"},
+	{	symbol: "£", unicode: "x00A3",	name: "pound", 	currency: "GBP"},
+	{	symbol: "¥", unicode: "x00A5",	name: "yen", 	currency: "JPY"},
+	{	symbol: "₹", unicode: "x20B9",	name: "rupee", 	currency: "INR"}	
+];
+
+// TODO: see if would be faster to return a single set of RegEx to get executed, rather than re-computing regex each time
+/**
+ * Replaces currency symbols in a given TeX string with their corresponding TeX command.
+ *
+ * This function takes a TeX string as input, and replaces all occurrences of currency symbols
+ * (e.g., "$", "€", "£", "¥", "₹") with their corresponding TeX command (e.g., "\dollar", "\euro",
+ * "\pound", "\yen", "\rupee"). The mapping between symbols and commands is defined by the
+ * `defaultCurrencyMap` array.
+ *
+ * @param input_tex - The input TeX string, potentially containing currency symbols.
+ *
+ * @returns The input string with all currency symbols replaced with their corresponding TeX command.
+ */
+function texCurrencyReplacement(input_tex:string) {
+	for (const symbolType of defaultCurrencyMap) {
+		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name  + " ");
+	}
+	return input_tex
+}
+
+
+/**
+ * Converts a string of HTML into a DocumentFragment continaing a sanitized collection array of DOM elements.
+ *
+ * @param html The HTML string to convert.
+ * @returns A DocumentFragment contaning DOM elements.
+ */
+export function htmlToElements(html: string): DocumentFragment {
+	const sanitizedHTML = sanitizeHTMLToDom(html);
+	return sanitizedHTML;
+  }
+
+async function mathjaxLoop(container: HTMLElement, value: string) {
+	const html = renderMath(value, true);
+	await finishRenderMath()
+
+	// container.empty();
+	container.append(html);
+}
+
+/**
+ * Return a function that formats a number according to the given locale
+ * @param locale Locale to use
+ * @param options Options to use (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat)
+ * @returns Function that calls toLocaleString with given locale
+ */
+export function getLocaleFormatter(
+	locale: Intl.LocalesArgument | undefined = undefined,
+	options: Intl.NumberFormatOptions | undefined = undefined
+): (value: number) => string {
+	if (locale === undefined) {
+		return (value: number): string => value.toLocaleString();
+	} else if (options === undefined) {
+		return (value: number): string => value.toLocaleString(locale);
+	} else {
+		return (value: number): string => value.toLocaleString(locale, options);
+	}
+}
+
+/**
+ * Applies the styles specified in the given settings to the given HTML element.
+ *
+ * This function takes an HTML element and a NumeralsSettings object, and applies the styles
+ * specified in the settings to the element. The function modifies the element's class list to
+ * add or remove classes based on the settings.
+ *
+ * @param el - The HTML element to which to apply the styles.
+ * @param settings - A NumeralsSettings object 
+ * @param blockRenderStyle - A NumeralsRenderStyle value that specifies the rendering style to be used for the
+ * Numerals block.
+ */
+function applyBlockStyles({
+	el,
+	settings,
+	blockRenderStyle,
+	hasEmitters = false
+}: {
+	el: HTMLElement,
+	settings: NumeralsSettings,
+	blockRenderStyle: NumeralsRenderStyle,
+	hasEmitters?: boolean
+}) {
+	el.toggleClass("numerals-block", true);
+	el.toggleClass(numeralsLayoutClasses[settings.layoutStyle], true);
+	el.toggleClass(numeralsRenderStyleClasses[blockRenderStyle], true);			
+	el.toggleClass("numerals-alt-row-color", settings.alternateRowColor)
+
+	if (hasEmitters) {
+		el.toggleClass("numerals-emitters-present", true);
+		el.toggleClass("numerals-hide-non-emitters", settings.hideLinesWithoutMarkupWhenEmitting);
+	}	
+}
+
+/**
+ * Pre-processes a block of text to apply and remove Numerals directives and apply any pre-processors.
+ * Source should be ready to be processed directly by mathjs after this function.
+ * 
+ * @param source - The source string to process.
+ * @param preProcessors - An array of StringReplaceMap objects that specify text replacements to be
+ * made in the source string before it is processed.
+ * @returns An object containing the processed source string, the emitter lines, and the result
+ * insertion lines.
+ */
+function preProcessBlockForNumeralsDirectives(
+	source: string,
+	preProcessors: StringReplaceMap[],
+): {
+	rawRows: string[],
+	processedSource: string,
+	emitter_lines: number[],
+	insertion_lines: number[]
+} {
+
+	const rawRows: string[] = source.split("\n");
+	let processedSource:string = source;
+
+	const emitter_lines: number[] = [];
+	const insertion_lines: number[] = [];
+
+	// Find emitter and result insertion lines before modifying source
+	for (let i = 0; i < rawRows.length; i++) {
+
+		// Find emitter lines (lines that end with `=>`)
+		if (rawRows[i].match(/^[^#\r\n]*=>.*$/)) {				 								
+			emitter_lines.push(i);
+		}
+
+		// Find result insertion lines (lines that match `@[variable::result]`)
+		const insertionMatch = rawRows[i].match(/@\s*\[([^\]:]+)(::)?([^\]]*)\].*$/);
+		if (insertionMatch) {
+			insertion_lines.push(i)
+		}
+	} 
+
+	// remove `=>` at the end of lines, but preserve comments.
+	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
+
+	// Replace result insertion directive `@[variable::result]` with only the variable
+	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")	
+
+	// Apply any pre-processors (e.g. currency replacement, thousands separator replacement, etc.)
+	for (const processor of preProcessors ) {
+		processedSource = processedSource.replace(processor.regex, processor.replaceStr)
+	}	
+
+	return {
+		rawRows,
+		processedSource,
+		emitter_lines,
+		insertion_lines
+	}
+}
+
+/**
+ * Evaluates a block of math expressions and returns the results. Each row is evaluated separately
+ * and the results are returned in an array. If an error occurs, the error message and the input that
+ * caused the error are returned.
+ * 
+ * @remarks
+ * This function uses the mathjs library to evaluate the expressions. The scope parameter is used to
+ * provide variables and functions that can be used in the expressions. The scope is a Map object
+ * where the keys are the variable names and the values are the variable values.
+ * 
+ * All Numerals directive must be removed from the source before calling this function as it is processed
+ * directly by mathjs.
+ * 
+ * @param processedSource The source string to evaluate
+ * @param scope The scope object to use for the evaluation
+ * @returns An object containing the results of the evaluation, the inputs that were evaluated, and
+ * any error message and input that caused the error.
+ */
+function evaluateMathFromSource(
+	processedSource: string,
+	scope: NumeralsScope
+): {
+	results: string[];
+	inputs: string[];
+	errorMsg: Error | null;
+	errorInput: string;
+} {
+	let errorMsg = null;
+	let errorInput = "";
+
+	const rows: string[] = processedSource.split("\n");
+	const results: string[] = [];
+	const inputs: string[] = [];
+
+	// Last row is empty in reader view, so ignore it if empty
+	const emptyLastRow = rows.slice(-1)[0] === "";
+	const rowsToProcess = emptyLastRow ? rows.slice(0, -1) : rows;
+
+	for (const row of rowsToProcess) {
+		try {
+			results.push(math.evaluate(row, scope));
+			inputs.push(row); // Only pushes if evaluate is successful
+		} catch (error) {
+			errorMsg = error;
+			errorInput = row;
+			break;
+		}
+	}
+
+	return { results, inputs, errorMsg, errorInput };
 }
