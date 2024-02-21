@@ -1,4 +1,4 @@
-import { unescapeSubscripts, processFrontmatter } from "./numeralsUtilities";
+import { unescapeSubscripts, getScopeFromFrontmatter } from "./numeralsUtilities";
 
 describe("unescapeSubscripts function", () => {
 	test("Basic Case", () => {
@@ -111,27 +111,27 @@ describe("processFrontmatter", () => {
 			["x", 7],
 			["y", 7],
 		]);
-		expect(processFrontmatter(frontmatter, scope)).toEqual(expectedScope);
+		expect(getScopeFromFrontmatter(frontmatter, scope)).toEqual(expectedScope);
 	});
 
 	test('should not process any keys when numerals is set to "none"', () => {
 		const frontmatter = { numerals: "none", x: "5+2", y: 7 };
 		const scope = new Map();
-		expect(processFrontmatter(frontmatter, scope)).toEqual(new Map());
+		expect(getScopeFromFrontmatter(frontmatter, scope)).toEqual(new Map());
 	});
 
 	test("should process only specific key when numerals is a string", () => {
 		const frontmatter = { numerals: "x", x: "5+2", y: 7 };
 		const scope = new Map();
 		const expectedScope = new Map([["x", 7]]);
-		expect(processFrontmatter(frontmatter, scope)).toEqual(expectedScope);
+		expect(getScopeFromFrontmatter(frontmatter, scope)).toEqual(expectedScope);
 	});
 
 	test("should process specific keys when numerals is an array", () => {
 		const frontmatter = { numerals: ["x"], x: "5+2", y: 7 };
 		const scope = new Map();
 		const expectedScope = new Map([["x", 7]]);
-		expect(processFrontmatter(frontmatter, scope)).toEqual(expectedScope);
+		expect(getScopeFromFrontmatter(frontmatter, scope)).toEqual(expectedScope);
 	});
 
 	test("should process all keys when forceAll is set to true", () => {
@@ -141,7 +141,7 @@ describe("processFrontmatter", () => {
 			["x", 7],
 			["y", (7)],
 		]);
-		expect(processFrontmatter(frontmatter, scope, true)).toEqual(
+		expect(getScopeFromFrontmatter(frontmatter, scope, true)).toEqual(
 			expectedScope
 		);
 	});
@@ -154,12 +154,12 @@ describe("processFrontmatter", () => {
 			["x", 7],
 			["y", 7],
 		]);
-		expect(processFrontmatter(frontmatter, scope)).toEqual(expectedScope);
+		expect(getScopeFromFrontmatter(frontmatter, scope)).toEqual(expectedScope);
 	});
 
 	test("should handle invalid expressions", () => {
 		const frontmatter = { numerals: "all", x: "invalid_expression", y: 7 };
 		const scope = new Map();
-		expect(() => processFrontmatter(frontmatter, scope)).toThrow();
+		expect(() => getScopeFromFrontmatter(frontmatter, scope)).toThrow();
 	});
 });

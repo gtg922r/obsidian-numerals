@@ -7,7 +7,7 @@ import {
 	getLocaleFormatter,
 	getMetadataForFileAtPath,
 	NumeralsScope,
-	maybeAddScopeToPageCache } from "./numeralsUtilities";
+	addGobalsFromScopeToPageCache } from "./numeralsUtilities";
 import equal from 'fast-deep-equal';
 import {
 	Plugin,
@@ -108,7 +108,7 @@ export default class NumeralsPlugin extends Plugin {
 			this.preProcessors,
 		);
 
-		maybeAddScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
+		addGobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
 
 		const numeralsBlockChild = new MarkdownRenderChild(el);
 
@@ -133,7 +133,7 @@ export default class NumeralsPlugin extends Plugin {
 				this.preProcessors,
 			);
 
-			maybeAddScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
+			addGobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
 		}
 
 		const dataviewAPI = getAPI();

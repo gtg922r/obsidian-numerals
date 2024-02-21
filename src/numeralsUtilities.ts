@@ -24,7 +24,7 @@ export class NumeralsScope extends Map<string, unknown>{}
  * @param frontmatter Frontmatter object
  * @returns Updated scope object
  */
-export function processFrontmatter(
+export function getScopeFromFrontmatter(
 	frontmatter: { [key: string]: unknown } | undefined,
 	scope: NumeralsScope|undefined,
 	forceAll=false,
@@ -89,7 +89,7 @@ export function processFrontmatter(
 				if (typeof value === "number") {
 					scope.set(key, math.number(value));
 				} else if (typeof value === "string") {
-					const processedValue = processTextForReplacements(value, stringReplaceMap);
+					const processedValue = replaceStringsInTextFromMap(value, stringReplaceMap);
 					// const evaluatedValue = math.evaluate(processedValue);
 					// try to evaluate processedValue as a mathjs expression, otherwise drop console error and move on
 					let evaluatedValue;
@@ -130,7 +130,7 @@ export function processFrontmatter(
  * @param scope Scope object
  * @returns void
  */
-export function maybeAddScopeToPageCache(sourcePath: string, scope: NumeralsScope, scopeCache: Map<string, NumeralsScope>) {
+export function addGobalsFromScopeToPageCache(sourcePath: string, scope: NumeralsScope, scopeCache: Map<string, NumeralsScope>) {
 	for (const [key, value] of scope.entries()) {
 		if (key.startsWith('$')) {
 			if (scopeCache.has(sourcePath)) {
@@ -153,26 +153,13 @@ export interface StringReplaceMap {
  * Process a block of text to convert from Numerals syntax to MathJax syntax
  * @param text Text to process
  * @param stringReplaceMap Array of StringReplaceMap objects to use for replacement
- * @returns Processed text
+ * @returns Processed text 
  */
-export function processTextForReplacements(text: string, stringReplaceMap: StringReplaceMap[]): string {
+export function replaceStringsInTextFromMap(text: string, stringReplaceMap: StringReplaceMap[]): string {
 	for (const processor of stringReplaceMap ) {
 		text = text.replace(processor.regex, processor.replaceStr)
 	}
 	return text;
-}
-
-const numeralsLayoutClasses = {
-	[NumeralsLayout.TwoPanes]: 		"numerals-panes",
-	[NumeralsLayout.AnswerRight]: 	"numerals-answer-right",
-	[NumeralsLayout.AnswerBelow]: 	"numerals-answer-below",
-	[NumeralsLayout.AnswerInline]: 	"numerals-answer-inline",	
-}
-
-const numeralsRenderStyleClasses = {
-	[NumeralsRenderStyle.Plain]: 			"numerals-plain",
-	[NumeralsRenderStyle.TeX]: 			 	"numerals-tex",
-	[NumeralsRenderStyle.SyntaxHighlight]: 	"numerals-syntax",
 }
 
 /**
@@ -243,6 +230,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	numberFormat: mathjsFormat,
 	preProcessors: StringReplaceMap[]
 ): NumeralsScope {
+
 	const blockRenderStyle: NumeralsRenderStyle = type
 		? type
 		: settings.defaultRenderStyle;
@@ -257,7 +245,7 @@ export function processAndRenderNumeralsBlockFromSource(
 		hasEmitters: emitter_lines.length > 0,
 	});
 
-	const scope = processFrontmatter(
+	const scope = getScopeFromFrontmatter(
 		metadata,
 		undefined,
 		settings.forceProcessAllFrontmatter,
@@ -498,6 +486,19 @@ export function getLocaleFormatter(
 	}
 }
 
+const numeralsLayoutClasses = {
+	[NumeralsLayout.TwoPanes]: 		"numerals-panes",
+	[NumeralsLayout.AnswerRight]: 	"numerals-answer-right",
+	[NumeralsLayout.AnswerBelow]: 	"numerals-answer-below",
+	[NumeralsLayout.AnswerInline]: 	"numerals-answer-inline",	
+}
+
+const numeralsRenderStyleClasses = {
+	[NumeralsRenderStyle.Plain]: 			"numerals-plain",
+	[NumeralsRenderStyle.TeX]: 			 	"numerals-tex",
+	[NumeralsRenderStyle.SyntaxHighlight]: 	"numerals-syntax",
+}
+
 /**
  * Applies the styles specified in the given settings to the given HTML element.
  *
@@ -580,9 +581,7 @@ function preProcessBlockForNumeralsDirectives(
 	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")	
 
 	// Apply any pre-processors (e.g. currency replacement, thousands separator replacement, etc.)
-	for (const processor of preProcessors ) {
-		processedSource = processedSource.replace(processor.regex, processor.replaceStr)
-	}	
+	processedSource = replaceStringsInTextFromMap(processedSource, preProcessors);
 
 	return {
 		rawRows,
