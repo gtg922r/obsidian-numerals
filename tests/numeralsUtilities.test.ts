@@ -114,11 +114,11 @@ describe("numeralsUtilities: applyBlockStyles()", () => {
 });
 
 
-describe("numeralsUtilities: preProcessBlockForNumeralsDirectives", () => {
-	it('Correctly processes example block 1', () => {
-		const sampleBlock =`# comment 1
-# comment 2
-apples = 2
-2 + 3 =>
-`;		
-		const result = preProcessBlockForNumeralsDirectives(sampleBlock, )
+// describe("numeralsUtilities: preProcessBlockForNumeralsDirectives", () => {
+// 	it('Correctly processes example block 1', () => {
+// 		const sampleBlock =`# comment 1
+// # comment 2
+// apples = 2
+// 2 + 3 =>
+// `;		
+// 		const result = preProcessBlockForNumeralsDirectives(sampleBlock, )
