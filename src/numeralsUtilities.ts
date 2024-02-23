@@ -1,10 +1,8 @@
 
 import * as math from 'mathjs';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings } from './settings';
-import { mathjsFormat } from './main';
 import { getAPI } from 'obsidian-dataview';
 import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
-
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat } from './numerals.types';
 
 // TODO: Addition of variables not adding up
 
@@ -412,12 +410,6 @@ export function unescapeSubscripts(input: string): string {
 
 
 // TODO: Add a switch for only rendering input
-export interface CurrencyType {
-	symbol: string;
-	unicode: string;
-	name: string;
-	currency: string;
-}
 
 export const defaultCurrencyMap: CurrencyType[] = [
 	{	symbol: "$", unicode: "x024", 	name: "dollar", currency: "USD"},
@@ -486,14 +478,14 @@ export function getLocaleFormatter(
 	}
 }
 
-const numeralsLayoutClasses = {
+export const numeralsLayoutClasses = {
 	[NumeralsLayout.TwoPanes]: 		"numerals-panes",
 	[NumeralsLayout.AnswerRight]: 	"numerals-answer-right",
 	[NumeralsLayout.AnswerBelow]: 	"numerals-answer-below",
 	[NumeralsLayout.AnswerInline]: 	"numerals-answer-inline",	
 }
 
-const numeralsRenderStyleClasses = {
+export const numeralsRenderStyleClasses = {
 	[NumeralsRenderStyle.Plain]: 			"numerals-plain",
 	[NumeralsRenderStyle.TeX]: 			 	"numerals-tex",
 	[NumeralsRenderStyle.SyntaxHighlight]: 	"numerals-syntax",
@@ -511,7 +503,7 @@ const numeralsRenderStyleClasses = {
  * @param blockRenderStyle - A NumeralsRenderStyle value that specifies the rendering style to be used for the
  * Numerals block.
  */
-function applyBlockStyles({
+export function applyBlockStyles({
 	el,
 	settings,
 	blockRenderStyle,
@@ -522,6 +514,7 @@ function applyBlockStyles({
 	blockRenderStyle: NumeralsRenderStyle,
 	hasEmitters?: boolean
 }) {
+	console.log("setting.alternateRowColor",settings.alternateRowColor);
 	el.toggleClass("numerals-block", true);
 	el.toggleClass(numeralsLayoutClasses[settings.layoutStyle], true);
 	el.toggleClass(numeralsRenderStyleClasses[blockRenderStyle], true);			
@@ -543,7 +536,7 @@ function applyBlockStyles({
  * @returns An object containing the processed source string, the emitter lines, and the result
  * insertion lines.
  */
-function preProcessBlockForNumeralsDirectives(
+export function preProcessBlockForNumeralsDirectives(
 	source: string,
 	preProcessors: StringReplaceMap[],
 ): {

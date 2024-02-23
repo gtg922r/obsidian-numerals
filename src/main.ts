@@ -2,12 +2,25 @@ import { NumeralsSuggestor } from "./NumeralsSuggestor";
 import {
 	StringReplaceMap,
 	defaultCurrencyMap,
-	CurrencyType,
 	processAndRenderNumeralsBlockFromSource,
 	getLocaleFormatter,
 	getMetadataForFileAtPath,
 	NumeralsScope,
 	addGobalsFromScopeToPageCache } from "./numeralsUtilities";
+import {
+	CurrencyType,
+	NumeralsLayout,
+	NumeralsRenderStyle,
+	NumeralsNumberFormat,
+	NumeralsSettings,
+	mathjsFormat,
+	DEFAULT_SETTINGS
+} from "./numerals.types";	
+import { 
+	NumeralsSettingTab,
+	currencyCodesForDollarSign,
+	currencyCodesForYenSign,
+ } from "./settings";
 import equal from 'fast-deep-equal';
 import {
 	Plugin,
@@ -24,16 +37,7 @@ import { getAPI } from 'obsidian-dataview';
 
 import * as math from 'mathjs';
 
-import { 
-	NumeralsSettingTab,
-	NumeralsLayout,
-	NumeralsRenderStyle,
-	NumeralsNumberFormat,
-	currencyCodesForDollarSign,
-	currencyCodesForYenSign,
-	NumeralsSettings,
-	DEFAULT_SETTINGS,
- } from "./settings";
+
 
 
 // Modify mathjs internal functions to allow for use of currency symbols
@@ -52,8 +56,6 @@ function (c: string, cPrev: any, cNext: any) {
 	};			
 
 	
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
 /**
  * Map Numerals Number Format to mathjs format options
  * @param format Numerals Number Format
