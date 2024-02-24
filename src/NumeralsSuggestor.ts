@@ -11,6 +11,32 @@ import {
  } from "obsidian";
 import { getMathJsSymbols } from "./mathjsUtilities";
 
+const greekSymbols = [
+    { trigger: ':alpha', symbol: 'α' },
+    { trigger: ':beta', symbol: 'β' },
+    { trigger: ':gamma', symbol: 'γ' },
+    { trigger: ':delta', symbol: 'δ' },
+    { trigger: ':epsilon', symbol: 'ε' },
+    { trigger: ':zeta', symbol: 'ζ' },
+    { trigger: ':eta', symbol: 'η' },
+    { trigger: ':theta', symbol: 'θ' },
+    { trigger: ':iota', symbol: 'ι' },
+    { trigger: ':kappa', symbol: 'κ' },
+    { trigger: ':lambda', symbol: 'λ' },
+    { trigger: ':mu', symbol: 'μ' },
+    { trigger: ':nu', symbol: 'ν' },
+    { trigger: ':xi', symbol: 'ξ' },
+    { trigger: ':omicron', symbol: 'ο' },
+    { trigger: ':pi', symbol: 'π' },
+    { trigger: ':rho', symbol: 'ρ' },
+    { trigger: ':sigma', symbol: 'σ' },
+    { trigger: ':tau', symbol: 'τ' },
+    { trigger: ':upsilon', symbol: 'υ' },
+    { trigger: ':phi', symbol: 'φ' },
+    { trigger: ':chi', symbol: 'χ' },
+    { trigger: ':psi', symbol: 'ψ' },
+    { trigger: ':omega', symbol: 'ω' },
+];
 
 export class NumeralsSuggestor extends EditorSuggest<string> {
 	plugin: NumeralsPlugin;
@@ -55,7 +81,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 
 		// Get last word in current line
 		const currentLineToCursor = editor.getLine(cursor.line).slice(0, cursor.ch);
-		const currentLineLastWordStart = currentLineToCursor.search(/[$\w]+$/);
+		const currentLineLastWordStart = currentLineToCursor.search(/:?[$\w\u0370-\u03FF]+$/);
 		// if there is no word, return null
 		if (currentLineLastWordStart === -1) {
 			return null;
@@ -119,6 +145,10 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			suggestions = local_suggestions;
 		}
 
+		const greek_suggestions = greekSymbols.filter(({ trigger }) => trigger.startsWith(query_lower)).map(({ symbol }) => 'g|' + symbol);
+
+		suggestions = suggestions.concat(greek_suggestions);
+
 		return suggestions;
 	}
 
@@ -142,6 +172,8 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			setIcon(suggestionFlair, 'file-code');
 		} else if (iconType === 'p') {
 			setIcon(suggestionFlair, 'box');
+		} else if (iconType === 'g') {
+			setIcon(suggestionFlair, 'case-lower'); // Assuming 'symbol' is a valid icon name
 		}
 		suggestionTitle.setText(suggestionText);
 
