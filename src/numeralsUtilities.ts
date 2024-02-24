@@ -538,7 +538,7 @@ export function applyBlockStyles({
  */
 export function preProcessBlockForNumeralsDirectives(
 	source: string,
-	preProcessors: StringReplaceMap[],
+	preProcessors: StringReplaceMap[] | undefined,
 ): {
 	rawRows: string[],
 	processedSource: string,
@@ -574,7 +574,9 @@ export function preProcessBlockForNumeralsDirectives(
 	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")	
 
 	// Apply any pre-processors (e.g. currency replacement, thousands separator replacement, etc.)
-	processedSource = replaceStringsInTextFromMap(processedSource, preProcessors);
+	if (preProcessors && preProcessors.length > 0) {
+		processedSource = replaceStringsInTextFromMap(processedSource, preProcessors);
+	}
 
 	return {
 		rawRows,
