@@ -12,30 +12,40 @@ import {
 import { getMathJsSymbols } from "./mathjsUtilities";
 
 const greekSymbols = [
-    { trigger: ':alpha', symbol: 'α' },
-    { trigger: ':beta', symbol: 'β' },
-    { trigger: ':gamma', symbol: 'γ' },
-    { trigger: ':delta', symbol: 'δ' },
-    { trigger: ':epsilon', symbol: 'ε' },
-    { trigger: ':zeta', symbol: 'ζ' },
-    { trigger: ':eta', symbol: 'η' },
-    { trigger: ':theta', symbol: 'θ' },
-    { trigger: ':iota', symbol: 'ι' },
-    { trigger: ':kappa', symbol: 'κ' },
-    { trigger: ':lambda', symbol: 'λ' },
-    { trigger: ':mu', symbol: 'μ' },
-    { trigger: ':nu', symbol: 'ν' },
-    { trigger: ':xi', symbol: 'ξ' },
-    { trigger: ':omicron', symbol: 'ο' },
-    { trigger: ':pi', symbol: 'π' },
-    { trigger: ':rho', symbol: 'ρ' },
-    { trigger: ':sigma', symbol: 'σ' },
-    { trigger: ':tau', symbol: 'τ' },
-    { trigger: ':upsilon', symbol: 'υ' },
-    { trigger: ':phi', symbol: 'φ' },
-    { trigger: ':chi', symbol: 'χ' },
-    { trigger: ':psi', symbol: 'ψ' },
-    { trigger: ':omega', symbol: 'ω' },
+    { trigger: 'alpha', symbol: 'α' },
+    { trigger: 'beta', symbol: 'β' },
+    { trigger: 'gamma', symbol: 'γ' },
+    { trigger: 'delta', symbol: 'δ' },
+    { trigger: 'epsilon', symbol: 'ε' },
+    { trigger: 'zeta', symbol: 'ζ' },
+    { trigger: 'eta', symbol: 'η' },
+    { trigger: 'theta', symbol: 'θ' },
+    { trigger: 'iota', symbol: 'ι' },
+    { trigger: 'kappa', symbol: 'κ' },
+    { trigger: 'lambda', symbol: 'λ' },
+    { trigger: 'mu', symbol: 'μ' },
+    { trigger: 'nu', symbol: 'ν' },
+    { trigger: 'xi', symbol: 'ξ' },
+    { trigger: 'omicron', symbol: 'ο' },
+    { trigger: 'pi', symbol: 'π' },
+    { trigger: 'rho', symbol: 'ρ' },
+    { trigger: 'sigma', symbol: 'σ' },
+    { trigger: 'tau', symbol: 'τ' },
+    { trigger: 'upsilon', symbol: 'υ' },
+    { trigger: 'phi', symbol: 'φ' },
+    { trigger: 'chi', symbol: 'χ' },
+    { trigger: 'psi', symbol: 'ψ' },
+    { trigger: 'omega', symbol: 'ω' },
+    { trigger: 'Gamma', symbol: 'Γ' },
+    { trigger: 'Delta', symbol: 'Δ' },
+    { trigger: 'Theta', symbol: 'Θ' },
+    { trigger: 'Lambda', symbol: 'Λ' },
+    { trigger: 'Xi', symbol: 'Ξ' },
+    { trigger: 'Pi', symbol: 'Π' },
+    { trigger: 'Sigma', symbol: 'Σ' },
+    { trigger: 'Phi', symbol: 'Φ' },
+    { trigger: 'Psi', symbol: 'Ψ' },
+    { trigger: 'Omega', symbol: 'Ω' },
 ];
 
 export class NumeralsSuggestor extends EditorSuggest<string> {
@@ -145,9 +155,10 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			suggestions = local_suggestions;
 		}
 
-		const greek_suggestions = greekSymbols.filter(({ trigger }) => trigger.startsWith(query_lower)).map(({ symbol }) => 'g|' + symbol);
-
-		suggestions = suggestions.concat(greek_suggestions);
+		if (this.plugin.settings.enableGreekAutoComplete) {
+			const greek_suggestions = greekSymbols.filter(({ trigger }) => (":" + trigger.toLowerCase()).startsWith(query_lower)).map(({ symbol, trigger }) => 'g|' + symbol + '|' + trigger);
+			suggestions = suggestions.concat(greek_suggestions);
+		}
 
 		return suggestions;
 	}
@@ -157,7 +168,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		el.addClasses(['mod-complex', 'numerals-suggestion']);
 		const suggestionContent = el.createDiv({cls: 'suggestion-content'});
 		const suggestionTitle = suggestionContent.createDiv({cls: 'suggestion-title'});
-		// const suggestionNote = suggestionContent.createDiv({cls: 'suggestion-note'});
+		const suggestionNote = suggestionContent.createDiv({cls: 'suggestion-note'});
 		const suggestionAux = el.createDiv({cls: 'suggestion-aux'});
 		const suggestionFlair = suggestionAux.createDiv({cls: 'suggestion-flair'});
 
@@ -176,6 +187,9 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			setIcon(suggestionFlair, 'case-lower'); // Assuming 'symbol' is a valid icon name
 		}
 		suggestionTitle.setText(suggestionText);
+		if (noteText) {
+			suggestionNote.setText(noteText);
+		}
 
 	}
 

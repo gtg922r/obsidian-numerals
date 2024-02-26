@@ -45,6 +45,7 @@ export interface NumeralsSettings {
 	numberFormat: NumeralsNumberFormat;
 	forceProcessAllFrontmatter: boolean;
 	customCurrencySymbol: CurrencyType | null;
+	enableGreekAutoComplete: boolean; 
 }
 
 
@@ -62,6 +63,7 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	numberFormat: 						NumeralsNumberFormat.System,
 	forceProcessAllFrontmatter: 		false,
 	customCurrencySymbol: 				null,
+	enableGreekAutoComplete: 			true, 
 }
 
 

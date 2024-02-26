@@ -156,7 +156,16 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.suggestionsIncludeMathjsSymbols = value;
 					await this.plugin.saveSettings();
-				}));					
+				}));	
+		new Setting(containerEl)
+			.setName('Enable Greek Character Auto-Complete')
+			.setDesc('Auto-complete suggestions for Greek characters by typing ":" and then greek letter name (e.g. `:alpha`).')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enableGreekAutoComplete)
+				.onChange(async (value) => {
+					this.plugin.settings.enableGreekAutoComplete = value;
+					await this.plugin.saveSettings();
+				}));							
 			
 		new Setting(containerEl)
 			.setHeading()
