@@ -2,11 +2,9 @@
 import * as math from 'mathjs';
 import { getAPI } from 'obsidian-dataview';
 import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat } from './numerals.types';
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope } from './numerals.types';
 
 // TODO: Addition of variables not adding up
-
-export class NumeralsScope extends Map<string, unknown>{}
 
 /**
  * Process frontmatter and return updated scope object

@@ -5,7 +5,6 @@ import {
 	processAndRenderNumeralsBlockFromSource,
 	getLocaleFormatter,
 	getMetadataForFileAtPath,
-	NumeralsScope,
 	addGobalsFromScopeToPageCache } from "./numeralsUtilities";
 import {
 	CurrencyType,
@@ -14,7 +13,8 @@ import {
 	NumeralsNumberFormat,
 	NumeralsSettings,
 	mathjsFormat,
-	DEFAULT_SETTINGS
+	DEFAULT_SETTINGS,
+	NumeralsScope,
 } from "./numerals.types";	
 import { 
 	NumeralsSettingTab,

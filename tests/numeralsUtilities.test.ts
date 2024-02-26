@@ -9,7 +9,9 @@ jest.mock(
 );
 
 import {
+	StringReplaceMap,
 	applyBlockStyles,
+	getScopeFromFrontmatter,
 	numeralsLayoutClasses,
 	numeralsRenderStyleClasses,
 	preProcessBlockForNumeralsDirectives,
@@ -18,6 +20,7 @@ import {
 	NumeralsSettings,
 	NumeralsRenderStyle,
 	NumeralsLayout,
+	NumeralsScope,	
 } from "../src/numerals.types";
 import { DEFAULT_SETTINGS } from "../src/numerals.types";
 
@@ -205,4 +208,144 @@ apples + oranges
 		expect(result.emitter_lines).toEqual([]);
 		expect(result.insertion_lines).toEqual([2]);
 	});
+});
+
+/**
+ * Unit tests for numeralsUtilities: getScopeFromFrontmatter
+ * 
+ * These tests verify the functionality of getScopeFromFrontmatter, ensuring it correctly processes
+ * frontmatter data under various conditions. The tests cover scenarios including undefined frontmatter,
+ * processing all keys, ignoring objects unless keysOnly is true, and processing specific keys when
+ * 'numerals' is an array. Each test sets up the necessary environment and asserts the expected outcomes
+ * for the scope object after processing the frontmatter.
+ */
+import * as math from 'mathjs';
+import { defaultCurrencyMap } from "../src/numeralsUtilities";
+describe("numeralsUtilities: getScopeFromFrontmatter", () => {
+    let scope: NumeralsScope;
+    let frontmatter: { [key: string]: unknown };
+    let forceAll: boolean;
+    let stringReplaceMap: StringReplaceMap[];
+    let keysOnly: boolean;
+
+    beforeEach(() => {
+        scope = new NumeralsScope();
+        frontmatter = {};
+        forceAll = false;
+        stringReplaceMap = [];
+        keysOnly = false;
+    });
+
+    it("should return an empty scope for undefined frontmatter", () => {
+        const result = getScopeFromFrontmatter(undefined, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(result.size).toBe(0);
+    });
+
+    it("should process 'numerals: all' correctly", () => {
+        frontmatter = {
+            numerals: "all",
+            count: 5,
+			speed: "5 m/s"
+        };
+        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(result.get("count")).toBe(5);
+        expect(result.get("title")).toBe(undefined); // title = "test", but no "title" key in scope
+		expect(result.get("speed")).toEqual(math.evaluate("5 m/s"));
+    });
+
+    it("should ignore objects unless keysOnly is true", () => {
+        frontmatter = {
+            objectKey: { nested: "value" }
+        };
+        let result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(result.has("objectKey")).toBe(false);
+
+        keysOnly = true;
+        result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(result.get("objectKey")).toBeUndefined();
+    });
+
+    it("should process specific keys when 'numerals' is an array", () => {
+        frontmatter = {
+            numerals: ["selectedKey"],
+            selectedKey: 10,
+            ignoredKey: "ignored"
+        };
+        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(result.get("selectedKey")).toBe(10);
+        expect(result.has("ignoredKey")).toBe(false);
+    });
+
+    it("should process string values as mathjs expressions", () => {
+        frontmatter = {
+			numerals: "expression",
+            expression: "2 + 2"
+        };
+        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(result.get("expression")).toEqual(math.evaluate("2 + 2"));
+    });
+
+	it("should handle missing scope values gracefully", () => {
+		frontmatter = {
+			numerals: "missingValue",
+			missingValue: "missing"
+		};
+		const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+		const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+		expect(result.get("missingValue")).toBeUndefined();
+		expect(consoleSpy).toHaveBeenCalled();
+		consoleSpy.mockRestore();
+	});
+
+
+    it("should handle errors in mathjs expression evaluation gracefully", () => {
+        frontmatter = {
+			numerals: "badExpression",
+            badExpression: "2 +"
+        };
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(consoleSpy).toHaveBeenCalled();
+        expect(result.has("badExpression")).toBe(false);
+        consoleSpy.mockRestore();
+    });
+
+    it("should respect the forceAll parameter", () => {
+        frontmatter = {
+            key1: "2",
+            key2: "2+2"
+        };
+        forceAll = true;
+        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(result.get("key1")).toBe(2);
+        expect(result.get("key2")).toEqual(math.evaluate("2+2"));
+    });
+
+    it("should apply string replacements from stringReplaceMap including currency support", () => {
+		const currencyPreProcessors = defaultCurrencyMap.map(m => {
+			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
+		})
+		const preProcessors = [
+			// {regex: /\$((\d|\.|(,\d{3}))+)/g, replace: '$1 USD'}, // Use this if commas haven't been removed already
+			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands seperators. Will be wrong for add(100,100)
+			...currencyPreProcessors
+		];		
+
+		for (const moneyType of defaultCurrencyMap) {
+			if (moneyType.currency != '') {
+				math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
+			}
+		}
+
+        frontmatter = {
+			numerals: "all",
+            cost: "100 USD",
+			dollarCost: "$100",
+			currencyCost: "$100,000"
+        };
+        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, preProcessors, keysOnly);
+        expect(result.get("cost")).toEqual(math.evaluate("100 USD"));
+		expect(result.get("dollarCost")).toEqual(math.evaluate("100 USD"));
+		expect(result.get("currencyCost")).toEqual(math.evaluate("100000 USD"));
+    });
 });

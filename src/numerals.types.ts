@@ -76,3 +76,5 @@ export interface CurrencyType {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
+
+export class NumeralsScope extends Map<string, unknown>{}
