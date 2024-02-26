@@ -9,7 +9,6 @@ jest.mock(
 );
 
 import {
-	StringReplaceMap,
 	applyBlockStyles,
 	numeralsLayoutClasses,
 	numeralsRenderStyleClasses,
@@ -49,8 +48,6 @@ describe("numeralsUtilities: applyBlockStyles()", () => {
 			hideLinesWithoutMarkupWhenEmitting: false,
 		};
 
-		console.log("el", el);
-		console.log("toggle class fn:", el.toggleClass);
 		applyBlockStyles({ el, settings, blockRenderStyle });
 
 		expect(el.classList.contains("numerals-block")).toBe(true);
@@ -65,7 +62,6 @@ describe("numeralsUtilities: applyBlockStyles()", () => {
 			)
 		).toBe(true);
 		expect(el.classList.contains("numerals-alt-row-color")).toBe(false);
-		console.log("el.classList", el.classList);
 
 		for (const layoutClass of Object.values(numeralsLayoutClasses)) {
 			if (
@@ -115,83 +111,97 @@ describe("numeralsUtilities: applyBlockStyles()", () => {
 });
 
 describe("numeralsUtilities: preProcessBlockForNumeralsDirectives", () => {
-	it('Correctly processes block with emitters and insertion directives', () => {
-		const sampleBlock =`# comment 1
+	it("Correctly processes block with emitters and insertion directives", () => {
+		const sampleBlock = `# comment 1
 apples = 2
 2 + 3 =>
 @[$result::5]`;
 
 		const preProcessors = [{ regex: /apples/g, replaceStr: "3" }];
-		const result = preProcessBlockForNumeralsDirectives(sampleBlock, preProcessors);
+		const result = preProcessBlockForNumeralsDirectives(
+			sampleBlock,
+			preProcessors
+		);
 
 		expect(result.rawRows).toEqual([
 			"# comment 1",
 			"apples = 2",
 			"2 + 3 =>",
-			"@[$result::5]"
+			"@[$result::5]",
 		]);
-		expect(result.processedSource).toEqual("# comment 1\n3 = 2\n2 + 3\n$result.");
+		expect(result.processedSource).toEqual(
+			"# comment 1\n3 = 2\n2 + 3\n$result"
+		);
 		expect(result.emitter_lines).toEqual([2]);
 		expect(result.insertion_lines).toEqual([3]);
 	});
 
-	it('Processes block without emitters or insertion directives', () => {
-		const sampleBlock =`# Simple math
+	it("Processes block without emitters or insertion directives", () => {
+		const sampleBlock = `# Simple math
 1 + 1
 2 * 2`;
 
 		const preProcessors = undefined;
-		const result = preProcessBlockForNumeralsDirectives(sampleBlock, preProcessors);
+		const result = preProcessBlockForNumeralsDirectives(
+			sampleBlock,
+			preProcessors
+		);
 
-		expect(result.rawRows).toEqual([
-			"# Simple math",
-			"1 + 1",
-			"2 * 2"
-		]);
+		expect(result.rawRows).toEqual(["# Simple math", "1 + 1", "2 * 2"]);
 		expect(result.processedSource).toEqual("# Simple math\n1 + 1\n2 * 2");
 		expect(result.emitter_lines).toEqual([]);
 		expect(result.insertion_lines).toEqual([]);
 	});
 
-	it('Handles multiple emitters and insertion directives', () => {
-		const sampleBlock =`# Multiple directives
+	it("Handles multiple emitters and insertion directives", () => {
+		const sampleBlock = `# Multiple directives
 5 + 5 =>
 10 - 2 =>
 @[$firstResult::10]
 @[$secondResult::8]`;
 
 		const preProcessors = undefined;
-		const result = preProcessBlockForNumeralsDirectives(sampleBlock, preProcessors);
+		const result = preProcessBlockForNumeralsDirectives(
+			sampleBlock,
+			preProcessors
+		);
 
 		expect(result.rawRows).toEqual([
 			"# Multiple directives",
 			"5 + 5 =>",
 			"10 - 2 =>",
 			"@[$firstResult::10]",
-			"@[$secondResult::8]"
+			"@[$secondResult::8]",
 		]);
-		expect(result.processedSource).toEqual("# Multiple directives\n5 + 5\n10 - 2\n$firstResult\n$secondResult");
+		expect(result.processedSource).toEqual(
+			"# Multiple directives\n5 + 5\n10 - 2\n$firstResult\n$secondResult"
+		);
 		expect(result.emitter_lines).toEqual([1, 2]);
 		expect(result.insertion_lines).toEqual([3, 4]);
 	});
 
-	it('Correctly applies preProcessors to the source', () => {
-		const sampleBlock =`# Preprocessor test
+	it("Correctly applies preProcessors to the source", () => {
+		const sampleBlock = `# Preprocessor test
 apples + oranges
 @[$totalFruits::apples + oranges]`;
 
 		const preProcessors = [
 			{ regex: /apples/g, replaceStr: "3" },
-			{ regex: /oranges/g, replaceStr: "5" }
+			{ regex: /oranges/g, replaceStr: "5" },
 		];
-		const result = preProcessBlockForNumeralsDirectives(sampleBlock, preProcessors);
+		const result = preProcessBlockForNumeralsDirectives(
+			sampleBlock,
+			preProcessors
+		);
 
 		expect(result.rawRows).toEqual([
 			"# Preprocessor test",
 			"apples + oranges",
-			"@[$totalFruits::apples + oranges]"
+			"@[$totalFruits::apples + oranges]",
 		]);
-		expect(result.processedSource).toEqual("# Preprocessor test\n3 + 5\n$totalFruits");
+		expect(result.processedSource).toEqual(
+			"# Preprocessor test\n3 + 5\n$totalFruits"
+		);
 		expect(result.emitter_lines).toEqual([]);
 		expect(result.insertion_lines).toEqual([2]);
 	});

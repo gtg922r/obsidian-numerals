@@ -514,7 +514,6 @@ export function applyBlockStyles({
 	blockRenderStyle: NumeralsRenderStyle,
 	hasEmitters?: boolean
 }) {
-	console.log("setting.alternateRowColor",settings.alternateRowColor);
 	el.toggleClass("numerals-block", true);
 	el.toggleClass(numeralsLayoutClasses[settings.layoutStyle], true);
 	el.toggleClass(numeralsRenderStyleClasses[blockRenderStyle], true);			
@@ -568,7 +567,7 @@ export function preProcessBlockForNumeralsDirectives(
 	} 
 
 	// remove `=>` at the end of lines, but preserve comments.
-	processedSource = processedSource.replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
+	processedSource = processedSource.replace(/^([^#\r\n]*?)([\t ]*=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
 
 	// Replace result insertion directive `@[variable::result]` with only the variable
 	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")	
