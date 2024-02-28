@@ -1,0 +1,204 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Snapshot 1: simple math block with units, emitters, result insertion 1`] = `
+<div
+  class="numerals-block numerals-panes numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
+>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      # Physics Calculation
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      		speed = 5 m/s
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5 m / s
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      		distance = 100 m
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 100 m
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      		time = distance / speed
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 s
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      		time
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 s
+    </span>
+  </div>
+</div>
+`;
+
+exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Snapshot 2: simple math block with test of locale formatting 1`] = `
+<div
+  class="numerals-block numerals-panes numerals-plain numerals-alt-row-color"
+>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      # Locale Test
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      		1000
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1,000
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      		3.14
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3.14
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      		lambda=780.246021 nanometer
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 780.246 nanometer
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      		nu=speedOfLight/lambda
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 384,228,115,147,286.25 Hz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      		pi+1
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4.142
+    </span>
+  </div>
+</div>
+`;
+
+exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests simple math block with currency and emitter with snapshot 1`] = `
+<div
+  class="numerals-block numerals-panes numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
+>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      amount = 100 USD + $1,000
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1,100 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      tax = 10% * amount
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 110 USD
+    </span>
+  </div>
+</div>
+`;
