@@ -581,8 +581,8 @@ export function preProcessBlockForNumeralsDirectives(
 	// Replace result insertion directive `@[variable::result]` with only the variable
 	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")	
 
-	processedSource = processedSource.replace(/@sum/gi, "__Σ");
-	processedSource = processedSource.replace(/@total/gi, "__Σ");
+	processedSource = processedSource.replace(/@sum/gi, "__total");
+	processedSource = processedSource.replace(/@total/gi, "__total");
 
 	// Apply any pre-processors (e.g. currency replacement, thousands separator replacement, etc.)
 	if (preProcessors && preProcessors.length > 0) {
@@ -641,18 +641,23 @@ export function evaluateMathFromSourceStrings(
 		try {			
 			const partialResults = results.slice(lastUndefinedRowIndex+1, index).filter(result => result !== undefined);
 			if (partialResults.length > 1) {
-				let rollingSum;
 				try {
 					// eslint-disable-next-line prefer-spread
-					rollingSum = math.add.apply(math, partialResults);
+					const rollingSum = math.add.apply(math, partialResults);
+					scope.set("__total", rollingSum);
 				} catch (error) {
-					rollingSum = undefined;
+					scope.set("__total", undefined);
+					if (/__total/i.test(row)) {
+						errorMsg = {name: "Summing Error", message: 'Error evaluating @sum or @total directive. Previous lines may not be summable.'};
+						errorInput = row;
+						break;
+					}						
 				}
-				scope.set("__Σ", rollingSum);
+
 			} else if (partialResults.length === 1) {
-				scope.set("__Σ", partialResults[0]);
+				scope.set("__total", partialResults[0]);
 			} else {
-				scope.set("__Σ", 0);
+				scope.set("__total", undefined);
 			}
 			results.push(math.evaluate(row, scope));
 			inputs.push(row); // Only pushes if evaluate is successful

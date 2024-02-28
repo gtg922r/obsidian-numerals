@@ -437,10 +437,10 @@ describe("numeralsUtilities: evaluateMathFromSourceStrings", () => {
     });
 
 	it("should handle rolling totals and sums", () => {
-		processedSource = "a = 1\nb = 2\n__Σ";
+		processedSource = "a = 1\nb = 2\n__total";
 		const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
 		expect(results).toEqual([1, 2, 3]);
-		expect(inputs).toEqual(["a = 1", "b = 2", "__Σ"]);
+		expect(inputs).toEqual(["a = 1", "b = 2", "__total"]);
 	});
 
 	it("should handle rolling totals and sums", () => {
@@ -448,15 +448,15 @@ describe("numeralsUtilities: evaluateMathFromSourceStrings", () => {
 apples = 3
 pears = 4
 grapes = 10
-fruit = __Σ
+fruit = __total
 
 monday = 10 USD
 tuesday = 20 USD
 wednesday = 30 USD
-profit = __Σ`;
+profit = __total`;
 		const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
 		expect(results).toEqual([undefined,3, 4, 10, 17, undefined, math.unit(10, 'USD'), math.unit(20, 'USD'), math.unit(30, 'USD'), math.unit(60, 'USD')]);
-		expect(inputs).toEqual(["# Fruit","apples = 3", "pears = 4", "grapes = 10", "fruit = __Σ", "", "monday = 10 USD", "tuesday = 20 USD", "wednesday = 30 USD", "profit = __Σ"]);
+		expect(inputs).toEqual(["# Fruit","apples = 3", "pears = 4", "grapes = 10", "fruit = __total", "", "monday = 10 USD", "tuesday = 20 USD", "wednesday = 30 USD", "profit = __total"]);
 	});	
 });
 describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests", () => {
