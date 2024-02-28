@@ -11,20 +11,42 @@ jest.mock(
 import {
 	StringReplaceMap,
 	applyBlockStyles,
+	evaluateMathFromSourceStrings,
+	getLocaleFormatter,
 	getScopeFromFrontmatter,
 	numeralsLayoutClasses,
 	numeralsRenderStyleClasses,
 	preProcessBlockForNumeralsDirectives,
+	processAndRenderNumeralsBlockFromSource,
 } from "../src/numeralsUtilities";
 import {
 	NumeralsSettings,
 	NumeralsRenderStyle,
 	NumeralsLayout,
-	NumeralsScope,	
+	NumeralsScope,
+	mathjsFormat,	
 } from "../src/numerals.types";
 import { DEFAULT_SETTINGS } from "../src/numerals.types";
 
 // jest.mock('obsidian-dataview');
+
+import * as math from 'mathjs';
+import { defaultCurrencyMap } from "../src/numeralsUtilities";
+import { MarkdownPostProcessorContext } from "obsidian";
+const currencyPreProcessors = defaultCurrencyMap.map(m => {
+	return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
+})
+const preProcessors = [
+	// {regex: /\$((\d|\.|(,\d{3}))+)/g, replace: '$1 USD'}, // Use this if commas haven't been removed already
+	{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands seperators. Will be wrong for add(100,100)
+	...currencyPreProcessors
+];		
+
+for (const moneyType of defaultCurrencyMap) {
+	if (moneyType.currency != '') {
+		math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
+	}
+}
 
 describe("numeralsUtilities: applyBlockStyles()", () => {
 	let el: HTMLElement;
@@ -33,10 +55,14 @@ describe("numeralsUtilities: applyBlockStyles()", () => {
 
 	beforeEach(() => {
 		el = document.createElement("div");
-		el.toggleClass = (className: string, value: boolean) => {
-			if (value) el.classList.add(className);
-			else el.classList.remove(className);
-		};
+		Object.defineProperty(HTMLElement.prototype, 'toggleClass', {
+			value: function(className: string, value: boolean) {
+				if (value) this.classList.add(className);
+				else this.classList.remove(className);
+			},
+			writable: true,
+			configurable: true
+		});
 		settings = {
 			...DEFAULT_SETTINGS,
 		};
@@ -219,8 +245,6 @@ apples + oranges
  * 'numerals' is an array. Each test sets up the necessary environment and asserts the expected outcomes
  * for the scope object after processing the frontmatter.
  */
-import * as math from 'mathjs';
-import { defaultCurrencyMap } from "../src/numeralsUtilities";
 describe("numeralsUtilities: getScopeFromFrontmatter", () => {
     let scope: NumeralsScope;
     let frontmatter: { [key: string]: unknown };
@@ -322,20 +346,6 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
     });
 
     it("should apply string replacements from stringReplaceMap including currency support", () => {
-		const currencyPreProcessors = defaultCurrencyMap.map(m => {
-			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
-		})
-		const preProcessors = [
-			// {regex: /\$((\d|\.|(,\d{3}))+)/g, replace: '$1 USD'}, // Use this if commas haven't been removed already
-			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands seperators. Will be wrong for add(100,100)
-			...currencyPreProcessors
-		];		
-
-		for (const moneyType of defaultCurrencyMap) {
-			if (moneyType.currency != '') {
-				math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
-			}
-		}
 
         frontmatter = {
 			numerals: "all",
@@ -348,4 +358,243 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
 		expect(result.get("dollarCost")).toEqual(math.evaluate("100 USD"));
 		expect(result.get("currencyCost")).toEqual(math.evaluate("100000 USD"));
     });
+});
+describe("numeralsUtilities: evaluateMathFromSourceStrings", () => {
+    let scope: NumeralsScope;
+    let processedSource: string;
+
+    beforeEach(() => {
+        scope = new NumeralsScope();
+        processedSource = "";
+    });
+
+    it("should evaluate simple math expressions correctly", () => {
+        processedSource = "2 + 2\n5 * 5";
+        const { results, inputs, errorMsg, errorInput } = evaluateMathFromSourceStrings(processedSource, scope);
+
+        expect(results).toEqual([4, 25]);
+        expect(inputs).toEqual(["2 + 2", "5 * 5"]);
+        expect(errorMsg).toBeNull();
+        expect(errorInput).toBe("");
+    });
+
+    it("should handle variables in scope correctly", () => {
+        scope.set("x", 10);
+        processedSource = "x * 2\nx + 5";
+        const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
+
+        expect(results).toEqual([20, 15]);
+        expect(inputs).toEqual(["x * 2", "x + 5"]);
+    });
+
+    it("should return an error for invalid expressions", () => {
+        processedSource = "2 +\n5 * 5";
+        const { errorMsg, errorInput } = evaluateMathFromSourceStrings(processedSource, scope);
+
+        expect(errorMsg).not.toBeNull();
+        expect(errorInput).toBe("2 +");
+    });
+
+    it("should ignore empty last row in processed source", () => {
+        processedSource = "2 + 2\n5 * 5\n";
+        const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
+
+        expect(results).toEqual([4, 25]);
+        expect(inputs).toEqual(["2 + 2", "5 * 5"]);
+    });
+
+    it("should process expressions with mathjs functions", () => {
+        processedSource = "sqrt(16)\nlog(100, 10)";
+        const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
+
+        expect(results).toEqual([4, 2]);
+        expect(inputs).toEqual(["sqrt(16)", "log(100, 10)"]);
+    });
+
+    it("should handle scope updates within the source", () => {
+        processedSource = "x = 5\nx * 2";
+        const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
+
+        expect(results).toEqual([5, 10]);
+        expect(inputs).toEqual(["x = 5", "x * 2"]);
+        expect(scope.get("x")).toBe(5);
+    });
+
+    it("should correctly handle expressions with units", () => {
+        processedSource = "5 m + 10 m\n100 kg - 50 kg";
+        const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
+
+        expect(results).toEqual([math.unit(15, 'm'), math.unit(50, 'kg')]);
+        expect(inputs).toEqual(["5 m + 10 m", "100 kg - 50 kg"]);
+    });
+
+    it("should return an error for incompatible unit operations", () => {
+        processedSource = "10 m + 5 kg";
+        const { errorMsg, errorInput } = evaluateMathFromSourceStrings(processedSource, scope);
+
+        expect(errorMsg).not.toBeNull();
+        expect(errorInput).toBe("10 m + 5 kg");
+    });
+});
+describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests", () => {
+    let el: HTMLElement;
+    let source: string;
+    let ctx: MarkdownPostProcessorContext;
+    let metadata: { [key: string]: unknown };
+    let type: NumeralsRenderStyle;
+    let settings: NumeralsSettings;
+    let numberFormat: mathjsFormat;
+
+    beforeEach(() => {
+        el = document.createElement("div");
+		Object.defineProperty(HTMLElement.prototype, 'toggleClass', {
+			value: function(className: string, value: boolean) {
+				if (value) this.classList.add(className);
+				else this.classList.remove(className);
+			},
+			writable: true,
+			configurable: true
+		});
+		Object.defineProperty(HTMLElement.prototype, 'createEl', {
+			value: jest.fn(function(this: HTMLElement, tag, options, callback) {
+				const element = document.createElement(tag);
+				if (typeof options === 'string') {
+					element.className = options;
+				} else if (options) {
+					if (options.cls) {
+						const classes = Array.isArray(options.cls) ? options.cls : [options.cls];
+						classes.forEach((cls: string) => element.classList.add(cls));
+					}
+					if (options.text) element.textContent = String(options.text);
+					if (options.attr) {
+						Object.entries(options.attr).forEach(([key, value]) => {
+							element.setAttribute(key, String(value));
+						});
+					}
+					if (options.title) element.title = options.title;
+				}
+				if (callback) callback(element);
+	
+				// Append the created element to the parent element ('this'), with type assertion
+				this.appendChild(element);
+	
+				return element;
+			}),
+			writable: true,
+			configurable: true
+		});
+        Object.defineProperty(HTMLElement.prototype, 'setText', {
+            value: function(text: string) {
+                this.textContent = text;
+            },
+            writable: true,
+            configurable: true
+        });
+        source = "";
+        ctx = { getSectionInfo: jest.fn() } as unknown as MarkdownPostProcessorContext;
+        metadata = {};
+        type = NumeralsRenderStyle.Plain;
+        settings = { ...DEFAULT_SETTINGS };
+        numberFormat = getLocaleFormatter();
+    });
+
+	const resultSeparator = DEFAULT_SETTINGS.resultSeparator;
+
+    it("renders a simple math block correctly", () => {
+        source = "1 + 1\n2 * 2";
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+
+        const lines = el.querySelectorAll(".numerals-line");
+        expect(lines.length).toBe(2);
+        expect(lines[0].textContent).toContain(`1 + 1${resultSeparator}2`);
+        expect(lines[1].textContent).toContain(`2 * 2${resultSeparator}4`);
+    });
+
+    it("renders a block with emitter lines correctly", () => {
+        source = "1 + 1 =>\n2 * 2 =>";
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+
+        const emitterLines = el.querySelectorAll(".numerals-emitter");
+        expect(emitterLines.length).toBe(2);
+        expect(emitterLines[0].textContent).toContain(`1 + 1${resultSeparator}2`);
+        expect(emitterLines[1].textContent).toContain(`2 * 2${resultSeparator}4`);
+    });
+
+    it("renders a block with insertion directives correctly", () => {
+		metadata = { numerals: "all", result1: 1, result2: 2, result3: 3 };
+        source = "@[result1]\n@[result2::2]\n@[result3::4]";
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+
+        const insertionLines = el.querySelectorAll(".numerals-line");
+        // const children = Array.from(el.children);
+        expect(insertionLines.length).toBe(3);
+        expect(insertionLines[0].textContent).toContain(`result1${resultSeparator}1`);
+        expect(insertionLines[1].textContent).toContain(`result2${resultSeparator}2`);
+		expect(insertionLines[2].textContent).toContain(`result3${resultSeparator}3`);
+    });
+
+    it("applies preProcessors correctly", () => {
+        source = "$100 + $1,000";
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+
+        const lines = el.querySelectorAll(".numerals-line");
+        expect(lines.length).toBe(1);
+        expect(lines[0].textContent).toContain(`$100 + $1,000${resultSeparator}1,100 USD`);
+    });
+
+    it("handles errors in math expressions gracefully", () => {
+        source = "1 +\n2 * 2";
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+
+        const errorLine = el.querySelector(".numerals-error-line");
+        expect(errorLine).not.toBeNull();
+        expect(errorLine?.textContent).toContain("SyntaxError:");
+    });
+
+    it("calculates with variables correctly", () => {
+        source = "lemons = 20\napples = 10\nfruit = lemons + apples";
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+
+        const lines = el.querySelectorAll(".numerals-line");
+        expect(lines.length).toBe(3);
+        expect(lines[0].textContent).toContain(`lemons = 20${resultSeparator}20`);
+        expect(lines[1].textContent).toContain(`apples = 10${resultSeparator}10`);
+        expect(lines[2].textContent).toContain(`fruit = lemons + apples${resultSeparator}30`);
+    });
+
+	it('simple math block with currency and emitter with snapshot', () => {
+		source = "amount = 100 USD + $1,000\ntax = 10% * amount =>";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines.length).toBe(2);
+		expect(lines[0].textContent).toContain(`amount = 100 USD + $1,000${resultSeparator}1,100 USD`);
+		expect(lines[1].textContent).toContain(`tax = 10% * amount${resultSeparator}110 USD`);
+
+		expect(el).toMatchSnapshot();
+	});
+
+	it('Snapshot 1: simple math block with units, emitters, result insertion', () => {
+		source = `# Physics Calculation
+		speed = 5 m/s
+		distance = 100 m
+		time = distance / speed =>
+		@[time]`;
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		expect(el).toMatchSnapshot();
+	});	
+	
+	it('Snapshot 2: simple math block with test of locale formatting', () => {
+		source = `# Locale Test
+		1000
+		3.14
+		lambda=780.246021 nanometer
+		nu=speedOfLight/lambda
+		pi+1`;
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		expect(el).toMatchSnapshot();
+	});		
+	
+
+
+
 });

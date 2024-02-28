@@ -248,7 +248,7 @@ export function processAndRenderNumeralsBlockFromSource(
 		preProcessors
 	);
 
-	const { results, inputs, errorMsg, errorInput } = evaluateMathFromSource(
+	const { results, inputs, errorMsg, errorInput } = evaluateMathFromSourceStrings(
 		processedSource,
 		scope
 	);
@@ -283,9 +283,10 @@ export function processAndRenderNumeralsBlockFromSource(
  
 		// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
 		if (settings.hideEmitterMarkupInInput) {
-			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*)(=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1$4") 
+			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*?)([\t ]*=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1$4") 
 		}
 
+		// Remove result insertion directive `@[variable::result]` from raw text, and only show the variable
 		rawRows[i] = rawRows[i].replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")
 
 		let inputElement: HTMLElement, resultElement: HTMLElement;
@@ -601,11 +602,11 @@ export function preProcessBlockForNumeralsDirectives(
  * @returns An object containing the results of the evaluation, the inputs that were evaluated, and
  * any error message and input that caused the error.
  */
-function evaluateMathFromSource(
+export function evaluateMathFromSourceStrings(
 	processedSource: string,
 	scope: NumeralsScope
 ): {
-	results: string[];
+	results: unknown[];
 	inputs: string[];
 	errorMsg: Error | null;
 	errorInput: string;
