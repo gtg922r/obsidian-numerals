@@ -435,6 +435,29 @@ describe("numeralsUtilities: evaluateMathFromSourceStrings", () => {
         expect(errorMsg).not.toBeNull();
         expect(errorInput).toBe("10 m + 5 kg");
     });
+
+	it("should handle rolling totals and sums", () => {
+		processedSource = "a = 1\nb = 2\n__Σ";
+		const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
+		expect(results).toEqual([1, 2, 3]);
+		expect(inputs).toEqual(["a = 1", "b = 2", "__Σ"]);
+	});
+
+	it("should handle rolling totals and sums", () => {
+		processedSource = `# Fruit
+apples = 3
+pears = 4
+grapes = 10
+fruit = __Σ
+
+monday = 10 USD
+tuesday = 20 USD
+wednesday = 30 USD
+profit = __Σ`;
+		const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
+		expect(results).toEqual([undefined,3, 4, 10, 17, undefined, math.unit(10, 'USD'), math.unit(20, 'USD'), math.unit(30, 'USD'), math.unit(60, 'USD')]);
+		expect(inputs).toEqual(["# Fruit","apples = 3", "pears = 4", "grapes = 10", "fruit = __Σ", "", "monday = 10 USD", "tuesday = 20 USD", "wednesday = 30 USD", "profit = __Σ"]);
+	});	
 });
 describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests", () => {
     let el: HTMLElement;
@@ -594,7 +617,30 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		expect(el).toMatchSnapshot();
 	});		
 	
-
-
+	it('Simple math with rolling sum', () => {
+		source = `# Fruit
+		apples = 3
+		pears = 4
+		grapes = 10
+		fruit = @sum
+		# Money
+		monday = $10
+		tuesday = $20
+		wednesday = $30
+		profit = @total`;
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines.length).toBe(10);	
+		expect(lines[0].textContent).toContain(`# Fruit`);
+		expect(lines[1].textContent).toContain(`apples = 3${resultSeparator}3`);
+		expect(lines[2].textContent).toContain(`pears = 4${resultSeparator}4`);
+		expect(lines[3].textContent).toContain(`grapes = 10${resultSeparator}10`);
+		expect(lines[4].textContent).toContain(`fruit = @sum${resultSeparator}17`);
+		expect(lines[5].textContent).toContain(`# Money`);
+		expect(lines[6].textContent).toContain(`monday = $10${resultSeparator}10 USD`);
+		expect(lines[7].textContent).toContain(`tuesday = $20${resultSeparator}20 USD`);
+		expect(lines[8].textContent).toContain(`wednesday = $30${resultSeparator}30 USD`);
+		expect(lines[9].textContent).toContain(`profit = @total${resultSeparator}60 USD`);
+	});
 
 });

@@ -571,6 +571,9 @@ export function preProcessBlockForNumeralsDirectives(
 	// Replace result insertion directive `@[variable::result]` with only the variable
 	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")	
 
+	processedSource = processedSource.replace(/@sum/gi, "__Σ");
+	processedSource = processedSource.replace(/@total/gi, "__Σ");
+
 	// Apply any pre-processors (e.g. currency replacement, thousands separator replacement, etc.)
 	if (preProcessors && preProcessors.length > 0) {
 		processedSource = replaceStringsInTextFromMap(processedSource, preProcessors);
@@ -615,15 +618,32 @@ export function evaluateMathFromSourceStrings(
 	let errorInput = "";
 
 	const rows: string[] = processedSource.split("\n");
-	const results: string[] = [];
+	const results: unknown[] = [];
 	const inputs: string[] = [];
 
 	// Last row is empty in reader view, so ignore it if empty
-	const emptyLastRow = rows.slice(-1)[0] === "";
-	const rowsToProcess = emptyLastRow ? rows.slice(0, -1) : rows;
+	const isLastRowEmpty = rows.slice(-1)[0] === "";
+	const rowsToProcess = isLastRowEmpty ? rows.slice(0, -1) : rows;
 
-	for (const row of rowsToProcess) {
-		try {
+	for (const [index, row] of rowsToProcess.entries()) {
+		const lastUndefinedRowIndex = results.slice(0, index).lastIndexOf(undefined);
+
+		try {			
+			const partialResults = results.slice(lastUndefinedRowIndex+1, index).filter(result => result !== undefined);
+			if (partialResults.length > 1) {
+				let rollingSum;
+				try {
+					// eslint-disable-next-line prefer-spread
+					rollingSum = math.add.apply(math, partialResults);
+				} catch (error) {
+					rollingSum = undefined;
+				}
+				scope.set("__Σ", rollingSum);
+			} else if (partialResults.length === 1) {
+				scope.set("__Σ", partialResults[0]);
+			} else {
+				scope.set("__Σ", 0);
+			}
 			results.push(math.evaluate(row, scope));
 			inputs.push(row); // Only pushes if evaluate is successful
 		} catch (error) {
@@ -635,3 +655,4 @@ export function evaluateMathFromSourceStrings(
 
 	return { results, inputs, errorMsg, errorInput };
 }
+
