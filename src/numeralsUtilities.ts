@@ -294,7 +294,17 @@ export function processAndRenderNumeralsBlockFromSource(
 			case NumeralsRenderStyle.Plain: {
 				const rawInputSansComment = rawRows[i].replace(/#.+$/, "")
 				const inputText = emptyLine ? rawRows[i] : rawInputSansComment;
-				inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
+
+				if (/@sum|@total/i.test(inputText)) {
+					const parts = inputText.match(/([^\r\n]*?)(@sum|@total)([^\r\n]*?)$/i) || [inputText, "", ""];
+					inputElement = line.createEl("span", {cls: "numerals-input"});
+					inputElement.createEl("span", {text: parts[1]});
+					inputElement.createEl("span", {text: parts[2], cls: "numerals-sum"});
+					inputElement.createEl("span", {text: parts[3]});
+				} else {
+					inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
+				}
+				
 				
 				const formattedResult = !emptyLine ? settings.resultSeparator + math.format(results[i], numberFormat) : '\xa0';
 				resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });

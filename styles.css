@@ -150,6 +150,9 @@ body {
     padding-left: 1em;
     color: var(--numerals-comment);
 }
+.numerals-input .numerals-sum {
+    font-style: italic;
+}
 
 .numerals-alt-row-color .numerals-line:nth-child(even){
     background-color: var(--numerals-alternating-row-color);
