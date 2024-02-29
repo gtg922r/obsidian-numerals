@@ -596,27 +596,6 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		expect(el).toMatchSnapshot();
 	});
 
-	it('Snapshot 1: simple math block with units, emitters, result insertion', () => {
-		source = `# Physics Calculation
-		speed = 5 m/s
-		distance = 100 m
-		time = distance / speed =>
-		@[time]`;
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
-		expect(el).toMatchSnapshot();
-	});	
-	
-	it('Snapshot 2: simple math block with test of locale formatting', () => {
-		source = `# Locale Test
-		1000
-		3.14
-		lambda=780.246021 nanometer
-		nu=speedOfLight/lambda
-		pi+1`;
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
-		expect(el).toMatchSnapshot();
-	});		
-	
 	it('Simple math with rolling sum', () => {
 		source = `# Fruit
 		apples = 3
@@ -643,4 +622,114 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		expect(lines[9].textContent).toContain(`profit = @total${resultSeparator}60 USD`);
 	});
 
+	it('Snapshot 1: simple math block with units, emitters, result insertion', () => {
+		source = `# Physics Calculation
+		speed = 5 m/s
+		distance = 100 m
+		time = distance / speed =>
+		@[time]`;
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		expect(el).toMatchSnapshot();
+	});	
+	
+	it('Snapshot 2: simple math block with test of locale formatting', () => {
+		source = `# Locale Test
+		1000
+		3.14
+		lambda=780.246021 nanometer
+		nu=speedOfLight/lambda
+		pi+1`;
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		expect(el).toMatchSnapshot();
+	});		
+	
+	it('Snapshot 3: longer example with more features', () => {
+		source = `# Sum and Total
+apples = 3
+pears = 4
+grapes = 10
+fruit = @Sum
+
+monday = $10
+tuesday = $20
+wednesday = $30
+profit = @Total
+
+# Sums to empty line or header
+elementary = 5 years
+middle = 3 years
+high = 4 years
+school = @total
+
+# Emitters
+test = 1+1  
+b = 32  
+b + test + 6 =>
+test + 3 => #this is the main thing
+# this is a comment => # ignore it
+test + 4 =>      # this is after comment =>
+ 
+income = $100,000 
+tax_rate = 20%
+taxes = income * tax_rate =>  
+
+distance = 10miles
+speed = 20 m/s
+time = distance / speed =>
+
+b + test + 2 => =>
+3+2
+
+#Currency
+1€ + 1€ 
+€1 + 1€
+$1 + 1USD
+1$ + 3 USD + $1 + 1$
+=>
+$1 + 4$
+£1 + £15 + 10£ #comment
+£1 + £15 + 10£ #comment =>
+1£ + £15 
+# Test =>
+=>
+¥3 + 327¥
+327¥ + ¥3
+$1,000
+1,000$
+¥1,000
+1,000¥
+1+2
+item1 = 1000.00$
+1+1
+item2 = 1000.00€
+£10 + £0.75
+10£ + 20.1 GBP
+100€ + 100€
+100¥ + ¥100
+
+# Currency and Units
+Lacroix_amazon =  $5.99 / (12*12 floz)
+Lacroix_safeway =  $12 / (3*8*12 floz) 
+
+Sodastream_CO2 = $64.99 / (120L in floz)
+Sodastream_machine = $89.99
+
+
+can = 12floz
+savings_per_can = (Lacroix_safeway - Sodastream_CO2) * can
+
+breakeven = Sodastream_machine / savings_per_can
+days_breakeven = breakeven / (5 / day)
+
+# Result Insertion
+lemons = 10 + 3*20
+@[lemons::70] = 80
+lemons
+lemons = 80
+$100 + $1,000
+`;
+
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		expect(el).toMatchSnapshot();
+	});
 });

@@ -647,6 +647,7 @@ export function evaluateMathFromSourceStrings(
 					scope.set("__total", rollingSum);
 				} catch (error) {
 					scope.set("__total", undefined);
+					// TODO consider doing this check before evaluating
 					if (/__total/i.test(row)) {
 						errorMsg = {name: "Summing Error", message: 'Error evaluating @sum or @total directive. Previous lines may not be summable.'};
 						errorInput = row;
