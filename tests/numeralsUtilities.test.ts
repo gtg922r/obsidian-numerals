@@ -18,6 +18,7 @@ import {
 	numeralsRenderStyleClasses,
 	preProcessBlockForNumeralsDirectives,
 	processAndRenderNumeralsBlockFromSource,
+	replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw,
 } from "../src/numeralsUtilities";
 import {
 	NumeralsSettings,
@@ -459,6 +460,61 @@ profit = __total`;
 		expect(inputs).toEqual(["# Fruit","apples = 3", "pears = 4", "grapes = 10", "fruit = __total", "", "monday = 10 USD", "tuesday = 20 USD", "wednesday = 30 USD", "profit = __total"]);
 	});	
 });
+
+describe("numeralsUtilities: replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw", () => {
+    it("replaces __total with @sum directive from raw string", () => {
+        const processedString = "profit = __total";
+        const rawString = "profit = @sum";
+        const result = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(processedString, rawString);
+        expect(result).toBe("profit = @sum");
+    });
+
+    it("replaces __total with @total directive from raw string", () => {
+        const processedString = "totalCost = __total";
+        const rawString = "totalCost = @total";
+        const result = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(processedString, rawString);
+        expect(result).toBe("totalCost = @total");
+    });
+
+    it("replaces multiple occurrences of __total with corresponding directives", () => {
+        const processedString = "profit = __total and totalCost = __total";
+        const rawString = "profit = @sum and totalCost = @total";
+        const result = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(processedString, rawString);
+        expect(result).toBe("profit = @sum and totalCost = @total");
+    });
+
+    it("replaces __total with @Sum if no matching directive is found", () => {
+        const processedString = "profit = __total";
+        const rawString = "profit = 100";
+        const result = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(processedString, rawString);
+        expect(result).toBe("profit = @Sum");
+    });
+
+    it("uses provided replacement string if specified", () => {
+        const processedString = "profit = __total";
+        const rawString = "profit = @sum";
+        const replacement = "@customSum";
+        const result = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(processedString, rawString, replacement);
+        expect(result).toBe("profit = @customSum");
+    });
+
+    it("handles case where multiple __total need replacement but only one directive is available", () => {
+        const processedString = "profit = __total and totalCost = __total";
+        const rawString = "profit = @sum";
+        const result = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(processedString, rawString);
+        // Expect the first __total to be replaced with @sum, and the second to be replaced with @Sum as no more specific directives are available
+        expect(result).toBe("profit = @sum and totalCost = @Sum");
+    });
+
+    it("does not replace __total if it is part of a larger word", () => {
+        const processedString = "profitability = __totalStuff";
+        const rawString = "profitability = @sum";
+        const result = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(processedString, rawString);
+        // Expect no replacement as __total is part of a larger word and not a standalone variable
+        expect(result).toBe("profitability = __totalStuff");
+    });
+});
+
 describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests", () => {
     let el: HTMLElement;
     let source: string;

@@ -317,12 +317,15 @@ export function processAndRenderNumeralsBlockFromSource(
 				resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
 				if (!emptyLine) {
 					// Input to Tex
-					const preprocess_input_tex:string = math.parse(inputs[i]).toTex();
-					let input_tex:string = unescapeSubscripts(preprocess_input_tex);
 					
-					const inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
+					const preprocess_input_tex:string = math.parse(inputs[i]).toTex();
 
-					input_tex = texCurrencyReplacement(input_tex);
+					let input_tex:string;
+					input_tex = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(preprocess_input_tex, rawRows[i], "@Sum()");				
+					input_tex = unescapeSubscripts(input_tex);				
+					input_tex = texCurrencyReplacement(input_tex);					
+
+					const inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
 					mathjaxLoop(inputTexElement, input_tex);
 
 					// Result to Tex
@@ -342,7 +345,13 @@ export function processAndRenderNumeralsBlockFromSource(
 				const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
 				inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
 				if (!emptyLine) {
-					const input_elements:DocumentFragment = htmlToElements(math.parse(inputs[i]).toHTML())
+					const input_html = math.parse(inputs[i]).toHTML();
+					const input_elements: DocumentFragment = htmlToElements(
+						replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(
+							input_html,
+							rawRows[i]
+						)
+					);
 					inputElement.appendChild(input_elements);
 				}
 
@@ -383,6 +392,38 @@ export function processAndRenderNumeralsBlockFromSource(
  * using `\_`.
  */
 const subscriptRegex = /(?<varStart>[\p{L}\p{Nl}_$])(?<varBody>[\p{L}\p{Nl}_$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F\u{1D400}-\u{1D7FF}\d]*)(\\_)(?<varEnd>[\p{L}\p{Nl}_$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F\u{1D400}-\u{1D7FF}\d]+)/gu;
+
+/**
+ * Replaces the magic variable for sum in the processed string with either a specified replacement string or the first matching directive from the raw string.
+ * 
+ * This function searches for occurrences of the magic variable `__total` in the `processedString` and replaces them with either a specified `replacement` string or the first matching sum directive (e.g., `sum` or `total`) found in the `rawString`. If no replacement is specified and no matching directives are found, the magic variable is removed.
+ * 
+ * @param processedString - The string after initial processing, where the magic variable `__total` needs to be replaced.
+ * @param rawString - The original raw string, which is searched for sum directives.
+ * @param replacement - An optional string to replace the magic variable with. If not provided, the function uses the first matching directive from the raw string.
+ * @returns The `processedString` with the magic variable `__total` replaced as described.
+ * 
+ * @example
+ * ```typescript
+ * const processed = "profit = __total";
+ * const raw = "profit = @sum";
+ * const output = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(processed, raw);
+ * console.log(output); // "profit = @sum"
+ */
+export function replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(processedString:string, rawString: string, replacement:string|undefined = undefined): string {
+    const directiveRegex = /@(sum|total)\b/g;
+	const directiveMatches = rawString.match(directiveRegex);
+
+	let restoredInput;
+	if (replacement) {
+		restoredInput = processedString.replace(/(__total|\\_\\_total)\b/g, replacement);
+	} else {
+		const defaultReplacementDirective = "@Sum";
+		restoredInput = processedString.replace(/(__total|\\_\\_total)\b/g, (match) => directiveMatches?.shift() ?? defaultReplacementDirective);
+	}
+
+	return restoredInput;
+}
 
 /**
  * Transforms a given string by unescaping and reformatting subscript notation.
