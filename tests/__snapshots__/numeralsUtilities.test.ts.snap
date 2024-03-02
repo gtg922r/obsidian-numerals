@@ -483,7 +483,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 804.672 s
+       → 0.009 day
     </span>
   </div>
   <div
@@ -548,7 +548,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-input numerals-empty"
     >
-      	#Currency
+      	# Currency	
     </span>
     <span
       class="numerals-result numerals-empty"
@@ -557,26 +557,325 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     </span>
   </div>
   <div
-    class="numerals-error-line numerals-line"
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Currency and Units
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
   >
     <span
       class="numerals-input"
     >
-      	1€ + 1€ 
+      	Lacroix_amazon =  $5.99 / (12*12 floz)
     </span>
     <span
       class="numerals-result"
     >
-      <span
-        class="numerals-error-name"
-      >
-        SyntaxError:
-      </span>
-      <span
-        class="numerals-error-message"
-      >
-        Syntax error in part "€ + 1€ " (char 3)
-      </span>
+       → 0.042 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Lacroix_safeway =  $12 / (3*8*12 floz) 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.042 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Sodastream_CO2 = $64.99 / (120L in floz)
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.016 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Sodastream_machine = $89.99
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 89.99 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	can = 12floz
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 12 floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	savings_per_can = (Lacroix_safeway - Sodastream_CO2) * can
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.308 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	breakeven = Sodastream_machine / savings_per_can
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 292.364
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	days_breakeven = breakeven / (5 / day)
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 58.473 day
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Result Insertion
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 10 + 3*20
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 70
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 80
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 80
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$100 + $1,000
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1,100 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	a = 1
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$b = 4
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$result = a + $b
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
     </span>
   </div>
 </div>
@@ -1065,7 +1364,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 804.672 s
+       → 0.009 day
     </span>
   </div>
   <div
@@ -1130,7 +1429,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-input numerals-empty"
     >
-      	#Currency
+      	# Currency	
     </span>
     <span
       class="numerals-result numerals-empty"
@@ -1139,26 +1438,325 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     </span>
   </div>
   <div
-    class="numerals-error-line numerals-line"
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Currency and Units
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
   >
     <span
       class="numerals-input"
     >
-      	1€ + 1€ 
+      	Lacroix_amazon =  $5.99 / (12*12 floz)
     </span>
     <span
       class="numerals-result"
     >
-      <span
-        class="numerals-error-name"
-      >
-        SyntaxError:
-      </span>
-      <span
-        class="numerals-error-message"
-      >
-        Syntax error in part "€ + 1€ " (char 3)
-      </span>
+       → 0.042 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Lacroix_safeway =  $12 / (3*8*12 floz) 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.042 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Sodastream_CO2 = $64.99 / (120L in floz)
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.016 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Sodastream_machine = $89.99
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 89.99 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	can = 12floz
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 12 floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	savings_per_can = (Lacroix_safeway - Sodastream_CO2) * can
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.308 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	breakeven = Sodastream_machine / savings_per_can
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 292.364
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	days_breakeven = breakeven / (5 / day)
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 58.473 day
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Result Insertion
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 10 + 3*20
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 70
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 80
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 80
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$100 + $1,000
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1,100 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	a = 1
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$b = 4
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$result = a + $b
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
     </span>
   </div>
 </div>
@@ -1647,7 +2245,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 804.672 s
+       → 0.009 day
     </span>
   </div>
   <div
@@ -1712,7 +2310,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-input numerals-empty"
     >
-      	#Currency
+      	# Currency	
     </span>
     <span
       class="numerals-result numerals-empty"
@@ -1721,26 +2319,325 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     </span>
   </div>
   <div
-    class="numerals-error-line numerals-line"
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Currency and Units
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
   >
     <span
       class="numerals-input"
     >
-      	1€ + 1€ 
+      	Lacroix_amazon =  $5.99 / (12*12 floz)
     </span>
     <span
       class="numerals-result"
     >
-      <span
-        class="numerals-error-name"
-      >
-        SyntaxError:
-      </span>
-      <span
-        class="numerals-error-message"
-      >
-        Syntax error in part "€ + 1€ " (char 3)
-      </span>
+       → 0.042 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Lacroix_safeway =  $12 / (3*8*12 floz) 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.042 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Sodastream_CO2 = $64.99 / (120L in floz)
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.016 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Sodastream_machine = $89.99
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 89.99 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	can = 12floz
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 12 floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	savings_per_can = (Lacroix_safeway - Sodastream_CO2) * can
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.308 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	breakeven = Sodastream_machine / savings_per_can
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 292.364
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	days_breakeven = breakeven / (5 / day)
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 58.473 day
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Result Insertion
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 10 + 3*20
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 70
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 80
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 80
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$100 + $1,000
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1,100 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	a = 1
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$b = 4
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$result = a + $b
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
     </span>
   </div>
 </div>
@@ -2229,7 +3126,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 804.672 s
+       → 0.009 day
     </span>
   </div>
   <div
@@ -2294,7 +3191,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-input numerals-empty"
     >
-      	#Currency
+      	# Currency	
     </span>
     <span
       class="numerals-result numerals-empty"
@@ -2303,26 +3200,325 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     </span>
   </div>
   <div
-    class="numerals-error-line numerals-line"
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Currency and Units
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
   >
     <span
       class="numerals-input"
     >
-      	1€ + 1€ 
+      	Lacroix_amazon =  $5.99 / (12*12 floz)
     </span>
     <span
       class="numerals-result"
     >
-      <span
-        class="numerals-error-name"
-      >
-        SyntaxError:
-      </span>
-      <span
-        class="numerals-error-message"
-      >
-        Syntax error in part "€ + 1€ " (char 3)
-      </span>
+       → 0.042 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Lacroix_safeway =  $12 / (3*8*12 floz) 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.042 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Sodastream_CO2 = $64.99 / (120L in floz)
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.016 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Sodastream_machine = $89.99
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 89.99 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	can = 12floz
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 12 floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	savings_per_can = (Lacroix_safeway - Sodastream_CO2) * can
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.308 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	breakeven = Sodastream_machine / savings_per_can
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 292.364
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	days_breakeven = breakeven / (5 / day)
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 58.473 day
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Result Insertion
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 10 + 3*20
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 70
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 80
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 80
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$100 + $1,000
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1,100 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	a = 1
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$b = 4
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$result = a + $b
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
     </span>
   </div>
 </div>
@@ -2811,7 +4007,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 804.672 s
+       → 0.009 day
     </span>
   </div>
   <div
@@ -2876,7 +4072,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-input numerals-empty"
     >
-      	#Currency
+      	# Currency	
     </span>
     <span
       class="numerals-result numerals-empty"
@@ -2885,26 +4081,325 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     </span>
   </div>
   <div
-    class="numerals-error-line numerals-line"
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Currency and Units
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
   >
     <span
       class="numerals-input"
     >
-      	1€ + 1€ 
+      	Lacroix_amazon =  $5.99 / (12*12 floz)
     </span>
     <span
       class="numerals-result"
     >
-      <span
-        class="numerals-error-name"
-      >
-        SyntaxError:
-      </span>
-      <span
-        class="numerals-error-message"
-      >
-        Syntax error in part "€ + 1€ " (char 3)
-      </span>
+       → 0.042 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Lacroix_safeway =  $12 / (3*8*12 floz) 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.042 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Sodastream_CO2 = $64.99 / (120L in floz)
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.016 USD / floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	Sodastream_machine = $89.99
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 89.99 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	can = 12floz
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 12 floz
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	savings_per_can = (Lacroix_safeway - Sodastream_CO2) * can
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.308 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	breakeven = Sodastream_machine / savings_per_can
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 292.364
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	days_breakeven = breakeven / (5 / day)
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 58.473 day
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Result Insertion
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 10 + 3*20
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 70
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 80
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	lemons = 80
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 80
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$100 + $1,000
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1,100 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	a = 1
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 1
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$b = 4
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	$result = a + $b =&gt; 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
     </span>
   </div>
 </div>

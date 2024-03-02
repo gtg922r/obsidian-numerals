@@ -287,7 +287,7 @@ export function processAndRenderNumeralsBlockFromSource(
 		}
 
 		// Remove result insertion directive `@[variable::result]` from raw text, and only show the variable
-		rawRows[i] = rawRows[i].replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")
+		rawRows[i] = rawRows[i].replace(/@\s*\[([^\]:]+)(::[^\]]*)?\](.*)$/gm, "$1$3")
 
 		let inputElement: HTMLElement, resultElement: HTMLElement;
 		switch(blockRenderStyle) {
@@ -620,7 +620,7 @@ export function preProcessBlockForNumeralsDirectives(
 	processedSource = processedSource.replace(/^([^#\r\n]*?)([\t ]*=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
 
 	// Replace result insertion directive `@[variable::result]` with only the variable
-	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::([^\]].*))?\].*$/gm, "$1")	
+	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::[^\]]*)?\](.*)$/gm, "$1$3")	
 
 	processedSource = processedSource.replace(/@sum/gi, "__total");
 	processedSource = processedSource.replace(/@total/gi, "__total");

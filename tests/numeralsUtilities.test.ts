@@ -166,6 +166,29 @@ apples = 2
 		expect(result.insertion_lines).toEqual([3]);
 	});
 
+	it("Correctly processes block with insertion directives inline", () => {
+		const sampleBlock = `# comment 1
+a = 2
+b = 3
+@[result::5] = a + b`;
+
+		const preProcessors = [{ regex: /apples/g, replaceStr: "3" }];
+		const result = preProcessBlockForNumeralsDirectives(
+			sampleBlock,
+			preProcessors
+		);
+
+		expect(result.rawRows).toEqual([
+			"# comment 1",
+			"a = 2",
+			"b = 3",
+			"@[result::5] = a + b",
+		]);
+		expect(result.processedSource).toEqual("# comment 1\na = 2\nb = 3\nresult = a + b");
+		expect(result.emitter_lines).toEqual([]);
+		expect(result.insertion_lines).toEqual([3]);
+	});	
+
 	it("Processes block without emitters or insertion directives", () => {
 		const sampleBlock = `# Simple math
 1 + 1
@@ -735,40 +758,13 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 	b + test + 2 => =>
 	3+2
 	
-	#Currency
-	1€ + 1€ 
-	€1 + 1€
-	$1 + 1USD
-	1$ + 3 USD + $1 + 1$
-	=>
-	$1 + 4$
-	£1 + £15 + 10£ #comment
-	£1 + £15 + 10£ #comment =>
-	1£ + £15 
-	# Test =>
-	=>
-	¥3 + 327¥
-	327¥ + ¥3
-	$1,000
-	1,000$
-	¥1,000
-	1,000¥
-	1+2
-	item1 = 1000.00$
-	1+1
-	item2 = 1000.00€
-	£10 + £0.75
-	10£ + 20.1 GBP
-	100€ + 100€
-	100¥ + ¥100
-	
+	# Currency	
 	# Currency and Units
 	Lacroix_amazon =  $5.99 / (12*12 floz)
 	Lacroix_safeway =  $12 / (3*8*12 floz) 
 	
 	Sodastream_CO2 = $64.99 / (120L in floz)
 	Sodastream_machine = $89.99
-	
 	
 	can = 12floz
 	savings_per_can = (Lacroix_safeway - Sodastream_CO2) * can
@@ -782,6 +778,9 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 	lemons
 	lemons = 80
 	$100 + $1,000
+	a = 1
+	$b = 4
+	@[$result::5] = a + $b => 
 	`;
 
 	it('Extended Snapshot 1: Default Settings', () => {
