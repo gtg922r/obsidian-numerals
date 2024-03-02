@@ -713,7 +713,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     </span>
   </div>
   <div
-    class="numerals-error-line"
+    class="numerals-error-line numerals-line"
   >
     <span
       class="numerals-input"
