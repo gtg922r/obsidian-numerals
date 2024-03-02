@@ -1,5 +1,2915 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Extended Snapshot 1: Default Settings 1`] = `
+<div
+  class="numerals-block numerals-panes numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
+>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      # Sum and Total
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	apples = 3
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	pears = 4
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	grapes = 10
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	fruit = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @Sum
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 17
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	monday = $10
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	tuesday = $20
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	wednesday = $30
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 30 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	profit = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @Total
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 60 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Sums to empty line or header
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	elementary = 5 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	middle = 3 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	high = 4 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	school = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @total
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 12 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Emitters
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test = 1+1  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 2
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b = 32  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 32
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b + test + 6
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 40
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test + 3
+      <span
+        class="numerals-inline-comment"
+      >
+        #this is the main thing
+      </span>
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# this is a comment =&gt; # ignore it
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test + 4
+      <span
+        class="numerals-inline-comment"
+      >
+        # this is after comment =&gt;
+      </span>
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 6
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	 
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	income = $100,000 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 100,000 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	tax_rate = 20%
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.2
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	taxes = income * tax_rate
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20,000 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	distance = 10miles
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10 miles
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	speed = 20 m/s
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 m / s
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	time = distance / speed
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 804.672 s
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b + test + 2=&gt;
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 36
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	3+2
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	#Currency
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-error-line numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	1€ + 1€ 
+    </span>
+    <span
+      class="numerals-result"
+    >
+      <span
+        class="numerals-error-name"
+      >
+        SyntaxError:
+      </span>
+      <span
+        class="numerals-error-message"
+      >
+        Syntax error in part "€ + 1€ " (char 3)
+      </span>
+    </span>
+  </div>
+</div>
+`;
+
+exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Extended Snapshot 2: Answer Right 1`] = `
+<div
+  class="numerals-block numerals-answer-right numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
+>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      # Sum and Total
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	apples = 3
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	pears = 4
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	grapes = 10
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	fruit = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @Sum
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 17
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	monday = $10
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	tuesday = $20
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	wednesday = $30
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 30 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	profit = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @Total
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 60 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Sums to empty line or header
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	elementary = 5 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	middle = 3 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	high = 4 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	school = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @total
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 12 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Emitters
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test = 1+1  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 2
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b = 32  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 32
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b + test + 6
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 40
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test + 3
+      <span
+        class="numerals-inline-comment"
+      >
+        #this is the main thing
+      </span>
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# this is a comment =&gt; # ignore it
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test + 4
+      <span
+        class="numerals-inline-comment"
+      >
+        # this is after comment =&gt;
+      </span>
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 6
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	 
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	income = $100,000 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 100,000 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	tax_rate = 20%
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.2
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	taxes = income * tax_rate
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20,000 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	distance = 10miles
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10 miles
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	speed = 20 m/s
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 m / s
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	time = distance / speed
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 804.672 s
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b + test + 2=&gt;
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 36
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	3+2
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	#Currency
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-error-line numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	1€ + 1€ 
+    </span>
+    <span
+      class="numerals-result"
+    >
+      <span
+        class="numerals-error-name"
+      >
+        SyntaxError:
+      </span>
+      <span
+        class="numerals-error-message"
+      >
+        Syntax error in part "€ + 1€ " (char 3)
+      </span>
+    </span>
+  </div>
+</div>
+`;
+
+exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Extended Snapshot 3: Answer Below 1`] = `
+<div
+  class="numerals-block numerals-answer-below numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
+>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      # Sum and Total
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	apples = 3
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	pears = 4
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	grapes = 10
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	fruit = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @Sum
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 17
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	monday = $10
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	tuesday = $20
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	wednesday = $30
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 30 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	profit = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @Total
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 60 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Sums to empty line or header
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	elementary = 5 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	middle = 3 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	high = 4 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	school = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @total
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 12 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Emitters
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test = 1+1  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 2
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b = 32  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 32
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b + test + 6
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 40
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test + 3
+      <span
+        class="numerals-inline-comment"
+      >
+        #this is the main thing
+      </span>
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# this is a comment =&gt; # ignore it
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test + 4
+      <span
+        class="numerals-inline-comment"
+      >
+        # this is after comment =&gt;
+      </span>
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 6
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	 
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	income = $100,000 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 100,000 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	tax_rate = 20%
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.2
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	taxes = income * tax_rate
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20,000 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	distance = 10miles
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10 miles
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	speed = 20 m/s
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 m / s
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	time = distance / speed
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 804.672 s
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b + test + 2=&gt;
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 36
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	3+2
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	#Currency
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-error-line numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	1€ + 1€ 
+    </span>
+    <span
+      class="numerals-result"
+    >
+      <span
+        class="numerals-error-name"
+      >
+        SyntaxError:
+      </span>
+      <span
+        class="numerals-error-message"
+      >
+        Syntax error in part "€ + 1€ " (char 3)
+      </span>
+    </span>
+  </div>
+</div>
+`;
+
+exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Extended Snapshot 4: Answer Inline 1`] = `
+<div
+  class="numerals-block numerals-answer-inline numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
+>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      # Sum and Total
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	apples = 3
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	pears = 4
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	grapes = 10
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	fruit = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @Sum
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 17
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	monday = $10
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	tuesday = $20
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	wednesday = $30
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 30 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	profit = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @Total
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 60 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Sums to empty line or header
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	elementary = 5 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	middle = 3 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	high = 4 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	school = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @total
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 12 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Emitters
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test = 1+1  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 2
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b = 32  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 32
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b + test + 6
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 40
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test + 3
+      <span
+        class="numerals-inline-comment"
+      >
+        #this is the main thing
+      </span>
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# this is a comment =&gt; # ignore it
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test + 4
+      <span
+        class="numerals-inline-comment"
+      >
+        # this is after comment =&gt;
+      </span>
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 6
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	 
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	income = $100,000 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 100,000 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	tax_rate = 20%
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.2
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	taxes = income * tax_rate
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20,000 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	distance = 10miles
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10 miles
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	speed = 20 m/s
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 m / s
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	time = distance / speed
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 804.672 s
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b + test + 2=&gt;
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 36
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	3+2
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	#Currency
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-error-line numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	1€ + 1€ 
+    </span>
+    <span
+      class="numerals-result"
+    >
+      <span
+        class="numerals-error-name"
+      >
+        SyntaxError:
+      </span>
+      <span
+        class="numerals-error-message"
+      >
+        Syntax error in part "€ + 1€ " (char 3)
+      </span>
+    </span>
+  </div>
+</div>
+`;
+
+exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Extended Snapshot 5: Mixed Settings 1`] = `
+<div
+  class="numerals-block numerals-answer-right numerals-plain numerals-emitters-present"
+>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      # Sum and Total
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	apples = 3
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	pears = 4
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	grapes = 10
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	fruit = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @Sum
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 17
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	monday = $10
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	tuesday = $20
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	wednesday = $30
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 30 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	profit = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @Total
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 60 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Sums to empty line or header
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	elementary = 5 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	middle = 3 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 3 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	high = 4 years
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 4 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      <span>
+        	school = 
+      </span>
+      <span
+        class="numerals-sum"
+      >
+        @total
+      </span>
+      <span />
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 12 years
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# Emitters
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test = 1+1  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 2
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b = 32  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 32
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b + test + 6 =&gt;
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 40
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test + 3 =&gt; 
+      <span
+        class="numerals-inline-comment"
+      >
+        #this is the main thing
+      </span>
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	# this is a comment =&gt; # ignore it
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	test + 4 =&gt;      
+      <span
+        class="numerals-inline-comment"
+      >
+        # this is after comment =&gt;
+      </span>
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 6
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	 
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	income = $100,000 
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 100,000 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	tax_rate = 20%
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 0.2
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	taxes = income * tax_rate =&gt;  
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20,000 USD
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	distance = 10miles
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 10 miles
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	speed = 20 m/s
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 20 m / s
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	time = distance / speed =&gt;
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 804.672 s
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line numerals-emitter"
+  >
+    <span
+      class="numerals-input"
+    >
+      	b + test + 2 =&gt; =&gt;
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 36
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	3+2
+    </span>
+    <span
+      class="numerals-result"
+    >
+       → 5
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-line"
+  >
+    <span
+      class="numerals-input numerals-empty"
+    >
+      	#Currency
+    </span>
+    <span
+      class="numerals-result numerals-empty"
+    >
+       
+    </span>
+  </div>
+  <div
+    class="numerals-error-line numerals-line"
+  >
+    <span
+      class="numerals-input"
+    >
+      	1€ + 1€ 
+    </span>
+    <span
+      class="numerals-result"
+    >
+      <span
+        class="numerals-error-name"
+      >
+        SyntaxError:
+      </span>
+      <span
+        class="numerals-error-message"
+      >
+        Syntax error in part "€ + 1€ " (char 3)
+      </span>
+    </span>
+  </div>
+</div>
+`;
+
 exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Snapshot 1: simple math block with units, emitters, result insertion 1`] = `
 <div
   class="numerals-block numerals-panes numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
@@ -163,576 +3073,6 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
       class="numerals-result"
     >
        → 4.142
-    </span>
-  </div>
-</div>
-`;
-
-exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Snapshot 3: longer example with more features 1`] = `
-<div
-  class="numerals-block numerals-panes numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
->
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    >
-      # Sum and Total
-    </span>
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      apples = 3
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 3
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      pears = 4
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 4
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      grapes = 10
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 10
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      <span>
-        fruit = 
-      </span>
-      <span
-        class="numerals-sum"
-      >
-        @Sum
-      </span>
-      <span />
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 17
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    />
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      monday = $10
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 10 USD
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      tuesday = $20
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 20 USD
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      wednesday = $30
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 30 USD
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      <span>
-        profit = 
-      </span>
-      <span
-        class="numerals-sum"
-      >
-        @Total
-      </span>
-      <span />
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 60 USD
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    />
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    >
-      # Sums to empty line or header
-    </span>
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      elementary = 5 years
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 5 years
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      middle = 3 years
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 3 years
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      high = 4 years
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 4 years
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      <span>
-        school = 
-      </span>
-      <span
-        class="numerals-sum"
-      >
-        @total
-      </span>
-      <span />
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 12 years
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    />
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    >
-      # Emitters
-    </span>
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      test = 1+1  
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 2
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      b = 32  
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 32
-    </span>
-  </div>
-  <div
-    class="numerals-line numerals-emitter"
-  >
-    <span
-      class="numerals-input"
-    >
-      b + test + 6
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 40
-    </span>
-  </div>
-  <div
-    class="numerals-line numerals-emitter"
-  >
-    <span
-      class="numerals-input"
-    >
-      test + 3
-      <span
-        class="numerals-inline-comment"
-      >
-        #this is the main thing
-      </span>
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 5
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    >
-      # this is a comment =&gt; # ignore it
-    </span>
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line numerals-emitter"
-  >
-    <span
-      class="numerals-input"
-    >
-      test + 4
-      <span
-        class="numerals-inline-comment"
-      >
-        # this is after comment =&gt;
-      </span>
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 6
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    >
-       
-    </span>
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      income = $100,000 
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 100,000 USD
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      tax_rate = 20%
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 0.2
-    </span>
-  </div>
-  <div
-    class="numerals-line numerals-emitter"
-  >
-    <span
-      class="numerals-input"
-    >
-      taxes = income * tax_rate
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 20,000 USD
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    />
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      distance = 10miles
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 10 miles
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      speed = 20 m/s
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 20 m / s
-    </span>
-  </div>
-  <div
-    class="numerals-line numerals-emitter"
-  >
-    <span
-      class="numerals-input"
-    >
-      time = distance / speed
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 804.672 s
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    />
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line numerals-emitter"
-  >
-    <span
-      class="numerals-input"
-    >
-      b + test + 2=&gt;
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 36
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      3+2
-    </span>
-    <span
-      class="numerals-result"
-    >
-       → 5
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    />
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-line"
-  >
-    <span
-      class="numerals-input numerals-empty"
-    >
-      #Currency
-    </span>
-    <span
-      class="numerals-result numerals-empty"
-    >
-       
-    </span>
-  </div>
-  <div
-    class="numerals-error-line numerals-line"
-  >
-    <span
-      class="numerals-input"
-    >
-      1€ + 1€ 
-    </span>
-    <span
-      class="numerals-result"
-    >
-      <span
-        class="numerals-error-name"
-      >
-        SyntaxError:
-      </span>
-      <span
-        class="numerals-error-message"
-      >
-        Syntax error in part "€ + 1€ " (char 2)
-      </span>
     </span>
   </div>
 </div>
