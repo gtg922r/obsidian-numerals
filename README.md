@@ -9,10 +9,13 @@
 - Units
  	- `1ft + 12in` → `2ft`
 	- `20 mi / 4 hr to m/s` → `2.235 m / s`
+	- `100 km/hr in mi/hr` → `62.137 mi / hr`
 	- `9.81 m/s^2 * 100 kg * 40 m` → `39.24 kJ`
 - Currency
 	- `$1,000 * 2` → `2,000 USD`
 	- `£10 + £0.75` → `10.75 GBP`
+	- `$100/hr * 3days` → `7,200 USD`
+	- Set custom currencies, for example `₿`
 - Math functions
 	- `sqrt`, `sin`, `cos`, `abs`, `log`, etc (see [mathjs](https://mathjs.org/docs/reference/functions.html) for full list)
 - Hex, Binary, Octal, and other bases
@@ -24,6 +27,13 @@
 - Auto-complete suggestions
 	- By default will offer auto-complete suggestions for any variables defined in a math codeblock being edited
 	- Optional setting to include all available functions, constants, and physical constants
+- Totals of previous lines using `@total` or `@sum` special operator
+	- When Numerals encounters `@total` or `@sum` it inserts the sum of all previous lines up until the last blank line or comment
+- Greek Letters
+	- Variables can be named using greek letters, e.g. `μ = 3 m/s`
+	- Greek letters can be auto-completed by typing `:`, e.g. `:mu` in a math block will offer `μ` as an auto-complete suggestion
+- Note-Global Variables
+	- Any variable name preceeded by an `$` symbol will be made available to all math blocks on a page
 - Fractions:	
 	- `fraction(1/3) + fraction(1/4)` → `7/12`
 - Comments and Headings:
@@ -31,6 +41,12 @@
 	- A line starting with `#` will be ignored by the math engine, but will be bolded when rendered
 - Result Annotation:
 	- `=>` at the end of a line (but before a comment) will tell *Numerals* that a result should be highlighted. Any line in that code block *without* a `=>` annotation will be rendered faintly (or hidden depending on settings).
+- Result Insertion:
+	- Using the `@[...]` syntax (for example: `$[profit]`), Numerals will insert the results of a calculation into the raw text of your note, following `::`
+	- Uses dataview notation, which allows writing back to dataview valueues. For example, `@[profit]` will be modified to say `@[profit::10 USD]`
+- Access Frontmatter Properties
+	- Numerals will have access to any property name specified in the `numerals:` property. Setting `numerals` to `all`, will make all properties in a note available to *Numerals*
+	- Multiple properties can be specified as a list, e.g. `numerals: [apples, pears]` will makes both the `apples` and `pears` property available to Numerals
 
 *Numerals* utilizes the [mathjs](https://mathjs.org/) library for all calculations. *Numerals* implements a preprocessor to allow more human-friendly syntax, such as currency symbols and thousands separators. For all available functions and capabilities (which includes matrices, vectors, symbolic algebra and calculus, etc), see the [mathjs documentation](https://mathjs.org/docs/index.html)
 
