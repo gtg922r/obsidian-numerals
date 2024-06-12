@@ -43,7 +43,7 @@
 	- `=>` at the end of a line (but before a comment) will tell *Numerals* that a result should be highlighted. Any line in that code block *without* a `=>` annotation will be rendered faintly (or hidden depending on settings).
 - Result Insertion:
 	- Using the `@[...]` syntax (for example: `$[profit]`), Numerals will insert the results of a calculation into the raw text of your note, following `::`
-	- Uses dataview notation, which allows writing back to dataview valueues. For example, `@[profit]` will be modified to say `@[profit::10 USD]`
+	- Uses dataview notation, which allows writing back to dataview values. For example, `@[profit]` will be modified to say `@[profit::10 USD]`
 - Access Frontmatter Properties
 	- Numerals will have access to any property name specified in the `numerals:` property. Setting `numerals` to `all`, will make all properties in a note available to *Numerals*
 	- Multiple properties can be specified as a list, e.g. `numerals: [apples, pears]` will makes both the `apples` and `pears` property available to Numerals
