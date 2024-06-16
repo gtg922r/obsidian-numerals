@@ -162,8 +162,8 @@ apples = 2
 		expect(result.processedSource).toEqual(
 			"# comment 1\n3 = 2\n2 + 3\n$result"
 		);
-		expect(result.emitter_lines).toEqual([2]);
-		expect(result.insertion_lines).toEqual([3]);
+		expect(result.blockInfo.emitter_lines).toEqual([2]);
+		expect(result.blockInfo.insertion_lines).toEqual([3]);
 	});
 
 	it("Correctly processes block with insertion directives inline", () => {
@@ -185,8 +185,8 @@ b = 3
 			"@[result::5] = a + b",
 		]);
 		expect(result.processedSource).toEqual("# comment 1\na = 2\nb = 3\nresult = a + b");
-		expect(result.emitter_lines).toEqual([]);
-		expect(result.insertion_lines).toEqual([3]);
+		expect(result.blockInfo.emitter_lines).toEqual([]);
+		expect(result.blockInfo.insertion_lines).toEqual([3]);
 	});	
 
 	it("Processes block without emitters or insertion directives", () => {
@@ -202,8 +202,8 @@ b = 3
 
 		expect(result.rawRows).toEqual(["# Simple math", "1 + 1", "2 * 2"]);
 		expect(result.processedSource).toEqual("# Simple math\n1 + 1\n2 * 2");
-		expect(result.emitter_lines).toEqual([]);
-		expect(result.insertion_lines).toEqual([]);
+		expect(result.blockInfo.emitter_lines).toEqual([]);
+		expect(result.blockInfo.insertion_lines).toEqual([]);
 	});
 
 	it("Handles multiple emitters and insertion directives", () => {
@@ -229,8 +229,8 @@ b = 3
 		expect(result.processedSource).toEqual(
 			"# Multiple directives\n5 + 5\n10 - 2\n$firstResult\n$secondResult"
 		);
-		expect(result.emitter_lines).toEqual([1, 2]);
-		expect(result.insertion_lines).toEqual([3, 4]);
+		expect(result.blockInfo.emitter_lines).toEqual([1, 2]);
+		expect(result.blockInfo.insertion_lines).toEqual([3, 4]);
 	});
 
 	it("Correctly applies preProcessors to the source", () => {
@@ -255,8 +255,8 @@ apples + oranges
 		expect(result.processedSource).toEqual(
 			"# Preprocessor test\n3 + 5\n$totalFruits"
 		);
-		expect(result.emitter_lines).toEqual([]);
-		expect(result.insertion_lines).toEqual([2]);
+		expect(result.blockInfo.emitter_lines).toEqual([]);
+		expect(result.blockInfo.insertion_lines).toEqual([2]);
 	});
 });
 

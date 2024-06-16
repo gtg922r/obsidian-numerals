@@ -2,7 +2,7 @@
 import * as math from 'mathjs';
 import { getAPI } from 'obsidian-dataview';
 import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope } from './numerals.types';
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo } from './numerals.types';
 
 // TODO: Addition of variables not adding up
 
@@ -231,8 +231,16 @@ export function processAndRenderNumeralsBlockFromSource(
 		? type
 		: settings.defaultRenderStyle;
 
-	const { rawRows, processedSource, emitter_lines, insertion_lines } =
+
+	const { rawRows, processedSource, blockInfo } =
 		preProcessBlockForNumeralsDirectives(source, preProcessors);
+	
+	const {
+		emitter_lines,
+		insertion_lines,
+		hidden_lines,
+		shouldHideNonEmitterLines
+	} = blockInfo;
 
 	applyBlockStyles({
 		el,
@@ -255,14 +263,8 @@ export function processAndRenderNumeralsBlockFromSource(
 	
 	// Render each line
 	for (let i = 0; i < inputs.length; i++) {
-		const line = el.createEl("div", {cls: "numerals-line"});
-		const emptyLine = (results[i] === undefined)
 
-		// if line is an emitter lines, add numerals-emitter class	
-		if (emitter_lines.includes(i)) {
-			line.toggleClass("numerals-emitter", true);
-		}
-
+		// TODO - extract this into a separate function
 		if (insertion_lines.includes(i)) {
 			const sectionInfo = ctx.getSectionInfo(el);
 			const lineStart = sectionInfo?.lineStart;
@@ -280,7 +282,22 @@ export function processAndRenderNumeralsBlockFromSource(
 				}
 			}
 		}
- 
+
+		if (
+			hidden_lines.includes(i) ||
+			(shouldHideNonEmitterLines && !emitter_lines.includes(i))
+		) {
+			continue;
+		}
+
+		const line = el.createEl("div", {cls: "numerals-line"});
+		const emptyLine = (results[i] === undefined)
+
+		// if line is an emitter lines, add numerals-emitter class	
+		if (emitter_lines.includes(i)) {
+			line.toggleClass("numerals-emitter", true);
+		}
+
 		// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
 		if (settings.hideEmitterMarkupInInput) {
 			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*?)([\t ]*=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1$4") 
@@ -591,8 +608,7 @@ export function preProcessBlockForNumeralsDirectives(
 ): {
 	rawRows: string[],
 	processedSource: string,
-	emitter_lines: number[],
-	insertion_lines: number[]
+	blockInfo: numeralsBlockInfo
 } {
 
 	const rawRows: string[] = source.split("\n");
@@ -600,6 +616,8 @@ export function preProcessBlockForNumeralsDirectives(
 
 	const emitter_lines: number[] = [];
 	const insertion_lines: number[] = [];
+	const hidden_lines: number[] = [];
+	let shouldHideNonEmitterLines = false;
 
 	// Find emitter and result insertion lines before modifying source
 	for (let i = 0; i < rawRows.length; i++) {
@@ -614,16 +632,32 @@ export function preProcessBlockForNumeralsDirectives(
 		if (insertionMatch) {
 			insertion_lines.push(i)
 		}
+
+		// Find hideRows directives (starts with @hideRows, ignoring whitespace)
+		if (rawRows[i].match(/^\s*@hideRows\s*$/)) {
+			hidden_lines.push(i);
+			shouldHideNonEmitterLines = true;
+		}
+
+		// Find @createUnit directives (starts with @createUnit, ignoring whitespace)
+		if (rawRows[i].match(/^\s*@createUnit\s*$/)) {
+			hidden_lines.push(i);
+		}
 	} 
 
 	// remove `=>` at the end of lines, but preserve comments.
 	processedSource = processedSource.replace(/^([^#\r\n]*?)([\t ]*=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
 
+	// Replace Directives
 	// Replace result insertion directive `@[variable::result]` with only the variable
 	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::[^\]]*)?\](.*)$/gm, "$1$3")	
 
+	// Replace sum directives
 	processedSource = processedSource.replace(/@sum/gi, "__total");
 	processedSource = processedSource.replace(/@total/gi, "__total");
+
+	// Remove @hideRows directive
+	processedSource = processedSource.replace(/^\s*@hideRows/gi, "");
 
 	// Apply any pre-processors (e.g. currency replacement, thousands separator replacement, etc.)
 	if (preProcessors && preProcessors.length > 0) {
@@ -633,8 +667,12 @@ export function preProcessBlockForNumeralsDirectives(
 	return {
 		rawRows,
 		processedSource,
-		emitter_lines,
-		insertion_lines
+		blockInfo: {
+			emitter_lines,
+			insertion_lines,
+			hidden_lines,
+			shouldHideNonEmitterLines
+		}
 	}
 }
 

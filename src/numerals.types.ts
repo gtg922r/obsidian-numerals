@@ -78,3 +78,10 @@ export interface CurrencyType {
 export type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
 
 export class NumeralsScope extends Map<string, unknown>{}
+
+export type numeralsBlockInfo = {
+	emitter_lines: number[];
+	insertion_lines: number[];
+	hidden_lines: number[];
+	shouldHideNonEmitterLines: boolean;
+}
