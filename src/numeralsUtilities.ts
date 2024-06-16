@@ -266,6 +266,7 @@ export function processAndRenderNumeralsBlockFromSource(
 
 		// TODO - extract this into a separate function
 		if (insertion_lines.includes(i)) {
+			// Update the editor with the evaluated result
 			const sectionInfo = ctx.getSectionInfo(el);
 			const lineStart = sectionInfo?.lineStart;
 
@@ -739,8 +740,18 @@ export function evaluateMathFromSourceStrings(
 			} else {
 				scope.set("__total", undefined);
 			}
-			results.push(math.evaluate(row, scope));
-			inputs.push(row); // Only pushes if evaluate is successful
+
+			const unitDirectiveMatch = row.match(/^\s*@unit\(([^#]*)\)\s*(#.*)?$/);
+			if (unitDirectiveMatch) {
+				const unitArgs = unitDirectiveMatch[1].trim();
+				const [unitDefinition, ...aliases] = unitArgs.split(',').map(arg => arg.trim());
+				createCustomUnit(unitDefinition, aliases);
+				results.push(undefined); // No result to push for unit creation
+				inputs.push(row);
+			} else {
+				results.push(math.evaluate(row, scope));
+				inputs.push(row); // Only pushes if evaluate is successful
+			}
 		} catch (error) {
 			errorMsg = error;
 			errorInput = row;
@@ -749,5 +760,41 @@ export function evaluateMathFromSourceStrings(
 	}
 
 	return { results, inputs, errorMsg, errorInput };
+}
+
+/**
+ * Creates a custom unit in mathjs with optional aliases.
+ * 
+ * This function parses a custom syntax for defining units and their aliases, and then calls
+ * mathjs's createUnit function with the appropriate arguments.
+ * 
+ * @param unitDefinition - The unit definition string, which can include an equals sign to define the unit in terms of existing units.
+ * @param aliases - An optional string or array of strings to be used as aliases for the new unit.
+ */
+export function createCustomUnit(unitDefinition: string, aliases?: string | string[]): math.Unit | undefined {
+	const [unit, definition] = unitDefinition.split('=').map(part => part.trim());
+	const unitOptions: { definition?: string, aliases?: string[]} = {};
+
+	if (definition) {
+		unitOptions.definition = definition;
+	} else {
+		// no definition would create a new base unit, which will fail if already exists
+		let unitExists = true;
+		try {  
+			math.unit(unit);
+		} catch (e) {
+			unitExists = false;
+		}
+		if (unitExists) {
+			// If the unit already exists, creating again will fail, so just return
+			return;
+		}
+	}
+
+	if (aliases) {
+		unitOptions.aliases = Array.isArray(aliases) ? aliases : [aliases];
+	}
+
+	return math.createUnit(unit, unitOptions, { override: true });
 }
 
