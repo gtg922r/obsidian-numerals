@@ -48,6 +48,12 @@ const greekSymbols = [
     { trigger: 'Omega', symbol: 'Ω' },
 ];
 
+const numeralsDirectives = [
+	"@hideRows",
+	"@Sum",
+	"@Total",
+]
+
 export class NumeralsSuggestor extends EditorSuggest<string> {
 	plugin: NumeralsPlugin;
 	
@@ -91,7 +97,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 
 		// Get last word in current line
 		const currentLineToCursor = editor.getLine(cursor.line).slice(0, cursor.ch);
-		const currentLineLastWordStart = currentLineToCursor.search(/[:@]?[$\w\u0370-\u03FF]+$/);
+		const currentLineLastWordStart = currentLineToCursor.search(/[:]?[$@\w\u0370-\u03FF]+$/);
 		// if there is no word, return null
 		if (currentLineLastWordStart === -1) {
 			return null;
@@ -134,8 +140,6 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 				localSymbols = [...new Set([...localSymbols, ...frontmatterSymbolsArray])];
 			}
 
-			// localSymbols = localSymbols.concat("m|@Sum", "m|@Total");
-
 			this.localSuggestionCache = localSymbols;
 			this.lastSuggestionListUpdate = performance.now();
 		} else {
@@ -157,7 +161,11 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			suggestions = local_suggestions;
 		}
 
-		suggestions = suggestions.concat(["@Sum", "@Total"].filter((value) => value.slice(0,-1).toLowerCase().startsWith(query_lower, 0)).map((value) => 'm|' + value));
+		suggestions = suggestions.concat(
+			numeralsDirectives
+				.filter((value) => value.slice(0,-1).toLowerCase().startsWith(query_lower, 0))
+				.map((value) => 'm|' + value)
+			);
 
 		// TODO MOVE THESE UP INTO THE CACHED portion. also trigger isn't the right name
 		if (this.plugin.settings.enableGreekAutoComplete) {
