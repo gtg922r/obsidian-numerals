@@ -657,7 +657,7 @@ export function preProcessBlockForNumeralsDirectives(
 	processedSource = processedSource.replace(/@total/gi, "__total");
 
 	// Remove @hideRows directive
-	processedSource = processedSource.replace(/^\s*@hideRows/gi, "");
+	processedSource = processedSource.replace(/^\s*@hideRows/gim, "");
 
 	// Apply any pre-processors (e.g. currency replacement, thousands separator replacement, etc.)
 	if (preProcessors && preProcessors.length > 0) {

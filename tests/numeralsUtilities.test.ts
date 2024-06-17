@@ -258,6 +258,50 @@ apples + oranges
 		expect(result.blockInfo.emitter_lines).toEqual([]);
 		expect(result.blockInfo.insertion_lines).toEqual([2]);
 	});
+
+	it("Correctly hides rows without result annotation when @hideRows is used", () => {
+		const sampleBlock = `# Test hideRows
+@hideRows
+apples = 2
+2 + 3 =>
+@[$result::5]`;
+
+		const result = preProcessBlockForNumeralsDirectives(sampleBlock, undefined);
+
+		expect(result.rawRows).toEqual([
+			"# Test hideRows",
+			"@hideRows",
+			"apples = 2",
+			"2 + 3 =>",
+			"@[$result::5]",
+		]);
+		expect(result.processedSource).toEqual(
+			"# Test hideRows\n\napples = 2\n2 + 3\n$result"
+		);
+		expect(result.blockInfo.hidden_lines).toEqual([1]);
+		expect(result.blockInfo.shouldHideNonEmitterLines).toBe(true);
+	});
+
+	it("Does not hide rows when @hideRows is not used", () => {
+		const sampleBlock = `# Test without hideRows
+apples = 2
+2 + 3 =>
+@[$result::5]`;
+
+		const result = preProcessBlockForNumeralsDirectives(sampleBlock, undefined);
+
+		expect(result.rawRows).toEqual([
+			"# Test without hideRows",
+			"apples = 2",
+			"2 + 3 =>",
+			"@[$result::5]",
+		]);
+		expect(result.processedSource).toEqual(
+			"# Test without hideRows\napples = 2\n2 + 3\n$result"
+		);
+		expect(result.blockInfo.hidden_lines).toEqual([]);
+		expect(result.blockInfo.shouldHideNonEmitterLines).toBe(false);
+	});
 });
 
 /**
@@ -700,6 +744,36 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		expect(lines[8].textContent).toContain(`wednesday = $30${resultSeparator}30 USD`);
 		expect(lines[9].textContent).toContain(`profit = @total${resultSeparator}60 USD`);
 	});
+
+    it("renders only result-annotated rows when @hideRows is used", () => {
+        const source = `# Test hideRows
+        @hideRows
+        apples = 2
+        2 + 3 =>
+        @[$result::5]`;
+        
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+
+        const lines = el.querySelectorAll(".numerals-line");
+        // expect(lines.length).toBe(3); // Only 3 lines should be rendered
+        expect(lines[0].textContent).toContain("2 + 3");
+    });
+
+    it("renders all rows when @hideRows is not used", () => {
+        const source = `# Test without hideRows
+        apples = 2
+        2 + 3 =>
+        @[$result::5]`;
+        
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+
+        const lines = el.querySelectorAll(".numerals-line");
+        expect(lines.length).toBe(4); // All 4 lines should be rendered
+        expect(lines[0].textContent).toContain("# Test without hideRows");
+        expect(lines[1].textContent).toContain("apples = 2");
+        expect(lines[2].textContent).toContain("2 + 3");
+        expect(lines[3].textContent).toContain("$result");
+    });	
 
 	it('Snapshot 1: simple math block with units, emitters, result insertion', () => {
 		source = `# Physics Calculation
