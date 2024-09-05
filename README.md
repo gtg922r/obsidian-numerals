@@ -42,7 +42,7 @@
 - Result Annotation:
 	- `=>` at the end of a line (but before a comment) will tell *Numerals* that a result should be highlighted. Any line in that code block *without* a `=>` annotation will be rendered faintly (or hidden depending on settings).
 - Result Insertion:
-	- Using the `@[...]` syntax (for example: `$[profit]`), Numerals will insert the results of a calculation into the raw text of your note, following `::`
+	- Using the `@[...]` syntax (for example: `@[profit]`), Numerals will insert the results of a calculation into the raw text of your note, following `::`
 	- Uses dataview notation, which allows writing back to dataview values. For example, `@[profit]` will be modified to say `@[profit::10 USD]`
 - Access Frontmatter Properties
 	- Numerals will have access to any property name specified in the `numerals:` property. Setting `numerals` to `all`, will make all properties in a note available to *Numerals*
@@ -67,8 +67,8 @@ One of these options can either be chosen as a default from *Numerals* settings,
 
 ### Layout
 #### 2-panes
-- Answer is shown to the right of the input with a background color and a seperator.
-- Distinctive style that seperates input from evaluated answers
+- Answer is shown to the right of the input with a background color and a separator.
+- Distinctive style that separates input from evaluated answers
 
 ![Numerals 2 Panes](https://user-images.githubusercontent.com/1195174/200186692-0b6a0a7b-3f77-47f8-887f-d7d333b53967.png)
 
