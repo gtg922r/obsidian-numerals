@@ -52,6 +52,7 @@ const numeralsDirectives = [
 	"@hideRows",
 	"@Sum",
 	"@Total",
+	"@Prev",
 ]
 
 export class NumeralsSuggestor extends EditorSuggest<string> {
