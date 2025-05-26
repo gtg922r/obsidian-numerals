@@ -652,9 +652,10 @@ export function preProcessBlockForNumeralsDirectives(
 	// Replace result insertion directive `@[variable::result]` with only the variable
 	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::[^\]]*)?\](.*)$/gm, "$1$3")	
 
-	// Replace sum directives
+	// Replace sum and prev directives
 	processedSource = processedSource.replace(/@sum/gi, "__total");
 	processedSource = processedSource.replace(/@total/gi, "__total");
+	processedSource = processedSource.replace(/@prev/gi, "__prev");
 
 	// Remove @hideRows directive
 	processedSource = processedSource.replace(/^\s*@hideRows/gim, "");
@@ -717,7 +718,19 @@ export function evaluateMathFromSourceStrings(
 	for (const [index, row] of rowsToProcess.entries()) {
 		const lastUndefinedRowIndex = results.slice(0, index).lastIndexOf(undefined);
 
-		try {			
+		try {
+			if (index > 0 && results.length > 0) {
+				const prevResult = results[results.length - 1];
+				scope.set("__prev", prevResult);
+			} else {
+				scope.set("__prev", undefined);
+				if (/__prev/i.test(row)) {
+					errorMsg = {name: "Previous Value Error", message: 'Error evaluating @prev directive. There is no previous result.'};
+					errorInput = row;
+					break;
+				}
+			}
+			
 			const partialResults = results.slice(lastUndefinedRowIndex+1, index).filter(result => result !== undefined);
 			if (partialResults.length > 1) {
 				try {

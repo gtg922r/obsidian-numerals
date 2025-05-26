@@ -206,6 +206,27 @@ b = 3
 		expect(result.blockInfo.insertion_lines).toEqual([]);
 	});
 
+	it("Correctly processes block with @prev directive", () => {
+		const sampleBlock = `value = 10
+doubled = @prev * 2
+tripled = @Prev * 1.5`;
+
+		const preProcessors = undefined;
+		const result = preProcessBlockForNumeralsDirectives(
+			sampleBlock,
+			preProcessors
+		);
+
+		expect(result.rawRows).toEqual([
+			"value = 10",
+			"doubled = @prev * 2",
+			"tripled = @Prev * 1.5"
+		]);
+		expect(result.processedSource).toEqual("value = 10\ndoubled = __prev * 2\ntripled = __prev * 1.5");
+		expect(result.blockInfo.emitter_lines).toEqual([]);
+		expect(result.blockInfo.insertion_lines).toEqual([]);
+	});
+
 	it("Handles multiple emitters and insertion directives", () => {
 		const sampleBlock = `# Multiple directives
 5 + 5 =>
@@ -525,7 +546,26 @@ profit = __total`;
 		const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
 		expect(results).toEqual([undefined,3, 4, 10, 17, undefined, math.unit(10, 'USD'), math.unit(20, 'USD'), math.unit(30, 'USD'), math.unit(60, 'USD')]);
 		expect(inputs).toEqual(["# Fruit","apples = 3", "pears = 4", "grapes = 10", "fruit = __total", "", "monday = 10 USD", "tuesday = 20 USD", "wednesday = 30 USD", "profit = __total"]);
-	});	
+	});
+
+	it("should handle @prev directive to use previous line's value", () => {
+		processedSource = `value = 10
+doubled = __prev * 2
+tripled = __prev * 1.5
+result = __prev + 5`;
+		const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
+		expect(results).toEqual([10, 20, 30, 35]);
+		expect(inputs).toEqual(["value = 10", "doubled = __prev * 2", "tripled = __prev * 1.5", "result = __prev + 5"]);
+	});
+	
+	it("should handle error when @prev is used on the first line", () => {
+		processedSource = `__prev + 5
+value = 10`;
+		const { errorMsg, errorInput } = evaluateMathFromSourceStrings(processedSource, scope);
+		expect(errorMsg).not.toBeNull();
+		expect(errorInput).toBe("__prev + 5");
+		expect(errorMsg?.name).toBe("Previous Value Error");
+	});
 });
 
 describe("numeralsUtilities: replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw", () => {

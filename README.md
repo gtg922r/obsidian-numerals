@@ -29,6 +29,8 @@
 	- Optional setting to include all available functions, constants, and physical constants
 - Totals of previous lines using `@total` or `@sum` special operator
 	- When Numerals encounters `@total` or `@sum` it inserts the sum of all previous lines up until the last blank line or comment
+- Previous result
+  - Use previous line result in current calculation with `@prev`
 - Greek Letters
 	- Variables can be named using greek letters, e.g. `μ = 3 m/s`
 	- Greek letters can be auto-completed by typing `:`, e.g. `:mu` in a math block will offer `μ` as an auto-complete suggestion
