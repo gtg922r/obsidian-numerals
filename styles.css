@@ -265,6 +265,11 @@ body {
     color: transparent;
 }
 
+/* Ensure error text remains visible even when non-emitter results are hidden */
+.numerals-emitters-present.numerals-hide-non-emitters .numerals-error-line .numerals-result {
+    color: var(--code-punctuation);
+}
+
 
 /**********************************/
 /* ** Inline Style ** */
