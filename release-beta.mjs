@@ -35,6 +35,7 @@ async function releaseBeta() {
         
         console.log(`✅ Beta release complete! Tagged as ${currentVersion}`);
         console.log("🚀 GitHub Actions will automatically build and publish the release.");
+        console.log(`📦 Release page: https://github.com/gtg922r/obsidian-numerals/releases/tag/${currentVersion}`);
         
         // Only show PR link if not on master branch
         if (currentBranch !== 'master') {

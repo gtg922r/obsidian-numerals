@@ -41,6 +41,7 @@ async function releaseProduction() {
         
         console.log(`✅ Production release complete! Tagged as ${targetVersion}`);
         console.log("🚀 GitHub Actions will automatically build and publish the release.");
+        console.log(`📦 Release page: https://github.com/gtg922r/obsidian-numerals/releases/tag/${targetVersion}`);
         
         // Only show PR link if not on master branch
         if (currentBranch !== 'master') {

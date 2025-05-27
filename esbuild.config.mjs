@@ -11,7 +11,7 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = (process.argv[2] === 'production');
 
-esbuild.build({
+const buildOptions = {
 	banner: {
 		js: banner,
 	},
@@ -33,10 +33,19 @@ esbuild.build({
 		'@lezer/lr',
 		...builtins],
 	format: 'cjs',
-	watch: !prod,
 	target: 'es2018',
 	logLevel: "info",
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
 	outfile: 'main.js',
-}).catch(() => process.exit(1));
+};
+
+if (prod) {
+	// Production build
+	esbuild.build(buildOptions).catch(() => process.exit(1));
+} else {
+	// Development build with watch
+	const context = await esbuild.context(buildOptions);
+	await context.watch();
+	console.log('Watching for changes...');
+}
