@@ -30,8 +30,16 @@ async function releaseBeta() {
         execSync(`git push origin`, { stdio: "inherit" });
         execSync(`git push origin ${currentVersion}`, { stdio: "inherit" });
         
+        // Get current branch name for PR URL
+        const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
+        
         console.log(`✅ Beta release complete! Tagged as ${currentVersion}`);
         console.log("🚀 GitHub Actions will automatically build and publish the release.");
+        
+        // Only show PR link if not on master branch
+        if (currentBranch !== 'master') {
+            console.log(`📋 Create PR: https://github.com/gtg922r/obsidian-numerals/compare/master...${currentBranch}?quick_pull=1&title=Beta%20Release%20${currentVersion}&body=Beta%20release%20for%20version%20${currentVersion}`);
+        }
         
     } catch (error) {
         console.error("❌ Beta release failed:", error.message);
