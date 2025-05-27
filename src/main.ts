@@ -97,7 +97,7 @@ export default class NumeralsPlugin extends Plugin {
 		// TODO: Rendering is getting called twice. Once without newline at the end of the code block and once with.
 		//       This is causing the code block to be rendered twice. Need to figure out why and fix it.
 
-		let metadata = getMetadataForFileAtPath(ctx.sourcePath);
+		let metadata = getMetadataForFileAtPath(ctx.sourcePath, this.app);
 		
 		const scope = processAndRenderNumeralsBlockFromSource(
 			el, 
@@ -108,6 +108,7 @@ export default class NumeralsPlugin extends Plugin {
 			this.settings,
 			this.numberFormat,
 			this.preProcessors,
+			this.app
 		);
 
 		addGobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
@@ -115,7 +116,7 @@ export default class NumeralsPlugin extends Plugin {
 		const numeralsBlockChild = new MarkdownRenderChild(el);
 
 		const numeralsBlockCallback = (_callbackType: unknown, _file: unknown, _oldPath?: unknown) => {
-			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath);
+			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath, this.app);
 			if (equal(currentMetadata, metadata)) {
 				return;
 			} else {
@@ -133,6 +134,7 @@ export default class NumeralsPlugin extends Plugin {
 				this.settings,
 				this.numberFormat,
 				this.preProcessors,
+				this.app
 			);
 
 			addGobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
