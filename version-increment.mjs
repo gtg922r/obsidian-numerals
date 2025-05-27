@@ -47,7 +47,7 @@ function updateVersion() {
         writeFileSync("package.json", JSON.stringify(packageJson, null, "\t"));
         
         console.log(`✅ Updated package.json to version ${newVersion}`);
-        console.log(`💡 Run 'npm run build:beta' or 'npm run build:release' to build and deploy`);
+        console.log(`💡 Run 'npm run release:beta' or 'npm run release:production' to build and deploy`);
         
     } catch (error) {
         console.error("❌ Version increment failed:", error.message);
