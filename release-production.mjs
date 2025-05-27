@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync, execSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
+import { execSync } from "child_process";
 
 async function releaseProduction() {
     try {
