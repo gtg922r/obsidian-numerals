@@ -5,7 +5,9 @@ import {
 	processAndRenderNumeralsBlockFromSource,
 	getLocaleFormatter,
 	getMetadataForFileAtPath,
-	addGobalsFromScopeToPageCache } from "./numeralsUtilities";
+	addGobalsFromScopeToPageCache,
+	addMathKernelModifier
+} from "./numeralsUtilities";
 import {
 	CurrencyType,
 	NumeralsLayout,
@@ -31,30 +33,10 @@ import {
 } from "obsidian";
 
 import { getAPI } from 'obsidian-dataview';
+import { MathJsStatic } from "mathjs";
 
 // if use syntax tree directly will need "@codemirror/language": "^6.3.2", // Needed for accessing syntax tree
 // import {syntaxTree, tokenClassNodeProp} from '@codemirror/language';
-
-import * as math from 'mathjs';
-
-
-
-
-// Modify mathjs internal functions to allow for use of currency symbols
-const currencySymbols: string[] = defaultCurrencyMap.map(m => m.symbol);
-const isAlphaOriginal = math.parse.isAlpha;
-math.parse.isAlpha = function (c, cPrev, cNext) {
-	return isAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
-	};	
-
-// 														@ts-ignore
-const isUnitAlphaOriginal = math.Unit.isValidAlpha; // 	@ts-ignore
-math.Unit.isValidAlpha =
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function (c: string, cPrev: any, cNext: any) {
-	return isUnitAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
-	};			
-
 	
 /**
  * Map Numerals Number Format to mathjs format options
@@ -109,6 +91,22 @@ export default class NumeralsPlugin extends Plugin {
 			this.numberFormat,
 			this.preProcessors,
 		);
+
+		// const startTime = performance.now();
+		// for (let i = 0; i < 10; i++) {
+		// 	processAndRenderNumeralsBlockFromSource(
+		// 		el, 
+		// 		source,
+		// 		ctx,
+		// 		metadata,
+		// 		type,
+		// 		this.settings,
+		// 		this.numberFormat,
+		// 		this.preProcessors
+		// 	);
+		// }
+		// const endTime = performance.now();
+		// console.log(`Time taken to run processAndRenderNumeralsBlockFromSource 10 times: ${endTime - startTime} milliseconds`);
 
 		addGobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
 
@@ -220,17 +218,22 @@ export default class NumeralsPlugin extends Plugin {
 		renderMath(configureCurrencyStr, true);
 
 
-		// TODO: Once mathjs support removing units (josdejong/mathjs#2081),
-		//       rerun unit creation and regex preprocessors on settings change
-		for (const moneyType of this.currencyMap) {
-			if (moneyType.currency != '') {
-				math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
-			}
-		}
 		// TODO: Incorporate this in a setup function that can be called when settings change, which should reduce need for restart after change
 		this.currencyPreProcessors = this.currencyMap.map(m => {
 			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
 		})
+
+		function addCurrencyUnitsToMathKernel(math: MathJsStatic, currencyMap: CurrencyType[]) {
+			// TODO: Once mathjs support removing units (josdejong/mathjs#2081),
+			//       rerun unit creation and regex preprocessors on settings change
+			for (const moneyType of currencyMap) {
+				if (moneyType.currency != '') {
+					math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
+				}
+			}	
+		}
+
+		addMathKernelModifier((math) => addCurrencyUnitsToMathKernel(math, this.currencyMap));
 		
 		this.preProcessors = [
 			// {regex: /\$((\d|\.|(,\d{3}))+)/g, replace: '$1 USD'}, // Use this if commas haven't been removed already

@@ -1,8 +1,9 @@
 
-import * as math from 'mathjs';
 import { getAPI } from 'obsidian-dataview';
 import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
 import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo } from './numerals.types';
+// import * as math from 'mathjs';
+import { create as mathCreate, all as mathAll, MathJsStatic } from 'mathjs'
 
 // TODO: Addition of variables not adding up
 
@@ -23,6 +24,7 @@ import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, ma
 export function getScopeFromFrontmatter(
 	frontmatter: { [key: string]: unknown } | undefined,
 	scope: NumeralsScope|undefined,
+	math: MathJsStatic,
 	forceAll=false,
 	stringReplaceMap: StringReplaceMap[] = [],
 	keysOnly=false
@@ -227,6 +229,15 @@ export function processAndRenderNumeralsBlockFromSource(
 	preProcessors: StringReplaceMap[]
 ): NumeralsScope {
 
+	const math = getNewMathKernel();
+
+	// const startTime = performance.now();
+	// for (let i = 0; i < 10; i++) {
+	// 	const newMath = getNewMathKernel();
+	// }
+	// const endTime = performance.now();
+	// console.log(`Time taken to run getNewMathKernel 10 times: ${endTime - startTime} milliseconds`);
+
 	const blockRenderStyle: NumeralsRenderStyle = type
 		? type
 		: settings.defaultRenderStyle;
@@ -252,13 +263,15 @@ export function processAndRenderNumeralsBlockFromSource(
 	const scope = getScopeFromFrontmatter(
 		metadata,
 		undefined,
+		math,
 		settings.forceProcessAllFrontmatter,
 		preProcessors
 	);
 
 	const { results, inputs, errorMsg, errorInput } = evaluateMathFromSourceStrings(
 		processedSource,
-		scope
+		scope,
+		math
 	);
 	
 	// Render each line
@@ -697,7 +710,8 @@ export function preProcessBlockForNumeralsDirectives(
  */
 export function evaluateMathFromSourceStrings(
 	processedSource: string,
-	scope: NumeralsScope
+	scope: NumeralsScope,
+	math: MathJsStatic
 ): {
 	results: unknown[];
 	inputs: string[];
@@ -745,7 +759,7 @@ export function evaluateMathFromSourceStrings(
 			if (unitDirectiveMatch) {
 				const unitArgs = unitDirectiveMatch[1].trim();
 				const [unitDefinition, ...aliases] = unitArgs.split(',').map(arg => arg.trim());
-				createCustomUnit(unitDefinition, aliases);
+				createCustomUnit(math, unitDefinition, aliases);
 				results.push(undefined); // No result to push for unit creation
 				inputs.push(row);
 			} else {
@@ -771,7 +785,7 @@ export function evaluateMathFromSourceStrings(
  * @param unitDefinition - The unit definition string, which can include an equals sign to define the unit in terms of existing units.
  * @param aliases - An optional string or array of strings to be used as aliases for the new unit.
  */
-export function createCustomUnit(unitDefinition: string, aliases?: string | string[]): math.Unit | undefined {
+export function createCustomUnit(math: MathJsStatic, unitDefinition: string, aliases?: string | string[]): math.Unit | undefined {
 	const [unit, definition] = unitDefinition.split('=').map(part => part.trim());
 	const unitOptions: { definition?: string, aliases?: string[]} = {};
 
@@ -798,3 +812,33 @@ export function createCustomUnit(unitDefinition: string, aliases?: string | stri
 	return math.createUnit(unit, unitOptions, { override: true });
 }
 
+export function getNewMathKernel(): MathJsStatic {
+	const math = mathCreate(mathAll);
+	mathKernelModifierFunctions.forEach(modifier => modifier(math));
+	return math;
+}
+
+export function modifyMathjsForCurrencySymbols(math: MathJsStatic) {
+	// Modify mathjs internal functions to allow for use of currency symbols
+	const currencySymbols: string[] = defaultCurrencyMap.map(m => m.symbol);
+	const isAlphaOriginal = math.parse.isAlpha;
+	
+	math.parse.isAlpha = function (c: string, cPrev: string, cNext: string) {
+		return isAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c);
+	};
+	// 														@ts-ignore
+	const isUnitAlphaOriginal = math.Unit.isValidAlpha; // 	@ts-ignore
+	math.Unit.isValidAlpha =
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	function (c: string, cPrev: any, cNext: any) {
+		return isUnitAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c);
+	};
+}
+
+const mathKernelModifierFunctions: ((math: MathJsStatic) => void)[] = [
+	modifyMathjsForCurrencySymbols,
+]
+
+export function addMathKernelModifier(modifier: (math: MathJsStatic) => void) {
+	mathKernelModifierFunctions.push(modifier);
+}
