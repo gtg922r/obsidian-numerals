@@ -5,21 +5,21 @@ async function buildRelease() {
         console.log("🚀 Starting release build process...");
         
         // Read current package.json version
-        const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+        const packageJson = JSON.parse(readFileSync("../package.json", "utf8"));
         const targetVersion = packageJson.version;
         
         console.log(`📦 Building release version: ${targetVersion}`);
         
         // Update manifest.json with release version
-        let manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
+        let manifest = JSON.parse(readFileSync("../manifest.json", "utf8"));
         const { minAppVersion } = manifest;
         manifest.version = targetVersion;
-        writeFileSync("manifest.json", JSON.stringify(manifest, null, "\t"));
+        writeFileSync("../manifest.json", JSON.stringify(manifest, null, "\t"));
         
         // Update versions.json with target version and minAppVersion
-        let versions = JSON.parse(readFileSync("versions.json", "utf8"));
+        let versions = JSON.parse(readFileSync("../versions.json", "utf8"));
         versions[targetVersion] = minAppVersion;
-        writeFileSync("versions.json", JSON.stringify(versions, null, "\t"));
+        writeFileSync("../versions.json", JSON.stringify(versions, null, "\t"));
         
         console.log("🔨 Building project...");
         

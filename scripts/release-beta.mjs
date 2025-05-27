@@ -6,15 +6,15 @@ async function releaseBeta() {
         console.log("🚀 Starting beta release process...");
         
         // Read current package.json version
-        const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+        const packageJson = JSON.parse(readFileSync("../package.json", "utf8"));
         const currentVersion = packageJson.version;
         
         console.log(`📦 Preparing beta release: ${currentVersion}`);
         
         // Update manifest-beta.json with current version
-        let manifestBeta = JSON.parse(readFileSync("manifest-beta.json", "utf8"));
+        let manifestBeta = JSON.parse(readFileSync("../manifest-beta.json", "utf8"));
         manifestBeta.version = currentVersion;
-        writeFileSync("manifest-beta.json", JSON.stringify(manifestBeta, null, "\t"));
+        writeFileSync("../manifest-beta.json", JSON.stringify(manifestBeta, null, "\t"));
         
         console.log("🔨 Building project...");
         

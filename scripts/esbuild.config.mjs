@@ -1,6 +1,10 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from 'builtin-modules'
+import path from 'path';
+
+// Get the project root directory (parent of scripts folder)
+const projectRoot = path.resolve(process.cwd());
 
 const banner =
 `/*
@@ -15,7 +19,7 @@ const buildOptions = {
 	banner: {
 		js: banner,
 	},
-	entryPoints: ['src/main.ts'],
+	entryPoints: [path.join(projectRoot, 'src/main.ts')],
 	bundle: true,
 	external: [
 		'obsidian',
@@ -37,7 +41,7 @@ const buildOptions = {
 	logLevel: "info",
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
-	outfile: 'main.js',
+	outfile: path.join(projectRoot, 'main.js'),
 };
 
 if (prod) {
