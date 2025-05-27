@@ -132,6 +132,69 @@ To try the latest features of *Numerals* before they are released, and provide h
 
 Feel free to suggest additional features by creating an [issue](https://github.com/gtg922r/obsidian-numerals/issues)!
 
+## Development
+
+*Numerals* uses a three-stage development workflow: **Version → Build → Release**
+
+### 1. Version Management
+
+Update the version number in `package.json`:
+
+```bash
+npm run version:patch    # 1.5.1 → 1.5.2
+npm run version:minor    # 1.5.1 → 1.6.0  
+npm run version:major    # 1.5.1 → 2.0.0
+npm run version          # defaults to patch
+```
+
+These commands only update the version in `package.json` and do not sync to manifests or create releases.
+
+### 2. Build
+
+Compile the TypeScript and bundle the plugin:
+
+```bash
+npm run build            # Build for production
+npm run dev              # Build for development with watch mode
+```
+
+The `build` command compiles TypeScript and creates the `main.js` file that Obsidian loads.
+
+### 3. Release
+
+Create tagged releases that trigger automated GitHub Actions:
+
+#### Beta Releases
+```bash
+npm run release:beta
+```
+- Creates a timestamped beta version (e.g., `1.5.1-beta.2024-01-15T10-30-00`)
+- Updates `manifest-beta.json` with the beta version
+- Builds the project
+- Creates a git tag and pushes it to trigger GitHub Actions
+- Automatically creates a beta release on GitHub
+
+#### Production Releases
+```bash
+npm run release:production    # Full command
+npm run release              # Shortcut for production
+```
+- Uses the current version from `package.json`
+- Updates `manifest.json` and `versions.json`
+- Builds the project
+- Creates a git tag and pushes it to trigger GitHub Actions
+- Automatically creates a production release on GitHub
+
+### Complete Development Workflow
+
+1. **Make changes** to the codebase
+2. **Test locally** with `npm run dev`
+3. **Increment version**: `npm run version:patch` (or minor/major)
+4. **Test with beta release**: `npm run release:beta` 
+5. **Create production release**: `npm run release`
+
+The release scripts handle all manifest syncing, building, tagging, and triggering GitHub Actions for automated release publishing.
+
 ## Related
 There are a number of other plugins that address math and calculation use cases in Obsidian. 
 - If you are primarily interested in evaluating math expressions and inserting the result into your notes, look into [meld-cp/obsidian-calc](https://github.com/meld-cp/obsidian-calc)
