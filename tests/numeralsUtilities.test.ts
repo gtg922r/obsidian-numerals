@@ -459,6 +459,93 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
 		expect(result.get("dollarCost")).toEqual(math.evaluate("100 USD"));
 		expect(result.get("currencyCost")).toEqual(math.evaluate("100000 USD"));
     });
+
+    it("should process global functions (prefixed with $) from frontmatter", () => {
+        frontmatter = {
+            "$a": 2,
+            "$b": 5,
+            "$v(x)": "x + $b - $a",  // Use function assignment syntax instead of JavaScript syntax
+        };
+        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(result.get("$a")).toBe(2);
+        expect(result.get("$b")).toBe(5);
+        
+        // Test that the function was created and stored under the function name (without parentheses)
+        const func = result.get("$v") as any;
+        expect(typeof func).toBe("function");
+        expect(func(0)).toBe(3); // 0 + 5 - 2 = 3
+    });
+
+    it("should process global function definitions using function assignment syntax", () => {
+        frontmatter = {
+            "$a": 2,
+            "$b": 5,
+            "$v(x)": "x + $b - $a",
+        };
+        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(result.get("$a")).toBe(2);
+        expect(result.get("$b")).toBe(5);
+        
+        // Check if the function was created and stored under the function name (without parentheses)
+        const func = result.get("$v") as any;
+        expect(typeof func).toBe("function");
+        expect(func(0)).toBe(3); // 0 + 5 - 2 = 3
+        expect(func(10)).toBe(13); // 10 + 5 - 2 = 13
+    });
+
+    it("should handle global functions with multiple parameters", () => {
+        frontmatter = {
+            "$multiply(x, y)": "x * y",
+            "$add(a, b, c)": "a + b + c"
+        };
+        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        
+        const multiplyFunc = result.get("$multiply") as any;
+        const addFunc = result.get("$add") as any;
+        
+        expect(typeof multiplyFunc).toBe("function");
+        expect(typeof addFunc).toBe("function");
+        
+        expect(multiplyFunc(3, 4)).toBe(12);
+        expect(addFunc(1, 2, 3)).toBe(6);
+    });
+
+    it("should support the exact scenario from the GitHub issue", () => {
+        // First, simulate the first math block defining globals
+        const firstBlockFrontmatter = {
+            "$a": 2,
+            "$b": 5,
+            "$v(x)": "x + $b - $a"
+        };
+        
+        const firstScope = getScopeFromFrontmatter(firstBlockFrontmatter, new NumeralsScope(), forceAll, stringReplaceMap, keysOnly);
+        
+        // Verify globals are created correctly
+        expect(firstScope.get("$a")).toBe(2);
+        expect(firstScope.get("$b")).toBe(5);
+        
+        const vFunc = firstScope.get("$v") as any;
+        expect(typeof vFunc).toBe("function");
+        expect(vFunc(0)).toBe(3); // 0 + 5 - 2 = 3
+        
+        // Now simulate that these globals are cached and retrieved in a second block
+        // This simulates what getMetadataForFileAtPath would return
+        const secondBlockFrontmatter = {
+            "$a": 2,
+            "$b": 5,
+            "$v": vFunc // Function object as it would be stored in cache
+        };
+        
+        const secondScope = getScopeFromFrontmatter(secondBlockFrontmatter, new NumeralsScope(), forceAll, stringReplaceMap, keysOnly);
+        
+        // Verify that globals work in the second block
+        expect(secondScope.get("$a")).toBe(2);
+        expect(secondScope.get("$b")).toBe(5);
+        
+        const vFunc2 = secondScope.get("$v") as any;
+        expect(typeof vFunc2).toBe("function");
+        expect(vFunc2(0)).toBe(3); // Global function should work across blocks!
+    });
 });
 describe("numeralsUtilities: evaluateMathFromSourceStrings", () => {
     let scope: NumeralsScope;
