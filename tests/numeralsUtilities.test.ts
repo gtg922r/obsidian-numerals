@@ -510,7 +510,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
         expect(addFunc(1, 2, 3)).toBe(6);
     });
 
-    it("should support the exact scenario from the GitHub issue", () => {
+    it("should handle global functions defined in math block (from the GitHub issue #101)", () => {
         // First, simulate the first math block defining globals
         const firstBlockFrontmatter = {
             "$a": 2,
