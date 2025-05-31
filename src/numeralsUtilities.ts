@@ -85,18 +85,40 @@ export function getScopeFromFrontmatter(
 					scope.set(key, math.number(value));
 				} else if (typeof value === "string") {
 					const processedValue = replaceStringsInTextFromMap(value, stringReplaceMap);
-					// const evaluatedValue = math.evaluate(processedValue);
-					// try to evaluate processedValue as a mathjs expression, otherwise drop console error and move on
-					let evaluatedValue;
-					try {
-						evaluatedValue = math.evaluate(processedValue);
-					} catch (error) {
-						console.error(`Error evaluating frontmatter value for key ${key}: ${error}`);
-						evaluatedValue = undefined;
+					
+					// Check if the key contains function assignment syntax (e.g., "$v(x)" or "f(x, y)")
+					const functionAssignmentMatch = key.match(/^([^(]+)\(([^)]*)\)$/);
+					
+					if (functionAssignmentMatch) {
+						// This is a function assignment like "$v(x)" with value "x + $b - $a"
+						const functionName = functionAssignmentMatch[1];
+						const parameters = functionAssignmentMatch[2];
+						const fullExpression = `${functionName}(${parameters}) = ${processedValue}`;
+						
+						try {
+							// Evaluate the complete function assignment expression
+							const evaluatedFunction = math.evaluate(fullExpression, scope);
+							// Store the function under the function name (without parentheses)
+							scope.set(functionName, evaluatedFunction);
+						} catch (error) {
+							console.error(`Error evaluating function assignment for key ${key}: ${error}`);
+						}
+					} else {
+						// Regular variable assignment
+						let evaluatedValue;
+						try {
+							evaluatedValue = math.evaluate(processedValue, scope);
+						} catch (error) {
+							console.error(`Error evaluating frontmatter value for key ${key}: ${error}`);
+							evaluatedValue = undefined;
+						}
+						if (evaluatedValue !== undefined) {
+							scope.set(key, evaluatedValue);
+						}
 					}
-					if (evaluatedValue !== undefined) {
-						scope.set(key, evaluatedValue);
-					}
+				} else if (typeof value === "function") {
+					// Functions (like those cached from previous evaluations) should be stored directly
+					scope.set(key, value);
 				} else if (typeof value === "object") { // TODO this is only a problem with Dataview. Can we only use dataview for inline?
 					// ignore objects
 
