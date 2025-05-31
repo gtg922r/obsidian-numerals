@@ -131,7 +131,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			}
 
 			// combine frontmatter and dataview metadata, with dataview metadata taking precedence
-			const metadata = getMetadataForFileAtPath(context.file.path, this.app);
+			const metadata = getMetadataForFileAtPath(context.file.path, this.app, this.plugin.scopeCache);
 
 
 			if (metadata) {

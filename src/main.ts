@@ -91,13 +91,13 @@ export default class NumeralsPlugin extends Plugin {
 	private preProcessors: StringReplaceMap[];
 	private currencyPreProcessors: StringReplaceMap[];
 	private numberFormat: mathjsFormat;
-	private scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
+	public scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
 
 	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {		
 		// TODO: Rendering is getting called twice. Once without newline at the end of the code block and once with.
 		//       This is causing the code block to be rendered twice. Need to figure out why and fix it.
 
-		let metadata = getMetadataForFileAtPath(ctx.sourcePath, this.app);
+		let metadata = getMetadataForFileAtPath(ctx.sourcePath, this.app, this.scopeCache);
 		
 		const scope = processAndRenderNumeralsBlockFromSource(
 			el, 
@@ -116,7 +116,7 @@ export default class NumeralsPlugin extends Plugin {
 		const numeralsBlockChild = new MarkdownRenderChild(el);
 
 		const numeralsBlockCallback = (_callbackType: unknown, _file: unknown, _oldPath?: unknown) => {
-			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath, this.app);
+			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath, this.app, this.scopeCache);
 			if (equal(currentMetadata, metadata)) {
 				return;
 			} else {

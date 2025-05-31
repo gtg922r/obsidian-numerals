@@ -41,6 +41,7 @@ const buildOptions = {
 	logLevel: "info",
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
+	minify: prod,
 	outfile: path.join(projectRoot, 'main.js'),
 };
 
