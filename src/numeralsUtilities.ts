@@ -1,4 +1,3 @@
-
 import * as math from 'mathjs';
 import { getAPI } from 'obsidian-dataview';
 import { App, TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
@@ -168,9 +167,14 @@ export function replaceStringsInTextFromMap(text: string, stringReplaceMap: Stri
  * 
  * @param sourcePath - The path of the file for which to retrieve metadata.
  * @param app - The Obsidian App instance.
+ * @param scopeCache - A Map containing NumeralsScope objects for each file path.
  * @returns The metadata for the file, including both frontmatter and Dataview metadata.
  */
-export function getMetadataForFileAtPath(sourcePath:string, app: App): {[key: string]: unknown} | undefined {
+export function getMetadataForFileAtPath(
+	sourcePath: string, 
+	app: App,
+	scopeCache: Map<string, NumeralsScope>
+): {[key: string]: unknown} | undefined {
 	const f_path:string = sourcePath;
 	const handle = app.vault.getAbstractFileByPath(f_path);
 	const f_handle = (handle instanceof TFile) ? handle : undefined;
@@ -184,9 +188,7 @@ export function getMetadataForFileAtPath(sourcePath:string, app: App): {[key: st
 		dataviewMetadata = {...dataviewPage, file: undefined, position: undefined}
 	}
  
-	//@ts-expect-error
-	const numeralsCache:Map<string, NumeralsScope> = app.plugins.plugins.numerals.scopeCache;
-	const numeralsPageScope = numeralsCache.get(f_path) as Map<string,unknown>;
+	const numeralsPageScope = scopeCache.get(f_path);
 	const numeralsPageScopeMetadata:{[key: string]: unknown} = numeralsPageScope ? Object.fromEntries(numeralsPageScope) : {};
   
 	// combine frontmatter and dataview metadata, with dataview metadata taking precedence and numerals scope taking precedence over both
