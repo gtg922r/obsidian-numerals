@@ -41,13 +41,7 @@ const buildOptions = {
 	logLevel: "info",
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
-	// Enhanced optimization settings
 	minify: prod,
-	keepNames: false,
-	mangleProps: prod ? /^_/ : undefined, // Mangle private properties in production
-	drop: prod ? ['console', 'debugger'] : [],
-	// Aggressive dead code elimination
-	pure: ['console.log', 'console.warn', 'console.info'],
 	outfile: path.join(projectRoot, 'main.js'),
 };
 
