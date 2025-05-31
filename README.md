@@ -35,7 +35,7 @@
 	- Variables can be named using greek letters, e.g. `μ = 3 m/s`
 	- Greek letters can be auto-completed by typing `:`, e.g. `:mu` in a math block will offer `μ` as an auto-complete suggestion
 - Note-Global Variables
-	- Any variable name preceeded by an `$` symbol will be made available to all math blocks on a page
+	- Any variable name or function definition preceeded by an `$` symbol will be made available to all math blocks on a page
 - Fractions:	
 	- `fraction(1/3) + fraction(1/4)` → `7/12`
 - Comments and Headings:
@@ -47,8 +47,10 @@
 	- Using the `@[...]` syntax (for example: `@[profit]`), Numerals will insert the results of a calculation into the raw text of your note, following `::`
 	- Uses dataview notation, which allows writing back to dataview values. For example, `@[profit]` will be modified to say `@[profit::10 USD]`
 - Access Frontmatter Properties
-	- Numerals will have access to any property name specified in the `numerals:` property. Setting `numerals` to `all`, will make all properties in a note available to *Numerals*
+	- Numerals math blocks will have access to any property name specified in the `numerals:` property. Setting `numerals` to `all`, will make all properties in a note available to *Numerals*
 	- Multiple properties can be specified as a list, e.g. `numerals: [apples, pears]` will makes both the `apples` and `pears` property available to Numerals
+	- Any property in the YAML frontmatter beginning with `$` automatically becomes a note-global variable (or function) accessible in every math block on the page
+	- Functions can be defined in YAML by name along with their arguments, e.g. `$f(x): x+2`
 
 *Numerals* utilizes the [mathjs](https://mathjs.org/) library for all calculations. *Numerals* implements a preprocessor to allow more human-friendly syntax, such as currency symbols and thousands separators. For all available functions and capabilities (which includes matrices, vectors, symbolic algebra and calculus, etc), see the [mathjs documentation](https://mathjs.org/docs/index.html)
 
