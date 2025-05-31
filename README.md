@@ -5,6 +5,13 @@
 ![Numerals Lemonade Stand - Side by Side](https://user-images.githubusercontent.com/1195174/200186757-a71b5e7a-df96-4350-b6a4-366d758e696d.png)
 ![Numerals Tex Example](https://user-images.githubusercontent.com/1195174/201516487-75bb7a08-76ab-4ff3-bf6b-d654aa284ab7.png)
 
+To get started, simply install and enable the plugin. Add a `math` code block with your desired calculations:
+````markdown
+```math
+20 mi / 4 hr to m/s
+```
+````
+
 ## Features
 - Units
  	- `1ft + 12in` → `2ft`
