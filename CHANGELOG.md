@@ -5,7 +5,8 @@ All notable changes to this project will be documented in this file. The format 
 ## [Unreleased]
 ### Added
 - Added this CHANGELOG
-## Fixed
+### Fixed
+- [#101](https://github.com/gtg922r/obsidian-numerals/issues/101): Global functions not working across math blocks
 - [#77](https://github.com/gtg922r/obsidian-numerals/issues/77): Error description not visible in a block with result annotation
 
 ## [1.5.5] - 2025-05-27
