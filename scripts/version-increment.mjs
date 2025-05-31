@@ -34,7 +34,7 @@ function updateVersion() {
         console.log(`🔢 Incrementing ${versionType} version...`);
         
         // Read current package.json
-        const packageJson = JSON.parse(readFileSync("../package.json", "utf8"));
+        const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
         const currentVersion = packageJson.version;
         
         // Calculate new version
@@ -44,7 +44,7 @@ function updateVersion() {
         
         // Update package.json
         packageJson.version = newVersion;
-        writeFileSync("../package.json", JSON.stringify(packageJson, null, "\t"));
+        writeFileSync("package.json", JSON.stringify(packageJson, null, "\t"));
         
         console.log(`✅ Updated package.json to version ${newVersion}`);
         console.log(`💡 Run 'npm run release:beta' or 'npm run release:production' to build and deploy`);
