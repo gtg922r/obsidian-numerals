@@ -170,6 +170,10 @@ body {
     color:var(--color-red);
     padding-right: var(--size-4-2);
 }
+/* Ensure error text remains visible even when non-emitter results are hidden */
+.numerals-error-message {
+    color: var(--code-punctuation);
+}
 
 /**********************************/
 /* ** Right-aligned Style ** */
@@ -264,7 +268,6 @@ body {
 .numerals-emitters-present.numerals-hide-non-emitters .numerals-result:not(.numerals-emitter .numerals-result) {
     color: transparent;
 }
-
 
 /**********************************/
 /* ** Inline Style ** */
