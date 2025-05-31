@@ -44,7 +44,7 @@
 - Result Annotation:
 	- `=>` at the end of a line (but before a comment) will tell *Numerals* that a result should be highlighted. Any line in that code block *without* a `=>` annotation will be rendered faintly (or hidden depending on settings).
 - Result Insertion:
-	- Using the `@[...]` syntax (for example: `$[profit]`), Numerals will insert the results of a calculation into the raw text of your note, following `::`
+	- Using the `@[...]` syntax (for example: `@[profit]`), Numerals will insert the results of a calculation into the raw text of your note, following `::`
 	- Uses dataview notation, which allows writing back to dataview values. For example, `@[profit]` will be modified to say `@[profit::10 USD]`
 - Access Frontmatter Properties
 	- Numerals will have access to any property name specified in the `numerals:` property. Setting `numerals` to `all`, will make all properties in a note available to *Numerals*
@@ -69,8 +69,8 @@ One of these options can either be chosen as a default from *Numerals* settings,
 
 ### Layout
 #### 2-panes
-- Answer is shown to the right of the input with a background color and a seperator.
-- Distinctive style that seperates input from evaluated answers
+- Answer is shown to the right of the input with a background color and a separator.
+- Distinctive style that separates input from evaluated answers
 
 ![Numerals 2 Panes](https://user-images.githubusercontent.com/1195174/200186692-0b6a0a7b-3f77-47f8-887f-d7d333b53967.png)
 
@@ -131,6 +131,69 @@ To try the latest features of *Numerals* before they are released, and provide h
 - [ ] Inline calculation for inline code blocks ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5))
 
 Feel free to suggest additional features by creating an [issue](https://github.com/gtg922r/obsidian-numerals/issues)!
+
+## Development
+
+*Numerals* uses a three-stage development workflow: **Version → Build → Release**
+
+### 1. Version Management
+
+Update the version number in `package.json`:
+
+```bash
+npm run version:patch    # 1.5.1 → 1.5.2
+npm run version:minor    # 1.5.1 → 1.6.0  
+npm run version:major    # 1.5.1 → 2.0.0
+npm run version          # defaults to patch
+```
+
+These commands only update the version in `package.json` and do not sync to manifests or create releases.
+
+### 2. Build
+
+Compile the TypeScript and bundle the plugin:
+
+```bash
+npm run build            # Build for production
+npm run dev              # Build for development with watch mode
+```
+
+The `build` command compiles TypeScript and creates the `main.js` file that Obsidian loads.
+
+### 3. Release
+
+Create tagged releases that trigger automated GitHub Actions:
+
+#### Beta Releases
+```bash
+npm run release:beta
+```
+- Creates a timestamped beta version (e.g., `1.5.1-beta.2024-01-15T10-30-00`)
+- Updates `manifest-beta.json` with the beta version
+- Builds the project
+- Creates a git tag and pushes it to trigger GitHub Actions
+- Automatically creates a beta release on GitHub
+
+#### Production Releases
+```bash
+npm run release:production    # Full command
+npm run release              # Shortcut for production
+```
+- Uses the current version from `package.json`
+- Updates `manifest.json` and `versions.json`
+- Builds the project
+- Creates a git tag and pushes it to trigger GitHub Actions
+- Automatically creates a production release on GitHub
+
+### Complete Development Workflow
+
+1. **Make changes** to the codebase
+2. **Test locally** with `npm run dev`
+3. **Increment version**: `npm run version:patch` (or minor/major)
+4. **Test with beta release**: `npm run release:beta` 
+5. **Create production release**: `npm run release`
+
+The release scripts handle all manifest syncing, building, tagging, and triggering GitHub Actions for automated release publishing.
 
 ## Related
 There are a number of other plugins that address math and calculation use cases in Obsidian. 

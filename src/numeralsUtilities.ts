@@ -1,7 +1,7 @@
 
 import * as math from 'mathjs';
 import { getAPI } from 'obsidian-dataview';
-import { TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
+import { App, TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
 import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo } from './numerals.types';
 
 // TODO: Addition of variables not adding up
@@ -167,9 +167,10 @@ export function replaceStringsInTextFromMap(text: string, stringReplaceMap: Stri
  * The function then combines the frontmatter and Dataview metadata, with the Dataview metadata taking precedence.
  * 
  * @param sourcePath - The path of the file for which to retrieve metadata.
+ * @param app - The Obsidian App instance.
  * @returns The metadata for the file, including both frontmatter and Dataview metadata.
  */
-export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unknown} | undefined {
+export function getMetadataForFileAtPath(sourcePath:string, app: App): {[key: string]: unknown} | undefined {
 	const f_path:string = sourcePath;
 	const handle = app.vault.getAbstractFileByPath(f_path);
 	const f_handle = (handle instanceof TFile) ? handle : undefined;
@@ -212,6 +213,7 @@ export function getMetadataForFileAtPath(sourcePath:string): {[key: string]: unk
  * @param numberFormat - A mathjsFormat function that is used to format numbers in the Numerals block.  
  * @param preProcessors - An array of StringReplaceMap objects that specify text replacements to be   
  * made in the source string before it is processed.  
+ * @param app - The Obsidian App instance.
  *  
  * @returns void  
  *
@@ -224,7 +226,8 @@ export function processAndRenderNumeralsBlockFromSource(
 	type: NumeralsRenderStyle,
 	settings: NumeralsSettings,
 	numberFormat: mathjsFormat,
-	preProcessors: StringReplaceMap[]
+	preProcessors: StringReplaceMap[],
+	app: App
 ): NumeralsScope {
 
 	const blockRenderStyle: NumeralsRenderStyle = type

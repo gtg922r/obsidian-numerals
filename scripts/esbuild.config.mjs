@@ -1,6 +1,10 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from 'builtin-modules'
+import path from 'path';
+
+// Get the project root directory (parent of scripts folder)
+const projectRoot = path.resolve(process.cwd());
 
 const banner =
 `/*
@@ -11,11 +15,11 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = (process.argv[2] === 'production');
 
-esbuild.build({
+const buildOptions = {
 	banner: {
 		js: banner,
 	},
-	entryPoints: ['src/main.ts'],
+	entryPoints: [path.join(projectRoot, 'src/main.ts')],
 	bundle: true,
 	external: [
 		'obsidian',
@@ -33,10 +37,20 @@ esbuild.build({
 		'@lezer/lr',
 		...builtins],
 	format: 'cjs',
-	watch: !prod,
 	target: 'es2018',
 	logLevel: "info",
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
-	outfile: 'main.js',
-}).catch(() => process.exit(1));
+	minify: prod,
+	outfile: path.join(projectRoot, 'main.js'),
+};
+
+if (prod) {
+	// Production build
+	esbuild.build(buildOptions).catch(() => process.exit(1));
+} else {
+	// Development build with watch
+	const context = await esbuild.context(buildOptions);
+	await context.watch();
+	console.log('Watching for changes...');
+}

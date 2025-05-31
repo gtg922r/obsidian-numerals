@@ -8,6 +8,18 @@ jest.mock(
 	{ virtual: true }
 );
 
+// Mock App object for tests
+const mockApp = {
+	workspace: {
+		getActiveViewOfType: jest.fn(() => ({
+			editor: {
+				getLine: jest.fn(),
+				setLine: jest.fn()
+			}
+		}))
+	}
+} as any;
+
 import {
 	StringReplaceMap,
 	applyBlockStyles,
@@ -688,7 +700,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     it("renders a simple math block correctly", () => {
         source = "1 + 1\n2 * 2";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 
         const lines = el.querySelectorAll(".numerals-line");
         expect(lines.length).toBe(2);
@@ -698,7 +710,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     it("renders a block with emitter lines correctly", () => {
         source = "1 + 1 =>\n2 * 2 =>";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 
         const emitterLines = el.querySelectorAll(".numerals-emitter");
         expect(emitterLines.length).toBe(2);
@@ -709,7 +721,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
     it("renders a block with insertion directives correctly", () => {
 		metadata = { numerals: "all", result1: 1, result2: 2, result3: 3 };
         source = "@[result1]\n@[result2::2]\n@[result3::4]";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 
         const insertionLines = el.querySelectorAll(".numerals-line");
         // const children = Array.from(el.children);
@@ -721,7 +733,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     it("applies preProcessors correctly", () => {
         source = "$100 + $1,000";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 
         const lines = el.querySelectorAll(".numerals-line");
         expect(lines.length).toBe(1);
@@ -730,7 +742,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     it("handles errors in math expressions gracefully", () => {
         source = "1 +\n2 * 2";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 
         const errorLine = el.querySelector(".numerals-error-line");
         expect(errorLine).not.toBeNull();
@@ -739,7 +751,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     it("calculates with variables correctly", () => {
         source = "lemons = 20\napples = 10\nfruit = lemons + apples";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 
         const lines = el.querySelectorAll(".numerals-line");
         expect(lines.length).toBe(3);
@@ -750,7 +762,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
 	it('simple math block with currency and emitter with snapshot', () => {
 		source = "amount = 100 USD + $1,000\ntax = 10% * amount =>";
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 		const lines = el.querySelectorAll(".numerals-line");
 		expect(lines.length).toBe(2);
 		expect(lines[0].textContent).toContain(`amount = 100 USD + $1,000${resultSeparator}1,100 USD`);
@@ -770,7 +782,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		tuesday = $20
 		wednesday = $30
 		profit = @total`;
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 		const lines = el.querySelectorAll(".numerals-line");
 		expect(lines.length).toBe(10);	
 		expect(lines[0].textContent).toContain(`# Fruit`);
@@ -792,7 +804,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
         2 + 3 =>
         @[$result::5]`;
         
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 
         const lines = el.querySelectorAll(".numerals-line");
         // expect(lines.length).toBe(3); // Only 3 lines should be rendered
@@ -805,7 +817,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
         2 + 3 =>
         @[$result::5]`;
         
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 
         const lines = el.querySelectorAll(".numerals-line");
         expect(lines.length).toBe(4); // All 4 lines should be rendered
@@ -821,7 +833,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		distance = 100 m
 		time = distance / speed =>
 		@[time]`;
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});	
 	
@@ -832,7 +844,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		lambda=780.246021 nanometer
 		nu=speedOfLight/lambda
 		pi+1`;
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});		
 	
@@ -900,26 +912,26 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 	it('Extended Snapshot 1: Default Settings', () => {
 		source = extendedSource;
 		settings = { ...DEFAULT_SETTINGS };
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});
 
 	it('Extended Snapshot 2: Answer Right', () => {
 		source = extendedSource;
 		settings = { ...DEFAULT_SETTINGS, layoutStyle: NumeralsLayout.AnswerRight };
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});	
 	it('Extended Snapshot 3: Answer Below', () => {
 		source = extendedSource;
 		settings = { ...DEFAULT_SETTINGS, layoutStyle: NumeralsLayout.AnswerBelow };
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});		
 	it('Extended Snapshot 4: Answer Inline', () => {
 		source = extendedSource;
 		settings = { ...DEFAULT_SETTINGS, layoutStyle: NumeralsLayout.AnswerInline };
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});			
 	it('Extended Snapshot 5: Mixed Settings', () => {
@@ -931,7 +943,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 			layoutStyle: NumeralsLayout.AnswerRight,
 			hideEmitterMarkupInInput: false
 		};
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors);
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});		
 });
