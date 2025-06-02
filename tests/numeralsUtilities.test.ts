@@ -583,6 +583,14 @@ describe("numeralsUtilities: evaluateMathFromSourceStrings", () => {
         expect(errorInput).toBe("2 +");
     });
 
+    it("should handle mixed white space in expressions", () => {
+        processedSource = "2 +\u00A05 * 5"; // non-breaking space (&nbsp;)
+        const { results, errorMsg } = evaluateMathFromSourceStrings(processedSource, scope);
+
+        expect(errorMsg).toBeNull();
+        expect(results).toEqual([27]);
+    });
+
     it("should ignore empty last row in processed source", () => {
         processedSource = "2 + 2\n5 * 5\n";
         const { results, inputs } = evaluateMathFromSourceStrings(processedSource, scope);
