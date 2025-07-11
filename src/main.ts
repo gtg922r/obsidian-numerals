@@ -52,7 +52,7 @@ const isUnitAlphaOriginal = math.Unit.isValidAlpha; // 	@ts-ignore
 math.Unit.isValidAlpha =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function (c: string, cPrev: any, cNext: any) {
-	return isUnitAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
+	return isUnitAlphaOriginal(c) || currencySymbols.includes(c)
 	};			
 
 	
