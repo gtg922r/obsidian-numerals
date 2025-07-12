@@ -4,7 +4,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 ### Changed
-- Upgraded mathjs from `^11.3.3` to `^14.5.3` for latest features and security fixes
+- Upgraded mathjs from `^11.3.3` to `^14.5.3` for latest features and security fixes.
+  - Fixes [#106](https://github.com/gtg922r/obsidian-numerals/issues/106) as mathjs now handles alternate white space 
 ### Fixed  
 - Updated `math.Unit.isValidAlpha` function call to match new single-parameter signature
 
