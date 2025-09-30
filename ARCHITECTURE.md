@@ -327,6 +327,19 @@ Phase 3 implemented the Strategy Pattern for rendering different styles:
 - Creates appropriate renderer based on `NumeralsRenderStyle`
 - Centralizes renderer instantiation
 
+### Result Insertion Side Effect (Phase 4 Refactoring)
+
+Phase 4 extracted the side effect of writing results back to the editor into a dedicated function:
+
+**handleResultInsertions** ([numeralsUtilities.ts:411-449](numeralsUtilities.ts))
+- Isolated side effect function for writing results back to source
+- Takes results array, insertion line indices, and editor context
+- Uses regex to replace `@[variable]` or `@[variable::oldValue]` with `@[variable::newValue]`
+- Deferred execution via `setTimeout(0)` to avoid conflicts with rendering
+- Guard clauses for undefined section info and missing editor
+- Only modifies lines where the value has actually changed
+- Pure separation: preprocessing → evaluation → rendering → side effects
+
 The Strategy Pattern provides:
 - **Extensibility**: New render styles require only a new renderer class
 - **Maintainability**: Each style isolated in its own class

@@ -370,6 +370,85 @@ export function prepareLineData(
 }
 
 /**
+ * Handles result insertion side effects by updating source lines in the editor.
+ *
+ * This function modifies the editor content to insert calculated results into
+ * the source using the @[variable::result] syntax. This is a side effect that
+ * writes back to the document.
+ *
+ * The insertion uses the format: @[variableName::calculatedValue]
+ * where calculatedValue is the formatted result from evaluation.
+ *
+ * @param results - Array of evaluated results
+ * @param insertionLines - Array of line indices that have insertion directives
+ * @param numberFormat - Format specification for displaying numbers
+ * @param ctx - Markdown post processor context (provides section info)
+ * @param app - Obsidian App instance (provides editor access)
+ * @param el - The HTML element being rendered (used to get section info)
+ *
+ * @example
+ * ```typescript
+ * // Source line: @[profit] = sales - costs
+ * // After evaluation with result=100:
+ * // Updated to: @[profit::100] = sales - costs
+ *
+ * handleResultInsertions(
+ *   [100],
+ *   [0],
+ *   numberFormat,
+ *   ctx,
+ *   app,
+ *   el
+ * );
+ * ```
+ *
+ * @remarks
+ * This function has side effects:
+ * - Modifies editor content via `editor.setLine()`
+ * - Uses setTimeout to defer the modification
+ * - Only modifies lines where the value has actually changed
+ */
+export function handleResultInsertions(
+	results: unknown[],
+	insertionLines: number[],
+	numberFormat: mathjsFormat,
+	ctx: MarkdownPostProcessorContext,
+	app: App,
+	el: HTMLElement
+): void {
+	for (const i of insertionLines) {
+		const sectionInfo = ctx.getSectionInfo(el);
+		const lineStart = sectionInfo?.lineStart;
+
+		if (lineStart === undefined) {
+			continue;
+		}
+
+		const editor = app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+		if (!editor) {
+			continue;
+		}
+
+		const curLine = lineStart + i + 1;
+		const sourceLine = editor.getLine(curLine);
+		const insertionValue = math.format(results[i], numberFormat);
+
+		// Replace @[variable] or @[variable::oldValue] with @[variable::newValue]
+		const modifiedSource = sourceLine.replace(
+			/(@\s*\[)([^\]:]+)(::([^\]]*))?(\].*)$/gm,
+			`$1$2::${insertionValue}$5`
+		);
+
+		// Only update if the line actually changed
+		if (modifiedSource !== sourceLine) {
+			setTimeout(() => {
+				editor.setLine(curLine, modifiedSource);
+			}, 0);
+		}
+	}
+}
+
+/**
  * Renders a Numerals block from a given source string, using provided metadata and settings.  
  *   
  * This function takes a source string, which represents a block of Numerals code, and processes it   
@@ -438,28 +517,12 @@ export function processAndRenderNumeralsBlockFromSource(
 		processedSource,
 		scope
 	);
-	
+
+	// Handle result insertion side effects
+	handleResultInsertions(results, insertion_lines, numberFormat, ctx, app, el);
+
 	// Render each line
 	for (let i = 0; i < inputs.length; i++) {
-
-		// TODO - extract this into a separate function
-		if (insertion_lines.includes(i)) {
-			const sectionInfo = ctx.getSectionInfo(el);
-			const lineStart = sectionInfo?.lineStart;
-
-			if (lineStart !== undefined) {
-				const editor = app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-				const curLine = lineStart + i + 1;
-				const sourceLine = editor?.getLine(curLine);
-				const insertionValue = math.format(results[i], numberFormat);
-				const modifiedSource = sourceLine?.replace(/(@\s*\[)([^\]:]+)(::([^\]]*))?(\].*)$/gm, `$1$2::${insertionValue}$5`)
-				if (modifiedSource && modifiedSource !== sourceLine) {
-					setTimeout(() => {
-						editor?.setLine(curLine, modifiedSource)
-					}, 0);
-				}
-			}
-		}
 
 		if (
 			hidden_lines.includes(i) ||
