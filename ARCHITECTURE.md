@@ -25,7 +25,8 @@ src/
 | **numeralsUtilities.ts** | Block processing, evaluation, rendering | `processAndRenderNumeralsBlockFromSource`, `evaluateMathFromSourceStrings` |
 | **mathjsUtilities.ts** | Mathjs function/constant definitions | `getMathJsSymbols()` |
 | **NumeralsSuggestor.ts** | Editor suggestions for variables/functions | `NumeralsSuggestor` |
-| **numerals.types.ts** | Type definitions, enums, interfaces | `NumeralsSettings`, `NumeralsScope`, enums |
+| **numerals.types.ts** | Type definitions, enums, interfaces | `NumeralsSettings`, `NumeralsScope`, `ProcessedBlock`, `EvaluationResult`, `LineRenderData`, `RenderContext`, `StringReplaceMap`, enums |
+| **renderers/ILineRenderer.ts** | Renderer interface definition | `ILineRenderer` |
 
 ## Architecture Diagram
 
@@ -229,6 +230,42 @@ for each row:
 - Append DOM fragments
 
 ## Data Flow
+
+### Rendering Pipeline Data Structures (Phase 1 Refactoring)
+
+As part of ongoing refactoring efforts, new Data Transfer Objects (DTOs) have been introduced to create a clearer data pipeline:
+
+**ProcessedBlock** ([numerals.types.ts:97-104](numerals.types.ts))
+- Result of preprocessing a source string
+- Contains: `rawRows`, `processedSource`, `blockInfo`
+- Used to pass preprocessed data to evaluation stage
+
+**EvaluationResult** ([numerals.types.ts:110-119](numerals.types.ts))
+- Result of evaluating a processed block
+- Contains: `results[]`, `inputs[]`, `errorMsg`, `errorInput`
+- Used to pass evaluation results to rendering stage
+
+**LineRenderData** ([numerals.types.ts:125-142](numerals.types.ts))
+- Prepared data for rendering a single line
+- Contains: `index`, `rawInput`, `processedInput`, `result`, metadata flags, `comment`
+- Intermediate structure between evaluation and rendering
+
+**RenderContext** ([numerals.types.ts:148-157](numerals.types.ts))
+- Configuration for rendering
+- Contains: `renderStyle`, `settings`, `numberFormat`, `preProcessors`
+- Passed to rendering functions to control display
+
+**StringReplaceMap** ([numerals.types.ts:163-168](numerals.types.ts))
+- Pattern replacement specification
+- Contains: `regex`, `replaceStr`
+- Used for preprocessing (currency symbols, thousands separators)
+
+**ILineRenderer** ([renderers/ILineRenderer.ts](renderers/ILineRenderer.ts))
+- Interface for rendering strategies
+- Single method: `renderLine(container, lineData, context)`
+- Foundation for Strategy Pattern implementation (future phases)
+
+These types enable a cleaner separation between preprocessing, evaluation, and rendering stages, making the code more maintainable and testable.
 
 ### Variable Scoping
 

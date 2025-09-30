@@ -1,7 +1,7 @@
 import * as math from 'mathjs';
 import { getAPI } from 'obsidian-dataview';
 import { App, TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo } from './numerals.types';
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo, StringReplaceMap } from './numerals.types';
 
 // TODO: Addition of variables not adding up
 
@@ -159,11 +159,6 @@ export function addGobalsFromScopeToPageCache(sourcePath: string, scope: Numeral
 			}
 		}
 	}
-}
-
-export interface StringReplaceMap {
-	regex: RegExp;
-	replaceStr: string;
 }
 
 /**
