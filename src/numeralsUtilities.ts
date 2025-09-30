@@ -1,7 +1,8 @@
 import * as math from 'mathjs';
 import { getAPI } from 'obsidian-dataview';
 import { App, TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo, StringReplaceMap, LineRenderData } from './numerals.types';
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo, StringReplaceMap, LineRenderData, ProcessedBlock, EvaluationResult, RenderContext } from './numerals.types';
+import { RendererFactory } from './renderers';
 
 // TODO: Addition of variables not adding up
 
@@ -370,6 +371,78 @@ export function prepareLineData(
 }
 
 /**
+ * Renders error information into the container element.
+ *
+ * Creates a formatted error display showing the input that caused the error
+ * and the error message with appropriate styling.
+ *
+ * @param container - HTML element to render the error into
+ * @param evaluationResult - Evaluation result containing error information
+ */
+export function renderError(
+	container: HTMLElement,
+	evaluationResult: EvaluationResult
+): void {
+	const line = container.createEl("div", {cls: ["numerals-error-line", "numerals-line"]});
+	line.createEl("span", { text: evaluationResult.errorInput, cls: "numerals-input"});
+	const resultElement = line.createEl("span", {cls: "numerals-result" });
+	resultElement.createEl("span", {cls:"numerals-error-name", text: evaluationResult.errorMsg!.name + ":"});
+	resultElement.createEl("span", {cls:"numerals-error-message", text: evaluationResult.errorMsg!.message});
+}
+
+/**
+ * Renders a complete Numerals block using the Strategy Pattern.
+ *
+ * This function orchestrates the rendering of all lines in a Numerals block.
+ * It uses the RendererFactory to create the appropriate renderer based on the
+ * render style, then iterates through all lines, preparing data and delegating
+ * rendering to the strategy implementation.
+ *
+ * Hidden lines (based on @hide directive or emitter visibility settings) are
+ * skipped during rendering. Each visible line gets a container div with appropriate
+ * CSS classes, and the renderer handles the actual content rendering.
+ *
+ * @param container - HTML element to render the block into
+ * @param evaluationResult - Results from evaluating the block
+ * @param processedBlock - Preprocessed block data including raw rows and metadata
+ * @param context - Rendering configuration and settings
+ */
+export function renderNumeralsBlock(
+	container: HTMLElement,
+	evaluationResult: EvaluationResult,
+	processedBlock: ProcessedBlock,
+	context: RenderContext
+): void {
+	const renderer = RendererFactory.createRenderer(context.renderStyle);
+
+	for (let i = 0; i < evaluationResult.inputs.length; i++) {
+		const lineData = prepareLineData(
+			i,
+			processedBlock.rawRows,
+			evaluationResult.inputs,
+			evaluationResult.results,
+			processedBlock.blockInfo,
+			context.settings
+		);
+
+		if (lineData.isHidden) {
+			continue;
+		}
+
+		const lineContainer = container.createEl("div", {cls: "numerals-line"});
+		if (lineData.isEmitter) {
+			lineContainer.toggleClass("numerals-emitter", true);
+		}
+
+		renderer.renderLine(lineContainer, lineData, context);
+	}
+
+	if (evaluationResult.errorMsg) {
+		renderError(container, evaluationResult);
+	}
+}
+
+/**
  * Handles result insertion side effects by updating source lines in the editor.
  *
  * This function modifies the editor content to insert calculated results into
@@ -484,28 +557,21 @@ export function processAndRenderNumeralsBlockFromSource(
 	app: App
 ): NumeralsScope {
 
-	const blockRenderStyle: NumeralsRenderStyle = type
-		? type
-		: settings.defaultRenderStyle;
+	// Phase 1: Determine render style
+	const blockRenderStyle: NumeralsRenderStyle = type ?? settings.defaultRenderStyle;
 
+	// Phase 2: Preprocess
+	const processedBlock = preProcessBlockForNumeralsDirectives(source, preProcessors);
 
-	const { rawRows, processedSource, blockInfo } =
-		preProcessBlockForNumeralsDirectives(source, preProcessors);
-	
-	const {
-		emitter_lines,
-		insertion_lines,
-		hidden_lines,
-		shouldHideNonEmitterLines
-	} = blockInfo;
-
+	// Phase 3: Apply block styles
 	applyBlockStyles({
 		el,
 		settings,
 		blockRenderStyle,
-		hasEmitters: emitter_lines.length > 0,
+		hasEmitters: processedBlock.blockInfo.emitter_lines.length > 0,
 	});
 
+	// Phase 4: Build scope
 	const scope = getScopeFromFrontmatter(
 		metadata,
 		undefined,
@@ -513,133 +579,31 @@ export function processAndRenderNumeralsBlockFromSource(
 		preProcessors
 	);
 
-	const { results, inputs, errorMsg, errorInput } = evaluateMathFromSourceStrings(
-		processedSource,
+	// Phase 5: Evaluate
+	const evaluationResult = evaluateMathFromSourceStrings(
+		processedBlock.processedSource,
 		scope
 	);
 
-	// Handle result insertion side effects
-	handleResultInsertions(results, insertion_lines, numberFormat, ctx, app, el);
+	// Phase 6: Handle side effects (result insertions)
+	handleResultInsertions(
+		evaluationResult.results,
+		processedBlock.blockInfo.insertion_lines,
+		numberFormat,
+		ctx,
+		app,
+		el
+	);
 
-	// Render each line
-	for (let i = 0; i < inputs.length; i++) {
+	// Phase 7: Render
+	const renderContext: RenderContext = {
+		renderStyle: blockRenderStyle,
+		settings,
+		numberFormat,
+		preProcessors,
+	};
 
-		if (
-			hidden_lines.includes(i) ||
-			(shouldHideNonEmitterLines && !emitter_lines.includes(i))
-		) {
-			continue;
-		}
-
-		const line = el.createEl("div", {cls: "numerals-line"});
-		const emptyLine = (results[i] === undefined)
-
-		// if line is an emitter lines, add numerals-emitter class	
-		if (emitter_lines.includes(i)) {
-			line.toggleClass("numerals-emitter", true);
-		}
-
-		// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
-		if (settings.hideEmitterMarkupInInput) {
-			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*?)([\t ]*=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1$4") 
-		}
-
-		// Remove result insertion directive `@[variable::result]` from raw text, and only show the variable
-		rawRows[i] = rawRows[i].replace(/@\s*\[([^\]:]+)(::[^\]]*)?\](.*)$/gm, "$1$3")
-
-		let inputElement: HTMLElement, resultElement: HTMLElement;
-		switch(blockRenderStyle) {
-			case NumeralsRenderStyle.Plain: {
-				const rawInputSansComment = rawRows[i].replace(/#.+$/, "")
-				const inputText = emptyLine ? rawRows[i] : rawInputSansComment;
-
-				if (/@sum|@total/i.test(inputText)) {
-					const parts = inputText.match(/([^\r\n]*?)(@sum|@total)([^\r\n]*?)$/i) || [inputText, "", ""];
-					inputElement = line.createEl("span", {cls: "numerals-input"});
-					inputElement.createEl("span", {text: parts[1]});
-					inputElement.createEl("span", {text: parts[2], cls: "numerals-sum"});
-					inputElement.createEl("span", {text: parts[3]});
-				} else {
-					inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
-				}
-				
-				
-				const formattedResult = !emptyLine ? settings.resultSeparator + math.format(results[i], numberFormat) : '\xa0';
-				resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
-
-				break;
-			} case NumeralsRenderStyle.TeX: {
-				const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
-				inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
-				const resultContent = !emptyLine ? "" : '\xa0';
-				resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
-				if (!emptyLine) {
-					// Input to Tex
-					
-					const preprocess_input_tex:string = math.parse(inputs[i]).toTex();
-
-					let input_tex:string;
-					input_tex = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(preprocess_input_tex, rawRows[i], "@Sum()");				
-					input_tex = unescapeSubscripts(input_tex);				
-					input_tex = texCurrencyReplacement(input_tex);					
-
-					const inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
-					mathjaxLoop(inputTexElement, input_tex);
-
-					// Result to Tex
-					const resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
-
-					// format result to string to get reasonable precision. Commas will be stripped
-					let processedResult:string = math.format(results[i], getLocaleFormatter('en-US', {useGrouping: false}));
-					for (const processor of preProcessors ) {
-						processedResult = processedResult.replace(processor.regex, processor.replaceStr)
-					}
-					let texResult = math.parse(processedResult).toTex() // TODO: Add custom handler for numbers to get good localeString formatting
-					texResult = texCurrencyReplacement(texResult);
-					mathjaxLoop(resultTexElement, texResult);
-				}
-				break;
-			} case NumeralsRenderStyle.SyntaxHighlight: {
-				const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
-				inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
-				if (!emptyLine) {
-					const input_html = math.parse(inputs[i]).toHTML();
-					const input_elements: DocumentFragment = htmlToElements(
-						replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(
-							input_html,
-							rawRows[i]
-						)
-					);
-					inputElement.appendChild(input_elements);
-				}
-
-				const formattedResult = !emptyLine ? settings.resultSeparator + math.format(results[i], numberFormat) : '\xa0';
-				resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
-
-				break;
-			}
-		}
-
-		if (!emptyLine) {
-			const inlineComment = rawRows[i].match(/#.+$/);
-			if (inlineComment){
-				inputElement.createEl("span", {cls: "numerals-inline-comment", text:inlineComment[0]})
-			}
-		} else {
-			resultElement.toggleClass("numerals-empty", true);
-			inputElement.toggleClass("numerals-empty", true);
-			resultElement.setText('\xa0');
-		}
-	}
-
-
-	if (errorMsg) {			
-		const line = el.createEl("div", {cls: ["numerals-error-line", "numerals-line"]});
-		line.createEl("span", { text: errorInput, cls: "numerals-input"});
-		const resultElement = line.createEl("span", {cls: "numerals-result" });
-		resultElement.createEl("span", {cls:"numerals-error-name", text: errorMsg.name + ":"});
-		resultElement.createEl("span", {cls:"numerals-error-message", text: errorMsg.message});		
-	}
+	renderNumeralsBlock(el, evaluationResult, processedBlock, renderContext);
 
 	return scope;
 

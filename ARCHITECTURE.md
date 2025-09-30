@@ -331,7 +331,7 @@ Phase 3 implemented the Strategy Pattern for rendering different styles:
 
 Phase 4 extracted the side effect of writing results back to the editor into a dedicated function:
 
-**handleResultInsertions** ([numeralsUtilities.ts:411-449](numeralsUtilities.ts))
+**handleResultInsertions** ([numeralsUtilities.ts:483-521](numeralsUtilities.ts))
 - Isolated side effect function for writing results back to source
 - Takes results array, insertion line indices, and editor context
 - Uses regex to replace `@[variable]` or `@[variable::oldValue]` with `@[variable::newValue]`
@@ -345,6 +345,41 @@ The Strategy Pattern provides:
 - **Maintainability**: Each style isolated in its own class
 - **Testability**: Each renderer independently testable
 - **Clean Code**: No more switch statements in rendering logic
+
+### Refactored Main Orchestrator (Phase 5 Refactoring)
+
+Phase 5 refactored the main orchestrator function into a clean, readable pipeline:
+
+**renderError** ([numeralsUtilities.ts:381-390](numeralsUtilities.ts))
+- Extracts error rendering into dedicated function
+- Creates formatted error display with input and message
+- Applies appropriate CSS classes for styling
+
+**renderNumeralsBlock** ([numeralsUtilities.ts:409-442](numeralsUtilities.ts))
+- Pure rendering orchestration function
+- Uses RendererFactory to create appropriate renderer
+- Iterates through evaluation results, preparing LineRenderData for each line
+- Skips hidden lines based on directives and settings
+- Applies CSS classes (numerals-line, numerals-emitter)
+- Delegates actual rendering to strategy implementation
+- Renders errors if present
+
+**processAndRenderNumeralsBlockFromSource** ([numeralsUtilities.ts:526-607](numeralsUtilities.ts))
+- Refactored into clear 7-phase pipeline:
+  1. **Determine render style**: Resolve block-level vs default style
+  2. **Preprocess**: Extract directives and prepare rows
+  3. **Apply block styles**: Set CSS classes on container
+  4. **Build scope**: Load variables from frontmatter
+  5. **Evaluate**: Calculate results using mathjs
+  6. **Handle side effects**: Write insertion directives back to editor
+  7. **Render**: Display results using strategy renderers
+
+Benefits of Phase 5 refactoring:
+- **Clarity**: 187-line monolithic function reduced to ~30-line orchestrator
+- **Separation of Concerns**: Each phase has single responsibility
+- **Testability**: Each function independently testable
+- **No Array Mutations**: All transformations use pure functions
+- **Maintainability**: Easy to understand flow, easy to modify
 
 ### Variable Scoping
 
