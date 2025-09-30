@@ -267,6 +267,33 @@ As part of ongoing refactoring efforts, new Data Transfer Objects (DTOs) have be
 
 These types enable a cleaner separation between preprocessing, evaluation, and rendering stages, making the code more maintainable and testable.
 
+### Line Preparation Functions (Phase 2 Refactoring)
+
+Phase 2 introduced extracted functions for preparing line data for rendering:
+
+**extractComment** ([numeralsUtilities.ts:232-247](numeralsUtilities.ts))
+- Extracts inline comments from raw input
+- Returns object with `inputWithoutComment` and `comment`
+- Pure function, no mutations
+
+**renderComment** ([numeralsUtilities.ts:263-265](numeralsUtilities.ts))
+- Renders comment into HTML element
+- Appends span with `numerals-inline-comment` class
+
+**cleanRawInput** ([numeralsUtilities.ts:287-299](numeralsUtilities.ts))
+- Removes Numerals directives for display
+- Removes `=>` if `hideEmitterMarkupInInput` setting is true
+- Removes `@[variable::result]` insertion syntax
+- Pure function, returns new string
+
+**prepareLineData** ([numeralsUtilities.ts:330-370](numeralsUtilities.ts))
+- Main line preparation function
+- Transforms raw data into `LineRenderData` structure
+- Extracts metadata, cleans input, determines line characteristics
+- Pure function, no side effects
+
+These functions eliminate array mutations and provide clear, testable units for line preparation.
+
 ### Variable Scoping
 
 ```
