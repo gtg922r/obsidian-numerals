@@ -677,7 +677,7 @@ export const defaultCurrencyMap: CurrencyType[] = [
  *
  * @returns The input string with all currency symbols replaced with their corresponding TeX command.
  */
-function texCurrencyReplacement(input_tex:string) {
+export function texCurrencyReplacement(input_tex:string) {
 	for (const symbolType of defaultCurrencyMap) {
 		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name  + " ");
 	}
@@ -696,7 +696,7 @@ export function htmlToElements(html: string): DocumentFragment {
 	return sanitizedHTML;
   }
 
-async function mathjaxLoop(container: HTMLElement, value: string) {
+export async function mathjaxLoop(container: HTMLElement, value: string) {
 	const html = renderMath(value, true);
 	await finishRenderMath()
 

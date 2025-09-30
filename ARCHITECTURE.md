@@ -294,6 +294,45 @@ Phase 2 introduced extracted functions for preparing line data for rendering:
 
 These functions eliminate array mutations and provide clear, testable units for line preparation.
 
+### Renderer Strategy Pattern (Phase 3 Refactoring)
+
+Phase 3 implemented the Strategy Pattern for rendering different styles:
+
+**ILineRenderer** ([renderers/ILineRenderer.ts](renderers/ILineRenderer.ts))
+- Interface defining the contract for all renderers
+- Single method: `renderLine(container, lineData, context)`
+
+**BaseLineRenderer** ([renderers/BaseLineRenderer.ts](renderers/BaseLineRenderer.ts))
+- Abstract base class with shared functionality
+- Provides: `createElements()`, `handleEmptyLine()`, `renderInlineComment()`
+- Reduces code duplication across renderer implementations
+
+**PlainRenderer** ([renderers/PlainRenderer.ts](renderers/PlainRenderer.ts))
+- Renders input and results as plain text
+- Special handling for @sum/@total with CSS highlighting
+- Simplest renderer implementation
+
+**TeXRenderer** ([renderers/TeXRenderer.ts](renderers/TeXRenderer.ts))
+- Renders using TeX notation with MathJax
+- Handles currency symbols, subscripts, sum directives
+- Most complex renderer with multiple transformation steps
+
+**SyntaxHighlightRenderer** ([renderers/SyntaxHighlightRenderer.ts](renderers/SyntaxHighlightRenderer.ts))
+- Renders input with HTML syntax highlighting
+- Uses mathjs `toHTML()` method
+- Plain text results
+
+**RendererFactory** ([renderers/RendererFactory.ts](renderers/RendererFactory.ts))
+- Factory Pattern implementation
+- Creates appropriate renderer based on `NumeralsRenderStyle`
+- Centralizes renderer instantiation
+
+The Strategy Pattern provides:
+- **Extensibility**: New render styles require only a new renderer class
+- **Maintainability**: Each style isolated in its own class
+- **Testability**: Each renderer independently testable
+- **Clean Code**: No more switch statements in rendering logic
+
 ### Variable Scoping
 
 ```
