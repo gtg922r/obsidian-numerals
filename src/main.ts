@@ -1,6 +1,5 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
 import {
-	StringReplaceMap,
 	defaultCurrencyMap,
 	processAndRenderNumeralsBlockFromSource,
 	getLocaleFormatter,
@@ -15,6 +14,7 @@ import {
 	mathjsFormat,
 	DEFAULT_SETTINGS,
 	NumeralsScope,
+	StringReplaceMap,
 } from "./numerals.types";	
 import { 
 	NumeralsSettingTab,

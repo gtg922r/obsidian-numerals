@@ -1,7 +1,8 @@
 import * as math from 'mathjs';
 import { getAPI } from 'obsidian-dataview';
 import { App, TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo } from './numerals.types';
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo, StringReplaceMap, LineRenderData, ProcessedBlock, EvaluationResult, RenderContext } from './numerals.types';
+import { RendererFactory } from './renderers';
 
 // TODO: Addition of variables not adding up
 
@@ -161,11 +162,6 @@ export function addGobalsFromScopeToPageCache(sourcePath: string, scope: Numeral
 	}
 }
 
-export interface StringReplaceMap {
-	regex: RegExp;
-	replaceStr: string;
-}
-
 /**
  * Process a block of text to convert from Numerals syntax to MathJax syntax
  * @param text Text to process
@@ -216,9 +212,321 @@ export function getMetadataForFileAtPath(
 	// combine frontmatter and dataview metadata, with dataview metadata taking precedence and numerals scope taking precedence over both
 	const metadata = {...frontmatter, ...dataviewMetadata, ...numeralsPageScopeMetadata};		
 	return metadata;
-}	
+}
 
-/**  
+/**
+ * Extracts inline comment from a raw input string.
+ * Comments in Numerals start with # and continue to the end of the line.
+ *
+ * @param rawInput - The raw input string that may contain a comment
+ * @returns Object with the input without comment and the extracted comment (or null)
+ *
+ * @example
+ * ```typescript
+ * extractComment("2 + 2 # this is a comment")
+ * // Returns: { inputWithoutComment: "2 + 2 ", comment: " this is a comment" }
+ *
+ * extractComment("2 + 2")
+ * // Returns: { inputWithoutComment: "2 + 2", comment: null }
+ * ```
+ */
+export function extractComment(rawInput: string): {
+	inputWithoutComment: string;
+	comment: string | null;
+} {
+	const commentMatch = rawInput.match(/#.+$/);
+	if (commentMatch) {
+		return {
+			inputWithoutComment: rawInput.replace(/#.+$/, ""),
+			comment: commentMatch[0],
+		};
+	}
+	return {
+		inputWithoutComment: rawInput,
+		comment: null,
+	};
+}
+
+/**
+ * Renders an inline comment into an HTML element.
+ * Appends a span with the "numerals-inline-comment" class containing the comment text.
+ *
+ * @param element - The parent element to append the comment to
+ * @param comment - The comment string (including the # symbol)
+ *
+ * @example
+ * ```typescript
+ * const container = document.createElement('div');
+ * renderComment(container, "# this is a comment");
+ * // Appends: <span class="numerals-inline-comment"># this is a comment</span>
+ * ```
+ */
+export function renderComment(element: HTMLElement, comment: string): void {
+	element.createEl("span", { cls: "numerals-inline-comment", text: comment });
+}
+
+/**
+ * Cleans raw input string by removing Numerals directives for display.
+ * - Removes emitter markup (=>) if hideEmitterMarkupInInput setting is true
+ * - Removes result insertion directive syntax (@[variable::result])
+ *
+ * This function returns a new string and does not mutate the input.
+ *
+ * @param rawInput - The raw input string to clean
+ * @param settings - Numerals settings that control which directives to hide
+ * @returns Cleaned input string ready for display
+ *
+ * @example
+ * ```typescript
+ * cleanRawInput("result = 42 =>", { hideEmitterMarkupInInput: true })
+ * // Returns: "result = 42 "
+ *
+ * cleanRawInput("@[profit::100] = sales - costs", settings)
+ * // Returns: "profit = sales - costs"
+ * ```
+ */
+export function cleanRawInput(rawInput: string, settings: NumeralsSettings): string {
+	let cleaned = rawInput;
+
+	// Remove emitter markup (=>) if setting is enabled
+	if (settings.hideEmitterMarkupInInput) {
+		cleaned = cleaned.replace(/^([^#\r\n]*?)([\t ]*=>[\t ]*)(\$\{.*\})?(.*)$/gm, "$1$4");
+	}
+
+	// Remove result insertion directive, keeping only the variable name
+	cleaned = cleaned.replace(/@\s*\[([^\]:]+)(::[^\]]*)?\](.*)$/gm, "$1$3");
+
+	return cleaned;
+}
+
+/**
+ * Prepares data for rendering a single line in a Numerals block.
+ * Extracts metadata, cleans input, and determines line characteristics.
+ *
+ * This is a pure function that transforms raw data into a structured format
+ * ready for rendering. It does not mutate any inputs.
+ *
+ * @param index - Zero-based index of the line in the block
+ * @param rawRows - Array of raw input strings from the original source
+ * @param inputs - Array of processed input strings that were evaluated
+ * @param results - Array of evaluation results
+ * @param blockInfo - Metadata about special lines (emitters, insertions, etc.)
+ * @param settings - Numerals settings that affect line preparation
+ * @returns LineRenderData object ready for rendering
+ *
+ * @example
+ * ```typescript
+ * const lineData = prepareLineData(
+ *   0,
+ *   ["2 + 2 # sum", ""],
+ *   ["2 + 2"],
+ *   [4, undefined],
+ *   { emitter_lines: [], insertion_lines: [], hidden_lines: [], shouldHideNonEmitterLines: false },
+ *   settings
+ * );
+ * // Returns: { index: 0, rawInput: "2 + 2", processedInput: "2 + 2", result: 4,
+ * //           isEmpty: false, isEmitter: false, isHidden: false, comment: "# sum" }
+ * ```
+ */
+export function prepareLineData(
+	index: number,
+	rawRows: string[],
+	inputs: string[],
+	results: unknown[],
+	blockInfo: numeralsBlockInfo,
+	settings: NumeralsSettings
+): LineRenderData {
+	const {
+		emitter_lines,
+		insertion_lines,
+		hidden_lines,
+		shouldHideNonEmitterLines,
+	} = blockInfo;
+
+	// Get raw input and clean directives
+	const rawInput = rawRows[index] || "";
+	const cleanedInput = cleanRawInput(rawInput, settings);
+
+	// Extract comment from cleaned input
+	const { inputWithoutComment, comment } = extractComment(cleanedInput);
+
+	// Determine line characteristics
+	const result = results[index];
+	const isEmpty = result === undefined;
+	const isEmitter = emitter_lines.includes(index);
+	const isHidden =
+		hidden_lines.includes(index) ||
+		(shouldHideNonEmitterLines && !isEmitter);
+
+	return {
+		index,
+		rawInput: inputWithoutComment,
+		processedInput: inputs[index] || "",
+		result,
+		isEmpty,
+		isEmitter,
+		isHidden,
+		comment,
+	};
+}
+
+/**
+ * Renders error information into the container element.
+ *
+ * Creates a formatted error display showing the input that caused the error
+ * and the error message with appropriate styling.
+ *
+ * @param container - HTML element to render the error into
+ * @param evaluationResult - Evaluation result containing error information
+ */
+export function renderError(
+	container: HTMLElement,
+	evaluationResult: EvaluationResult
+): void {
+	const line = container.createEl("div", {cls: ["numerals-error-line", "numerals-line"]});
+	line.createEl("span", { text: evaluationResult.errorInput, cls: "numerals-input"});
+	const resultElement = line.createEl("span", {cls: "numerals-result" });
+	resultElement.createEl("span", {cls:"numerals-error-name", text: evaluationResult.errorMsg!.name + ":"});
+	resultElement.createEl("span", {cls:"numerals-error-message", text: evaluationResult.errorMsg!.message});
+}
+
+/**
+ * Renders a complete Numerals block using the Strategy Pattern.
+ *
+ * This function orchestrates the rendering of all lines in a Numerals block.
+ * It uses the RendererFactory to create the appropriate renderer based on the
+ * render style, then iterates through all lines, preparing data and delegating
+ * rendering to the strategy implementation.
+ *
+ * Hidden lines (based on @hide directive or emitter visibility settings) are
+ * skipped during rendering. Each visible line gets a container div with appropriate
+ * CSS classes, and the renderer handles the actual content rendering.
+ *
+ * @param container - HTML element to render the block into
+ * @param evaluationResult - Results from evaluating the block
+ * @param processedBlock - Preprocessed block data including raw rows and metadata
+ * @param context - Rendering configuration and settings
+ */
+export function renderNumeralsBlock(
+	container: HTMLElement,
+	evaluationResult: EvaluationResult,
+	processedBlock: ProcessedBlock,
+	context: RenderContext
+): void {
+	const renderer = RendererFactory.createRenderer(context.renderStyle);
+
+	for (let i = 0; i < evaluationResult.inputs.length; i++) {
+		const lineData = prepareLineData(
+			i,
+			processedBlock.rawRows,
+			evaluationResult.inputs,
+			evaluationResult.results,
+			processedBlock.blockInfo,
+			context.settings
+		);
+
+		if (lineData.isHidden) {
+			continue;
+		}
+
+		const lineContainer = container.createEl("div", {cls: "numerals-line"});
+		if (lineData.isEmitter) {
+			lineContainer.toggleClass("numerals-emitter", true);
+		}
+
+		renderer.renderLine(lineContainer, lineData, context);
+	}
+
+	if (evaluationResult.errorMsg) {
+		renderError(container, evaluationResult);
+	}
+}
+
+/**
+ * Handles result insertion side effects by updating source lines in the editor.
+ *
+ * This function modifies the editor content to insert calculated results into
+ * the source using the @[variable::result] syntax. This is a side effect that
+ * writes back to the document.
+ *
+ * The insertion uses the format: @[variableName::calculatedValue]
+ * where calculatedValue is the formatted result from evaluation.
+ *
+ * @param results - Array of evaluated results
+ * @param insertionLines - Array of line indices that have insertion directives
+ * @param numberFormat - Format specification for displaying numbers
+ * @param ctx - Markdown post processor context (provides section info)
+ * @param app - Obsidian App instance (provides editor access)
+ * @param el - The HTML element being rendered (used to get section info)
+ *
+ * @example
+ * ```typescript
+ * // Source line: @[profit] = sales - costs
+ * // After evaluation with result=100:
+ * // Updated to: @[profit::100] = sales - costs
+ *
+ * handleResultInsertions(
+ *   [100],
+ *   [0],
+ *   numberFormat,
+ *   ctx,
+ *   app,
+ *   el
+ * );
+ * ```
+ *
+ * @remarks
+ * This function has side effects:
+ * - Modifies editor content via `editor.setLine()`
+ * - Uses setTimeout to defer the modification
+ * - Only modifies lines where the value has actually changed
+ */
+export function handleResultInsertions(
+	results: unknown[],
+	insertionLines: number[],
+	numberFormat: mathjsFormat,
+	ctx: MarkdownPostProcessorContext,
+	app: App,
+	el: HTMLElement
+): void {
+	for (const i of insertionLines) {
+		const sectionInfo = ctx.getSectionInfo(el);
+		const lineStart = sectionInfo?.lineStart;
+
+		if (lineStart === undefined) {
+			continue;
+		}
+
+		const editor = app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+		if (!editor) {
+			continue;
+		}
+
+		// Skip if result doesn't exist (evaluation stopped early due to error)
+		if (i >= results.length || results[i] === undefined) {
+			continue;
+		}
+
+		const curLine = lineStart + i + 1;
+		const sourceLine = editor.getLine(curLine);
+		const insertionValue = math.format(results[i], numberFormat);
+
+		// Replace @[variable] or @[variable::oldValue] with @[variable::newValue]
+		const modifiedSource = sourceLine.replace(
+			/(@\s*\[)([^\]:]+)(::([^\]]*))?(\].*)$/gm,
+			`$1$2::${insertionValue}$5`
+		);
+
+		// Only update if the line actually changed
+		if (modifiedSource !== sourceLine) {
+			setTimeout(() => {
+				editor.setLine(curLine, modifiedSource);
+			}, 0);
+		}
+	}
+}
+
+/**
  * Renders a Numerals block from a given source string, using provided metadata and settings.  
  *   
  * This function takes a source string, which represents a block of Numerals code, and processes it   
@@ -254,28 +562,21 @@ export function processAndRenderNumeralsBlockFromSource(
 	app: App
 ): NumeralsScope {
 
-	const blockRenderStyle: NumeralsRenderStyle = type
-		? type
-		: settings.defaultRenderStyle;
+	// Phase 1: Determine render style
+	const blockRenderStyle: NumeralsRenderStyle = type ?? settings.defaultRenderStyle;
 
+	// Phase 2: Preprocess
+	const processedBlock = preProcessBlockForNumeralsDirectives(source, preProcessors);
 
-	const { rawRows, processedSource, blockInfo } =
-		preProcessBlockForNumeralsDirectives(source, preProcessors);
-	
-	const {
-		emitter_lines,
-		insertion_lines,
-		hidden_lines,
-		shouldHideNonEmitterLines
-	} = blockInfo;
-
+	// Phase 3: Apply block styles
 	applyBlockStyles({
 		el,
 		settings,
 		blockRenderStyle,
-		hasEmitters: emitter_lines.length > 0,
+		hasEmitters: processedBlock.blockInfo.emitter_lines.length > 0,
 	});
 
+	// Phase 4: Build scope
 	const scope = getScopeFromFrontmatter(
 		metadata,
 		undefined,
@@ -283,149 +584,31 @@ export function processAndRenderNumeralsBlockFromSource(
 		preProcessors
 	);
 
-	const { results, inputs, errorMsg, errorInput } = evaluateMathFromSourceStrings(
-		processedSource,
+	// Phase 5: Evaluate
+	const evaluationResult = evaluateMathFromSourceStrings(
+		processedBlock.processedSource,
 		scope
 	);
-	
-	// Render each line
-	for (let i = 0; i < inputs.length; i++) {
 
-		// TODO - extract this into a separate function
-		if (insertion_lines.includes(i)) {
-			const sectionInfo = ctx.getSectionInfo(el);
-			const lineStart = sectionInfo?.lineStart;
+	// Phase 6: Handle side effects (result insertions)
+	handleResultInsertions(
+		evaluationResult.results,
+		processedBlock.blockInfo.insertion_lines,
+		numberFormat,
+		ctx,
+		app,
+		el
+	);
 
-			if (lineStart !== undefined) {
-				const editor = app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-				const curLine = lineStart + i + 1;
-				const sourceLine = editor?.getLine(curLine);
-				const insertionValue = math.format(results[i], numberFormat);
-				const modifiedSource = sourceLine?.replace(/(@\s*\[)([^\]:]+)(::([^\]]*))?(\].*)$/gm, `$1$2::${insertionValue}$5`)
-				if (modifiedSource && modifiedSource !== sourceLine) {
-					setTimeout(() => {
-						editor?.setLine(curLine, modifiedSource)
-					}, 0);
-				}
-			}
-		}
+	// Phase 7: Render
+	const renderContext: RenderContext = {
+		renderStyle: blockRenderStyle,
+		settings,
+		numberFormat,
+		preProcessors,
+	};
 
-		if (
-			hidden_lines.includes(i) ||
-			(shouldHideNonEmitterLines && !emitter_lines.includes(i))
-		) {
-			continue;
-		}
-
-		const line = el.createEl("div", {cls: "numerals-line"});
-		const emptyLine = (results[i] === undefined)
-
-		// if line is an emitter lines, add numerals-emitter class	
-		if (emitter_lines.includes(i)) {
-			line.toggleClass("numerals-emitter", true);
-		}
-
-		// if hideEmitters setting is true, remove => from the raw text (already removed from processed text)
-		if (settings.hideEmitterMarkupInInput) {
-			rawRows[i] = rawRows[i].replace(/^([^#\r\n]*?)([\t ]*=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1$4") 
-		}
-
-		// Remove result insertion directive `@[variable::result]` from raw text, and only show the variable
-		rawRows[i] = rawRows[i].replace(/@\s*\[([^\]:]+)(::[^\]]*)?\](.*)$/gm, "$1$3")
-
-		let inputElement: HTMLElement, resultElement: HTMLElement;
-		switch(blockRenderStyle) {
-			case NumeralsRenderStyle.Plain: {
-				const rawInputSansComment = rawRows[i].replace(/#.+$/, "")
-				const inputText = emptyLine ? rawRows[i] : rawInputSansComment;
-
-				if (/@sum|@total/i.test(inputText)) {
-					const parts = inputText.match(/([^\r\n]*?)(@sum|@total)([^\r\n]*?)$/i) || [inputText, "", ""];
-					inputElement = line.createEl("span", {cls: "numerals-input"});
-					inputElement.createEl("span", {text: parts[1]});
-					inputElement.createEl("span", {text: parts[2], cls: "numerals-sum"});
-					inputElement.createEl("span", {text: parts[3]});
-				} else {
-					inputElement = line.createEl("span", { text: inputText, cls: "numerals-input"});
-				}
-				
-				
-				const formattedResult = !emptyLine ? settings.resultSeparator + math.format(results[i], numberFormat) : '\xa0';
-				resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
-
-				break;
-			} case NumeralsRenderStyle.TeX: {
-				const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
-				inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
-				const resultContent = !emptyLine ? "" : '\xa0';
-				resultElement = line.createEl("span", { text: resultContent, cls: "numerals-result" });
-				if (!emptyLine) {
-					// Input to Tex
-					
-					const preprocess_input_tex:string = math.parse(inputs[i]).toTex();
-
-					let input_tex:string;
-					input_tex = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(preprocess_input_tex, rawRows[i], "@Sum()");				
-					input_tex = unescapeSubscripts(input_tex);				
-					input_tex = texCurrencyReplacement(input_tex);					
-
-					const inputTexElement = inputElement.createEl("span", {cls: "numerals-tex"})
-					mathjaxLoop(inputTexElement, input_tex);
-
-					// Result to Tex
-					const resultTexElement = resultElement.createEl("span", {cls: "numerals-tex"})
-
-					// format result to string to get reasonable precision. Commas will be stripped
-					let processedResult:string = math.format(results[i], getLocaleFormatter('en-US', {useGrouping: false}));
-					for (const processor of preProcessors ) {
-						processedResult = processedResult.replace(processor.regex, processor.replaceStr)
-					}
-					let texResult = math.parse(processedResult).toTex() // TODO: Add custom handler for numbers to get good localeString formatting
-					texResult = texCurrencyReplacement(texResult);
-					mathjaxLoop(resultTexElement, texResult);
-				}
-				break;
-			} case NumeralsRenderStyle.SyntaxHighlight: {
-				const inputText = emptyLine ? rawRows[i] : ""; // show comments from raw text if no other input
-				inputElement = line.createEl("span", {text: inputText, cls: "numerals-input"});
-				if (!emptyLine) {
-					const input_html = math.parse(inputs[i]).toHTML();
-					const input_elements: DocumentFragment = htmlToElements(
-						replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(
-							input_html,
-							rawRows[i]
-						)
-					);
-					inputElement.appendChild(input_elements);
-				}
-
-				const formattedResult = !emptyLine ? settings.resultSeparator + math.format(results[i], numberFormat) : '\xa0';
-				resultElement = line.createEl("span", { text: formattedResult, cls: "numerals-result" });
-
-				break;
-			}
-		}
-
-		if (!emptyLine) {
-			const inlineComment = rawRows[i].match(/#.+$/);
-			if (inlineComment){
-				inputElement.createEl("span", {cls: "numerals-inline-comment", text:inlineComment[0]})
-			}
-		} else {
-			resultElement.toggleClass("numerals-empty", true);
-			inputElement.toggleClass("numerals-empty", true);
-			resultElement.setText('\xa0');
-		}
-	}
-
-
-	if (errorMsg) {			
-		const line = el.createEl("div", {cls: ["numerals-error-line", "numerals-line"]});
-		line.createEl("span", { text: errorInput, cls: "numerals-input"});
-		const resultElement = line.createEl("span", {cls: "numerals-result" });
-		resultElement.createEl("span", {cls:"numerals-error-name", text: errorMsg.name + ":"});
-		resultElement.createEl("span", {cls:"numerals-error-message", text: errorMsg.message});		
-	}
+	renderNumeralsBlock(el, evaluationResult, processedBlock, renderContext);
 
 	return scope;
 
@@ -526,7 +709,7 @@ export const defaultCurrencyMap: CurrencyType[] = [
  *
  * @returns The input string with all currency symbols replaced with their corresponding TeX command.
  */
-function texCurrencyReplacement(input_tex:string) {
+export function texCurrencyReplacement(input_tex:string) {
 	for (const symbolType of defaultCurrencyMap) {
 		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name  + " ");
 	}
@@ -545,7 +728,7 @@ export function htmlToElements(html: string): DocumentFragment {
 	return sanitizedHTML;
   }
 
-async function mathjaxLoop(container: HTMLElement, value: string) {
+export async function mathjaxLoop(container: HTMLElement, value: string) {
 	const html = renderMath(value, true);
 	await finishRenderMath()
 

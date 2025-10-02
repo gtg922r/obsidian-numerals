@@ -21,7 +21,6 @@ const mockApp = {
 } as any;
 
 import {
-	StringReplaceMap,
 	applyBlockStyles,
 	evaluateMathFromSourceStrings,
 	getLocaleFormatter,
@@ -37,9 +36,10 @@ import {
 	NumeralsRenderStyle,
 	NumeralsLayout,
 	NumeralsScope,
-	mathjsFormat,	
+	mathjsFormat,
+	StringReplaceMap,
+	DEFAULT_SETTINGS,
 } from "../src/numerals.types";
-import { DEFAULT_SETTINGS } from "../src/numerals.types";
 
 // jest.mock('obsidian-dataview');
 
