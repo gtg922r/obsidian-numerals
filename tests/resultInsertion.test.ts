@@ -351,4 +351,61 @@ describe('handleResultInsertions', () => {
 		// Now it should have been called
 		expect(mockEditor.setLine).toHaveBeenCalled();
 	});
+
+	it('should skip insertion lines when results array is shorter (partial evaluation)', () => {
+		// Simulates when evaluation stopped early due to error
+		// If we have 5 lines with insertions at [0, 2, 4] but evaluation fails at line 2,
+		// results will only have [result0, result1] (2 items)
+		const results = [100, 200]; // Only 2 results
+		const insertionLines = [0, 1, 4]; // 3 insertion line indices, but only 0 and 1 have results
+
+		mockCtx.getSectionInfo.mockReturnValue({ lineStart: 0 });
+		mockEditor.getLine
+			.mockReturnValueOnce('@[result1]') // insertionLines[0] = 0 - has result
+			.mockReturnValueOnce('@[result2]'); // insertionLines[1] = 1 - has result
+			// insertionLines[2] = 4 - no result at index 4 (would throw without guard)
+
+		handleResultInsertions(
+			results,
+			insertionLines,
+			numberFormat,
+			mockCtx as unknown as MarkdownPostProcessorContext,
+			mockApp as App,
+			mockEl
+		);
+
+		jest.runAllTimers();
+
+		// Should only process first 2 insertion lines (indices 0 and 1), skip index 4
+		expect(mockEditor.setLine).toHaveBeenCalledTimes(2);
+		expect(mockEditor.setLine).toHaveBeenNthCalledWith(1, 1, '@[result1::100]');
+		expect(mockEditor.setLine).toHaveBeenNthCalledWith(2, 2, '@[result2::200]');
+	});
+
+	it('should skip insertion when result is undefined', () => {
+		// Simulates when evaluation returns undefined for certain lines (e.g., comments)
+		const results = [100, undefined, 300];
+		const insertionLines = [0, 1, 2];
+
+		mockCtx.getSectionInfo.mockReturnValue({ lineStart: 0 });
+		mockEditor.getLine
+			.mockReturnValueOnce('@[result1]')
+			.mockReturnValueOnce('@[result3]');
+
+		handleResultInsertions(
+			results,
+			insertionLines,
+			numberFormat,
+			mockCtx as unknown as MarkdownPostProcessorContext,
+			mockApp as App,
+			mockEl
+		);
+
+		jest.runAllTimers();
+
+		// Should skip the undefined result at index 1
+		expect(mockEditor.setLine).toHaveBeenCalledTimes(2);
+		expect(mockEditor.setLine).toHaveBeenNthCalledWith(1, 1, '@[result1::100]');
+		expect(mockEditor.setLine).toHaveBeenNthCalledWith(2, 3, '@[result3::300]');
+	});
 });

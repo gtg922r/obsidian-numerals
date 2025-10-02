@@ -502,6 +502,11 @@ export function handleResultInsertions(
 			continue;
 		}
 
+		// Skip if result doesn't exist (evaluation stopped early due to error)
+		if (i >= results.length || results[i] === undefined) {
+			continue;
+		}
+
 		const curLine = lineStart + i + 1;
 		const sourceLine = editor.getLine(curLine);
 		const insertionValue = math.format(results[i], numberFormat);
