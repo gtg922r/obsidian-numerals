@@ -152,6 +152,22 @@ describe("numeralsUtilities: applyBlockStyles()", () => {
 	});
 });
 
+describe("numeralsUtilities: getLocaleFormatter small number precision", () => {
+    it("formats very small positive numbers without rounding to 0", () => {
+        const fmt = getLocaleFormatter('en-US');
+        const formatted = fmt(1.055e-5);
+        expect(formatted).not.toBe('0');
+        expect(formatted).toContain('1055');
+    });
+
+    it("formats very small negative numbers without rounding to -0", () => {
+        const fmt = getLocaleFormatter('en-US');
+        const formatted = fmt(-3.593e-9);
+        expect(formatted).not.toBe('-0');
+        expect(formatted).toContain('3593');
+    });
+});
+
 describe("numeralsUtilities: preProcessBlockForNumeralsDirectives", () => {
 	it("Correctly processes block with emitters and insertion directives", () => {
 		const sampleBlock = `# comment 1

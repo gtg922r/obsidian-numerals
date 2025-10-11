@@ -743,16 +743,26 @@ export async function mathjaxLoop(container: HTMLElement, value: string) {
  * @returns Function that calls toLocaleString with given locale
  */
 export function getLocaleFormatter(
-	locale: Intl.LocalesArgument | undefined = undefined,
-	options: Intl.NumberFormatOptions | undefined = undefined
+    locale: Intl.LocalesArgument | undefined = undefined,
+    options: Intl.NumberFormatOptions | undefined = undefined
 ): (value: number) => string {
-	if (locale === undefined) {
-		return (value: number): string => value.toLocaleString();
-	} else if (options === undefined) {
-		return (value: number): string => value.toLocaleString(locale);
-	} else {
-		return (value: number): string => value.toLocaleString(locale, options);
-	}
+    // Keep previous behavior for normal magnitudes (Intl default ~3 fraction digits)
+    // but avoid showing 0 for very small non-zero numbers.
+    const defaultFormatter = new Intl.NumberFormat(locale, options);
+    const smallNumberFormatter = new Intl.NumberFormat(locale, {
+        ...(options ?? {}),
+        maximumFractionDigits: Math.max(12, options?.maximumFractionDigits ?? 12),
+        // Do not force minimumFractionDigits, so trailing zeros are not added
+    });
+
+    const tinyMagnitudeThreshold = 1e-3; // values below this often became 0 before
+
+    return (value: number): string => {
+        if (Number.isFinite(value) && Math.abs(value) > 0 && Math.abs(value) < tinyMagnitudeThreshold) {
+            return smallNumberFormatter.format(value);
+        }
+        return defaultFormatter.format(value);
+    };
 }
 
 export const numeralsLayoutClasses = {
