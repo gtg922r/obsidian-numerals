@@ -67,7 +67,12 @@ function getMathjsFormat(format: NumeralsNumberFormat): mathjsFormat {
 		case NumeralsNumberFormat.System:
 			return getLocaleFormatter();			
 		case NumeralsNumberFormat.Fixed:
-			return {notation: "fixed"};
+			return {
+				notation: "fixed",
+				precision: 14,
+				lowerExp: -9,
+				upperExp: 14
+			};
 		case NumeralsNumberFormat.Exponential:
 			return {notation: "exponential"};
 		case NumeralsNumberFormat.Engineering:
@@ -81,7 +86,12 @@ function getMathjsFormat(format: NumeralsNumberFormat): mathjsFormat {
 		case NumeralsNumberFormat.Format_Indian:
 			return getLocaleFormatter('en-IN');
 		default:
-			return {notation: "fixed"};
+			return {
+				notation: "fixed",
+				precision: 14,
+				lowerExp: -9,
+				upperExp: 14
+			};
 	}
 }
 

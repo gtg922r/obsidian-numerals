@@ -746,12 +746,19 @@ export function getLocaleFormatter(
 	locale: Intl.LocalesArgument | undefined = undefined,
 	options: Intl.NumberFormatOptions | undefined = undefined
 ): (value: number) => string {
+	// Default options for better handling of small decimal numbers
+	const defaultOptions: Intl.NumberFormatOptions = {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 14,
+		...options
+	};
+	
 	if (locale === undefined) {
-		return (value: number): string => value.toLocaleString();
+		return (value: number): string => value.toLocaleString(undefined, defaultOptions);
 	} else if (options === undefined) {
-		return (value: number): string => value.toLocaleString(locale);
+		return (value: number): string => value.toLocaleString(locale, defaultOptions);
 	} else {
-		return (value: number): string => value.toLocaleString(locale, options);
+		return (value: number): string => value.toLocaleString(locale, defaultOptions);
 	}
 }
 
