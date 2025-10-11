@@ -483,7 +483,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.009 day
+       → 0.00931333333333 day
     </span>
   </div>
   <div
@@ -581,7 +581,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.042 USD / floz
+       → 0.04159722222222 USD / floz
     </span>
   </div>
   <div
@@ -595,7 +595,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.042 USD / floz
+       → 0.04166666666667 USD / floz
     </span>
   </div>
   <div
@@ -623,7 +623,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.016 USD / floz
+       → 0.01601653071889 USD / floz
     </span>
   </div>
   <div
@@ -679,7 +679,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.308 USD
+       → 0.30780163137331 USD
     </span>
   </div>
   <div
@@ -707,7 +707,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 292.364
+       → 292.3636226308917
     </span>
   </div>
   <div
@@ -721,7 +721,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 58.473 day
+       → 58.47272452617834 day
     </span>
   </div>
   <div
@@ -1364,7 +1364,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.009 day
+       → 0.00931333333333 day
     </span>
   </div>
   <div
@@ -1462,7 +1462,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.042 USD / floz
+       → 0.04159722222222 USD / floz
     </span>
   </div>
   <div
@@ -1476,7 +1476,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.042 USD / floz
+       → 0.04166666666667 USD / floz
     </span>
   </div>
   <div
@@ -1504,7 +1504,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.016 USD / floz
+       → 0.01601653071889 USD / floz
     </span>
   </div>
   <div
@@ -1560,7 +1560,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.308 USD
+       → 0.30780163137331 USD
     </span>
   </div>
   <div
@@ -1588,7 +1588,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 292.364
+       → 292.3636226308917
     </span>
   </div>
   <div
@@ -1602,7 +1602,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 58.473 day
+       → 58.47272452617834 day
     </span>
   </div>
   <div
@@ -2245,7 +2245,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.009 day
+       → 0.00931333333333 day
     </span>
   </div>
   <div
@@ -2343,7 +2343,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.042 USD / floz
+       → 0.04159722222222 USD / floz
     </span>
   </div>
   <div
@@ -2357,7 +2357,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.042 USD / floz
+       → 0.04166666666667 USD / floz
     </span>
   </div>
   <div
@@ -2385,7 +2385,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.016 USD / floz
+       → 0.01601653071889 USD / floz
     </span>
   </div>
   <div
@@ -2441,7 +2441,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.308 USD
+       → 0.30780163137331 USD
     </span>
   </div>
   <div
@@ -2469,7 +2469,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 292.364
+       → 292.3636226308917
     </span>
   </div>
   <div
@@ -2483,7 +2483,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 58.473 day
+       → 58.47272452617834 day
     </span>
   </div>
   <div
@@ -3126,7 +3126,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.009 day
+       → 0.00931333333333 day
     </span>
   </div>
   <div
@@ -3224,7 +3224,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.042 USD / floz
+       → 0.04159722222222 USD / floz
     </span>
   </div>
   <div
@@ -3238,7 +3238,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.042 USD / floz
+       → 0.04166666666667 USD / floz
     </span>
   </div>
   <div
@@ -3266,7 +3266,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.016 USD / floz
+       → 0.01601653071889 USD / floz
     </span>
   </div>
   <div
@@ -3322,7 +3322,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.308 USD
+       → 0.30780163137331 USD
     </span>
   </div>
   <div
@@ -3350,7 +3350,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 292.364
+       → 292.3636226308917
     </span>
   </div>
   <div
@@ -3364,7 +3364,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 58.473 day
+       → 58.47272452617834 day
     </span>
   </div>
   <div
@@ -4007,7 +4007,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.009 day
+       → 0.00931333333333 day
     </span>
   </div>
   <div
@@ -4105,7 +4105,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.042 USD / floz
+       → 0.04159722222222 USD / floz
     </span>
   </div>
   <div
@@ -4119,7 +4119,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.042 USD / floz
+       → 0.04166666666667 USD / floz
     </span>
   </div>
   <div
@@ -4147,7 +4147,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.016 USD / floz
+       → 0.01601653071889 USD / floz
     </span>
   </div>
   <div
@@ -4203,7 +4203,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 0.308 USD
+       → 0.30780163137331 USD
     </span>
   </div>
   <div
@@ -4231,7 +4231,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 292.364
+       → 292.3636226308917
     </span>
   </div>
   <div
@@ -4245,7 +4245,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 58.473 day
+       → 58.47272452617834 day
     </span>
   </div>
   <div
@@ -4539,7 +4539,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 780.246 nanometer
+       → 780.246021 nanometer
     </span>
   </div>
   <div
@@ -4567,7 +4567,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 4.142
+       → 4.14159265358979
     </span>
   </div>
 </div>
