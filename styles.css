@@ -302,3 +302,18 @@ body {
     font-family: var(--numerals-font);
     font-size: var(--numerals-size);
 }
+
+/***************************/
+/* ** Inline Expression Style ** */
+
+.numerals-inline-result {
+    color: var(--code-punctuation);
+    font-family: var(--numerals-font);
+    font-size: var(--numerals-size);
+}
+
+.numerals-inline-error {
+    color: var(--color-red);
+    font-family: var(--numerals-font);
+    font-size: var(--numerals-size);
+}

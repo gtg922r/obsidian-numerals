@@ -43,6 +43,14 @@ To get started, simply install and enable the plugin. Add a `math` code block wi
 	- Greek letters can be auto-completed by typing `:`, e.g. `:mu` in a math block will offer `μ` as an auto-complete suggestion
 - Note-Global Variables
 	- Any variable name or function definition preceeded by an `$` symbol will be made available to all math blocks on a page
+- Inline Math Expressions
+	- Use inline code with `mathexpr:` syntax to evaluate expressions inline with your text
+	- Reference page-global variables: `` `mathexpr: $length * 2` ``
+	- Simple calculations: `` `mathexpr: 3 * 4` `` → `12`
+	- Math functions: `` `mathexpr: sqrt(16)` `` → `4`
+	- Units and currency: `` `mathexpr: 5 m + 3 m` `` → `8 m`
+	- Inline expressions are read-only and cannot define variables
+	- Only page-global variables (with `$` prefix) are accessible from inline expressions
 - Fractions:	
 	- `fraction(1/3) + fraction(1/4)` → `7/12`
 - Comments and Headings:
@@ -60,6 +68,69 @@ To get started, simply install and enable the plugin. Add a `math` code block wi
 	- Functions can be defined in YAML by name along with their arguments, e.g. `$f(x): x+2`
 
 *Numerals* utilizes the [mathjs](https://mathjs.org/) library for all calculations. *Numerals* implements a preprocessor to allow more human-friendly syntax, such as currency symbols and thousands separators. For all available functions and capabilities (which includes matrices, vectors, symbolic algebra and calculus, etc), see the [mathjs documentation](https://mathjs.org/docs/index.html)
+
+## Inline Math Expressions
+
+Numerals now supports inline math expressions using the `` `mathexpr:` `` syntax. This allows you to display calculated results directly in your text without needing a full code block.
+
+> **✨ New**: Inline math expressions now work in **both Live Preview and Reading Mode**!
+
+### Basic Usage
+
+You can use inline expressions for simple calculations:
+
+```markdown
+The total cost is `mathexpr: 3 * 4` dollars.
+```
+
+This will render as: **The total cost is 12 dollars** in both editing and reading modes.
+
+### Variable References
+
+Inline expressions can reference page-global variables (defined with `$` prefix in math blocks):
+
+````markdown
+```math
+$length = 10
+$width = 5
+```
+
+The area of the rectangle is `mathexpr: $length * $width` square meters.
+````
+
+This will render as: The area of the rectangle is 50 square meters.
+
+### Advanced Examples
+
+Inline expressions support all the same features as math blocks:
+
+- **Math functions**: `` `mathexpr: sqrt(16)` `` → 4
+- **Units**: `` `mathexpr: 5 m + 3 m` `` → 8 m
+- **Currency**: `` `mathexpr: $100 + $50` `` → 150 USD
+- **Complex expressions**: `` `mathexpr: (5 + 3) * 2` `` → 16
+
+### Limitations
+
+- Inline expressions are **read-only** - they display results but cannot define new variables
+- Only **page-global variables** (with `$` prefix) are accessible from inline expressions
+- Local variables defined in math blocks without `$` prefix are not accessible
+
+### Example Workflow
+
+````markdown
+```math
+# Define page-global variables
+$price = $100
+$quantity = 5
+$taxRate = 0.08
+```
+
+In this order, we have `mathexpr: $quantity` items at `mathexpr: $price` each.
+The subtotal is `mathexpr: $price * $quantity`.
+With tax (`mathexpr: $taxRate * 100`%), the total is `mathexpr: $price * $quantity * (1 + $taxRate)`.
+````
+
+This creates a natural flow where calculations appear inline with your text!
 
 
 ## Styling Options
@@ -137,7 +208,10 @@ To try the latest features of *Numerals* before they are released, and provide h
 	- Support added in 1.0.5
 - [x] Autocompletion of functions and variable inside math code block ([#15](https://github.com/gtg922r/obsidian-numerals/issues/15))
 	- Support added in 1.0.8
-- [ ] Inline calculation for inline code blocks ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5))
+- [x] Inline calculation for inline code blocks ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5))
+	- MVP support added: `` `mathexpr:` `` syntax for inline expressions
+	- Can reference page-global variables and evaluate simple expressions
+	- Future enhancements: local variable support, TeX rendering
 
 Feel free to suggest additional features by creating an [issue](https://github.com/gtg922r/obsidian-numerals/issues)!
 

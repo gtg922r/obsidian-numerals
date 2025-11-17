@@ -7,6 +7,39 @@ import { RendererFactory } from './renderers';
 // TODO: Addition of variables not adding up
 
 /**
+ * Add Greek letter symbols to a scope for use in inline math expressions
+ * These symbols are not built into mathjs but are commonly used in mathematical notation
+ * Greek letters are initialized to 0 by default and can be assigned values in code blocks or frontmatter
+ * Note: 'π' (pi) is already defined in mathjs as a constant, so we skip it
+ * @param scope The scope to add Greek letters to (will be created if undefined)
+ * @returns The scope with Greek letters added
+ */
+export function addGreekLettersToScope(scope: NumeralsScope | undefined): NumeralsScope {
+	if (!scope) {
+		scope = new NumeralsScope();
+	}
+	
+	// Define Greek letters, initialized to 0 (can be overridden by user assignments)
+	// This allows expressions like "μ * 2" or "α + β" to work even if not explicitly assigned
+	const greekLetters = [
+		'α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ', 'μ',
+		'ν', 'ξ', 'ο', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω',
+		'Γ', 'Δ', 'Θ', 'Λ', 'Ξ', 'Π', 'Σ', 'Φ', 'Ψ', 'Ω'
+		// Note: 'π' is excluded because it's already a mathjs constant (pi = 3.14159...)
+	];
+	
+	// Only add Greek letters that aren't already defined in the scope
+	// Initialize them to 0 so they can be used in expressions
+	for (const letter of greekLetters) {
+		if (!scope.has(letter)) {
+			scope.set(letter, math.number(0));
+		}
+	}
+	
+	return scope;
+}
+
+/**
  * Process frontmatter and return updated scope object
  * - Numbers are converted to mathjs numbers. Strings are processed as mathjs expressions.
  * - Objects are ignored
@@ -972,5 +1005,97 @@ export function evaluateMathFromSourceStrings(
 	}
 
 	return { results, inputs, errorMsg, errorInput };
+}
+
+/**
+ * Process and render inline math expressions in the format `mathexpr: expression`.
+ * This function is designed to be called as a MarkdownPostProcessor to handle inline code elements.
+ * 
+ * @remarks
+ * Inline expressions are read-only - they can reference variables but cannot define new ones.
+ * Only page-global variables (stored in scopeCache) are accessible.
+ * Processing order is controlled via sortOrder parameter to ensure code blocks run first.
+ * 
+ * @param el - The container element to search for inline code elements
+ * @param ctx - The markdown post processor context
+ * @param scopeCache - Map of file paths to their global scopes
+ * @param numberFormat - Number formatting options for displaying results
+ * @param preProcessors - String replacement preprocessors (e.g., for currency symbols)
+ */
+export function processInlineMathExpressions(
+	el: HTMLElement,
+	ctx: MarkdownPostProcessorContext,
+	scopeCache: Map<string, NumeralsScope>,
+	numberFormat: mathjsFormat,
+	preProcessors: StringReplaceMap[],
+	app: App
+): void {
+	// Find all <code> elements within the container
+	const codeElements = el.querySelectorAll('code');
+	
+	codeElements.forEach((codeEl) => {
+		const text = codeEl.textContent || '';
+		
+		// Check if this is a mathexpr inline expression
+		const match = text.match(/^mathexpr:\s*(.+)$/);
+		if (!match) {
+			return; // Not a mathexpr inline code, skip it
+		}
+		
+		const expression = match[1].trim();
+		
+		// Get the scope for this file from the cache (may be undefined if no code blocks yet)
+		let scope = scopeCache.get(ctx.sourcePath);
+		
+		// Get frontmatter and process it properly through getScopeFromFrontmatter
+		try {
+			const f_path = ctx.sourcePath;
+			const handle = app.vault.getAbstractFileByPath(f_path);
+			const f_handle = (handle instanceof TFile) ? handle : undefined;
+			const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle as TFile) : undefined;
+			const frontmatter = f_cache?.frontmatter;
+			
+			if (frontmatter) {
+				// Process frontmatter through getScopeFromFrontmatter to properly convert values
+				scope = getScopeFromFrontmatter(frontmatter, scope, false, preProcessors, false);
+			}
+		} catch (e) {
+			console.warn('Numerals: Failed to get frontmatter for inline expressions:', e);
+		}
+		
+		// Add Greek letters to scope so they can be used in expressions
+		scope = addGreekLettersToScope(scope);
+		
+		try {
+			// Apply preprocessors to the expression
+			let processedExpression = expression;
+			if (preProcessors && preProcessors.length > 0) {
+				processedExpression = replaceStringsInTextFromMap(processedExpression, preProcessors);
+			}
+			
+			// Evaluate the expression using the page scope
+			const result = math.evaluate(processedExpression, scope);
+			
+			// Format the result
+			const formattedResult = math.format(result, numberFormat);
+			
+			// Replace the code element with a span containing the result
+			const resultSpan = document.createElement('span');
+			resultSpan.classList.add('numerals-inline-result');
+			resultSpan.textContent = formattedResult;
+			
+			// Replace the code element with our result span
+			codeEl.replaceWith(resultSpan);
+			
+		} catch (error) {
+			// Display error inline
+			const errorSpan = document.createElement('span');
+			errorSpan.classList.add('numerals-inline-error');
+			errorSpan.textContent = `[Error: ${error.message || 'Invalid expression'}]`;
+			
+			// Replace the code element with our error span
+			codeEl.replaceWith(errorSpan);
+		}
+	});
 }
 

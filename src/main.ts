@@ -4,7 +4,9 @@ import {
 	processAndRenderNumeralsBlockFromSource,
 	getLocaleFormatter,
 	getMetadataForFileAtPath,
-	addGobalsFromScopeToPageCache } from "./numeralsUtilities";
+	addGobalsFromScopeToPageCache,
+	processInlineMathExpressions } from "./numeralsUtilities";
+import { createInlineMathViewPlugin } from "./inlineMathLivePreview";
 import {
 	CurrencyType,
 	NumeralsLayout,
@@ -248,6 +250,32 @@ export default class NumeralsPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor("math-tex", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);  
 		this.registerMarkdownCodeBlockProcessor("math-TeX", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);  
 		this.registerMarkdownCodeBlockProcessor("math-highlight", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.SyntaxHighlight), priority); 
+
+		// Register Inline Math Expression Processor for Reading Mode
+		// Use higher sortOrder (200) to ensure inline expressions are processed AFTER code blocks
+		// This allows inline expressions to reference variables defined in code blocks
+		const inlinePriority = 200;
+		this.registerMarkdownPostProcessor((el, ctx) => {
+			processInlineMathExpressions(
+				el,
+				ctx,
+				this.scopeCache,
+				this.numberFormat,
+				this.preProcessors,
+				this.app
+			);
+		}, inlinePriority); 
+
+		// Register Inline Math Expression Processor for Live Preview Mode
+		// Uses CodeMirror 6 ViewPlugin to handle inline code rendering in editing mode
+		this.registerEditorExtension(
+			createInlineMathViewPlugin(
+				(path: string) => this.scopeCache.get(path),
+				() => this.numberFormat,
+				() => this.preProcessors,
+				() => this.app
+			)
+		); 
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new NumeralsSettingTab(this.app, this));
