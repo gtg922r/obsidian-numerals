@@ -262,6 +262,23 @@ describe('Renderer Implementations', () => {
 			expect(comment).not.toBeNull();
 			expect(comment?.textContent).toBe('# calculation');
 		});
+
+		it('should preserve non-scientific number notation in highlighted input', () => {
+			const lineData: LineRenderData = {
+				index: 0,
+				rawInput: '100000 + 0.0000004',
+				processedInput: '100000 + 0.0000004',
+				result: 100000.0000004,
+				isEmpty: false,
+				isEmitter: false,
+				isHidden: false,
+				comment: null,
+			};
+
+			renderer.renderLine(container, lineData, context);
+			expect(container.textContent).toContain('100000');
+			expect(container.textContent).toContain('0.0000004');
+		});
 	});
 
 	describe('TeXRenderer', () => {

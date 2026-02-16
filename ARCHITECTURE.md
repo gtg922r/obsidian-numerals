@@ -8,25 +8,49 @@ Numerals is an Obsidian plugin that transforms `math` code blocks into interacti
 
 ```
 src/
-├── main.ts                   # Plugin entry point and orchestration
+├── main.ts                   # Plugin lifecycle and block registration
 ├── settings.ts               # Settings UI and configuration
-├── numeralsUtilities.ts      # Core processing and rendering logic
-├── mathjsUtilities.ts        # Mathjs symbol definitions
+├── numeralsUtilities.ts      # Compatibility barrel exports
+├── constants.ts              # Shared constants and class maps
+├── mathjsIntegration.ts      # Reversible mathjs currency patching + unit setup
+├── mathjsUtilities.ts        # Mathjs symbol definitions for suggestor
 ├── NumeralsSuggestor.ts      # Auto-complete functionality
-└── numerals.types.ts         # Type definitions and enums
+├── numerals.types.ts         # Type definitions and enums
+├── processing/
+│   ├── preprocessor.ts       # Directive parsing and source preprocessing
+│   └── evaluator.ts          # Line-by-line math evaluation
+├── scope/
+│   ├── frontmatter.ts        # Frontmatter/Dataview scope building + warnings
+│   └── scopeCache.ts         # $-global cache helpers
+├── rendering/
+│   ├── blockStyles.ts        # Block-level class application
+│   ├── linePreparation.ts    # Comment extraction and line DTO shaping
+│   ├── displayUtils.ts       # TeX/HTML display helpers and locale formatting
+│   └── orchestrator.ts       # Render pipeline orchestration + insertions
+└── renderers/
+    ├── BaseLineRenderer.ts
+    ├── PlainRenderer.ts
+    ├── SyntaxHighlightRenderer.ts
+    ├── TeXRenderer.ts
+    └── RendererFactory.ts
 ```
 
 ### File Responsibilities
 
 | File | Purpose | Key Exports |
 |------|---------|-------------|
-| **main.ts** | Plugin lifecycle, code block registration, currency setup | `NumeralsPlugin` |
-| **settings.ts** | Settings tab UI, configuration options | `NumeralsSettingTab`, currency code mappings |
-| **numeralsUtilities.ts** | Block processing, evaluation, rendering | `processAndRenderNumeralsBlockFromSource`, `evaluateMathFromSourceStrings` |
-| **mathjsUtilities.ts** | Mathjs function/constant definitions | `getMathJsSymbols()` |
-| **NumeralsSuggestor.ts** | Editor suggestions for variables/functions | `NumeralsSuggestor` |
-| **numerals.types.ts** | Type definitions, enums, interfaces | `NumeralsSettings`, `NumeralsScope`, `ProcessedBlock`, `EvaluationResult`, `LineRenderData`, `RenderContext`, `StringReplaceMap`, enums |
-| **renderers/ILineRenderer.ts** | Renderer interface definition | `ILineRenderer` |
+| **main.ts** | Plugin lifecycle, code block registration, listener ownership, cleanup | `NumeralsPlugin` |
+| **settings.ts** | Settings tab UI and persisted configuration | `NumeralsSettingTab`, currency code mappings |
+| **numeralsUtilities.ts** | Backward-compatible export barrel | (re-exports) |
+| **mathjsIntegration.ts** | Currency parser patching + idempotent unit registration | `setupMathjsCurrencySupport`, `ensureCurrencyUnits`, `teardownMathjsCurrencySupport` |
+| **processing/preprocessor.ts** | Directive parsing and source transformation | `preProcessBlockForNumeralsDirectives` |
+| **processing/evaluator.ts** | Expression evaluation with proper `Error` objects | `evaluateMathFromSourceStrings` |
+| **scope/frontmatter.ts** | Frontmatter scope building with surfaced warnings | `getScopeFromFrontmatterWithWarnings`, `getMetadataForFileAtPath` |
+| **rendering/orchestrator.ts** | End-to-end rendering pipeline and result insertion side effects | `processAndRenderNumeralsBlockFromSource`, `handleResultInsertions` |
+| **renderers/** | Strategy Pattern implementations by render style | `PlainRenderer`, `TeXRenderer`, `SyntaxHighlightRenderer`, `RendererFactory` |
+| **mathjsUtilities.ts** | Mathjs symbol catalog for suggestor | `getMathJsSymbols()` |
+| **NumeralsSuggestor.ts** | Context-aware editor suggestions with cache | `NumeralsSuggestor` |
+| **numerals.types.ts** | Shared enums and DTOs | `NumeralsSettings`, `ProcessedBlock`, `EvaluationResult`, etc. |
 
 ## Architecture Diagram
 

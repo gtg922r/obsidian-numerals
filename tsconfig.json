@@ -7,19 +7,18 @@
     "target": "ES2018",
     "allowJs": true,
     "noImplicitAny": true,
+    "strict": true,
     "moduleResolution": "node",
     "importHelpers": true,
     "isolatedModules": true,
-	"strictNullChecks": true,
 	"esModuleInterop":true,
+	"skipLibCheck": true,
     "lib": [
       "DOM",
-      "ES5",
-      "ES6",
-      "ES7"
+      "ES2021"
     ]
   },
   "include": [
-    "**/*.ts"
+    "src/**/*.ts"
   ]
 }

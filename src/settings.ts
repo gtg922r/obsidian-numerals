@@ -3,7 +3,6 @@
 ///////////////////////////////////////////
 
 import NumeralsPlugin from "./main";
-import { NumeralsSuggestor } from "./NumeralsSuggestor";
 import { htmlToElements } from "./numeralsUtilities";
 import { NumeralsRenderStyle, NumeralsNumberFormat, NumeralsLayout } from "./numerals.types";
 
@@ -138,14 +137,11 @@ export class NumeralsSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Provide Auto-Complete Suggestions')
-			.setDesc('Enable auto-complete suggestions when inside a math codeblock. Will base suggestions on variables in current codeblock, as well as mathjs functions and constants if enabled below (Disabling requires restart to take effect)')
+			.setDesc('Enable auto-complete suggestions when inside a math codeblock. Suggestions are based on variables in the current codeblock, and optionally mathjs functions/constants.')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.provideSuggestions)
 				.onChange(async (value) => {
 					this.plugin.settings.provideSuggestions = value;
-					if (value) {
-						this.plugin.registerEditorSuggest(new NumeralsSuggestor(this.plugin));
-					}
 					await this.plugin.saveSettings();
 				}));
 		new Setting(containerEl)
