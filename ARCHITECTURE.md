@@ -21,7 +21,8 @@ src/
 │   ├── index.ts                   # Barrel exports
 │   ├── inlineParser.ts            # Trigger detection and expression parsing
 │   ├── inlineEvaluator.ts         # Single-expression mathjs evaluation
-│   └── inlinePostProcessor.ts     # Markdown post-processor (renders <code> elements)
+│   ├── inlinePostProcessor.ts     # Markdown post-processor (Reading mode)
+│   └── inlineLivePreview.ts       # CM6 ViewPlugin (Live Preview mode)
 │
 ├── processing/                    # Expression processing pipeline
 │   ├── scope.ts                   # Frontmatter/Dataview scope resolution
@@ -55,7 +56,8 @@ src/
 | **numeralsUtilities.ts** | 42 | Barrel re-export for backwards compatibility | Re-exports all public symbols from `processing/` and `rendering/` |
 | **inline/inlineParser.ts** | 35 | Trigger detection and expression extraction | `parseInlineExpression()` |
 | **inline/inlineEvaluator.ts** | 40 | Single-expression evaluation with scope cloning | `evaluateInlineExpression()` |
-| **inline/inlinePostProcessor.ts** | 145 | Markdown post-processor for `<code>` elements | `createInlineNumeralsPostProcessor()` |
+| **inline/inlinePostProcessor.ts** | 145 | Markdown post-processor for Reading mode | `createInlineNumeralsPostProcessor()` |
+| **inline/inlineLivePreview.ts** | 260 | CM6 ViewPlugin for Live Preview mode | `createInlineLivePreviewExtension()`, `InlineNumeralsWidget` |
 | **processing/scope.ts** | 203 | Frontmatter + Dataview scope building | `getScopeFromFrontmatter`, `addGlobalsFromScopeToPageCache`, `getMetadataForFileAtPath` |
 | **processing/preprocessor.ts** | 99 | Directive detection and text substitution | `preProcessBlockForNumeralsDirectives`, `replaceStringsInTextFromMap` |
 | **processing/evaluator.ts** | 89 | Per-line mathjs evaluation with `__prev`/`__total` | `evaluateMathFromSourceStrings` |
@@ -76,7 +78,7 @@ src/
 │                    NumeralsPlugin (main.ts)                       │
 │  • Plugin lifecycle (onload / onunload)                           │
 │  • Registers code block processors (math, math-tex, etc.)        │
-│  • Registers inline post-processor (inline/ module)              │
+│  • Registers inline post-processor + CM6 extension (inline/)    │
 │  • Mathjs currency setup                                         │
 │  • WeakMap deduplication (prevents double rendering)              │
 │  • Event listeners on MarkdownRenderChild (not Plugin)           │
@@ -182,38 +184,45 @@ Entry point: `processAndRenderNumeralsBlockFromSource()` in `rendering/orchestra
 
 ## Inline Numerals Pipeline
 
-Inline Numerals evaluates expressions in inline code spans (e.g., `` `=: 3+2` ``) using a Markdown post-processor. This follows the same pattern as Dataview's inline queries.
+Inline Numerals evaluates expressions in inline code spans (e.g., `` `#: 3+2` ``). Two rendering paths ensure it works everywhere:
+
+1. **Reading mode** — `registerMarkdownPostProcessor` walks rendered `<code>` elements
+2. **Live Preview** — CM6 `ViewPlugin` walks the Lezer syntax tree for `inline-code` nodes
+
+Both paths share the same core logic (`inlineParser.ts` + `inlineEvaluator.ts`).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ Markdown Post-Processor (inline/inlinePostProcessor.ts)             │
-│ registerMarkdownPostProcessor() callback                            │
-│                                                                      │
-│ 1. Quick-reject: check if feature is enabled                        │
-│ 2. Query all <code> elements in the rendered HTML                   │
-│ 3. Quick-reject: check if any start with a trigger prefix           │
-│ 4. Build scope (frontmatter + note-globals from scopeCache)         │
-│ 5. For each matching <code> element:                                │
-│    a. Parse trigger → InlineNumeralsExpression (inlineParser.ts)    │
-│    b. Evaluate expression (inlineEvaluator.ts)                      │
-│       - Apply preprocessors (currency, thousands)                   │
-│       - Clone scope (isolate from shared state)                     │
-│       - math.evaluate() + math.format()                             │
-│    c. Render into <code> element:                                   │
-│       ResultOnly: <span class="value">result</span>                │
-│       Equation:   <span class="input">expr</span>                  │
-│                   <span class="separator"> = </span>               │
-│                   <span class="value">result</span>                │
-│    d. On error: show raw expression with error styling              │
+│              Reading Mode (inlinePostProcessor.ts)                  │
+│  registerMarkdownPostProcessor() callback                          │
+│  • querySelectorAll('code') → filter by trigger prefix              │
+│  • Replace <code> innerHTML with rendered result                    │
+└─────────────────────────────────────────────────────────────────────┘
+           │                                     │
+┌────────────┴─────────────┐   ┌───────────┴──────────────┐
+│  inlineParser.ts  │   │ inlineEvaluator.ts │
+│  trigger detect +  │   │ preprocess, clone  │
+│  expression extract│   │ scope, evaluate,   │
+│                     │   │ format             │
+└─────────────────────┘   └──────────────────────────┘
+           │                                     │
+┌────────────┴─────────────┐   ┌───────────┴──────────────┐
+│ Live Preview (inlineLivePreview.ts)  │
+│ CM6 ViewPlugin + WidgetType                                        │
+│ • syntaxTree().iterate() for inline-code nodes                     │
+│ • Cursor guard: skip when cursor is inside span                    │
+│ • Decoration.replace() with InlineNumeralsWidget                   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Key inline design decisions:
-- **Post-processor approach**: Works in Live Preview, Reading mode, and mobile
+- **Dual rendering paths**: Post-processor (Reading) + ViewPlugin (Live Preview) share parser + evaluator
+- **Cursor guard** (Live Preview): Widget is removed when cursor enters the code span, revealing raw source for editing
 - **Scope cloning**: Inline expressions cannot write back to the shared scope
 - **No multi-line features**: No @sum/@total/@prev — those are block concepts
 - **No side effects**: No @[variable::result] insertion
-- **Quick-reject**: Skips scope building when no triggers are found in the DOM
+- **Quick-reject**: Skips scope building when no triggers are found
+- **Source mode**: ViewPlugin checks `editorLivePreviewField` and is a no-op in Source mode
 
 ## Key Design Decisions
 
@@ -350,6 +359,7 @@ Test files:
 | `tests/resultInsertion.test.ts` | Editor write-back side effects |
 | `tests/types.test.ts` | DTO and type validation |
 | `tests/inline.test.ts` | Inline parser and evaluator |
-| `tests/inlinePostProcessor.test.ts` | Inline integration pipeline |
+| `tests/inlinePostProcessor.test.ts` | Inline integration pipeline (Reading mode) |
+| `tests/inlineLivePreview.test.ts` | InlineNumeralsWidget DOM output and equality |
 
 Run: `npm test` (Jest)
