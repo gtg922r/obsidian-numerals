@@ -302,3 +302,41 @@ body {
     font-family: var(--numerals-font);
     font-size: var(--numerals-size);
 }
+
+/***************************/
+/* ** Inline Numerals ** */
+
+/* Base: inline numerals replaces a <code> element */
+.numerals-inline {
+    font-family: var(--numerals-font);
+    font-size: var(--numerals-size);
+}
+
+/* Result-only mode: just show the computed value */
+.numerals-inline-result .numerals-inline-value {
+    color: var(--text-accent);
+    font-weight: var(--font-semibold, 600);
+}
+
+/* Equation mode: input = result */
+.numerals-inline-equation .numerals-inline-input {
+    color: var(--code-normal);
+}
+
+.numerals-inline-equation .numerals-inline-separator {
+    color: var(--text-faint);
+}
+
+.numerals-inline-equation .numerals-inline-value {
+    color: var(--text-accent);
+    font-weight: var(--font-semibold, 600);
+}
+
+/* Error state: show the raw expression in error color */
+.numerals-inline-error {
+    color: var(--text-error);
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: var(--text-error);
+    text-underline-offset: 3px;
+}
