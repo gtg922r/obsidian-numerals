@@ -1,5 +1,5 @@
 import NumeralsPlugin from "./main";
-import { getMetadataForFileAtPath, getScopeFromFrontmatter } from "./numeralsUtilities";
+import { getMetadataForFileAtPath, getScopeFromFrontmatter } from "./processing/scope";
 import {
     EditorSuggest,
     EditorPosition,
@@ -135,7 +135,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 
 
 			if (metadata) {
-				const frontmatterSymbols = getScopeFromFrontmatter(metadata, undefined, this.plugin.settings.forceProcessAllFrontmatter, undefined, true);
+				const { scope: frontmatterSymbols } = getScopeFromFrontmatter(metadata, undefined, this.plugin.settings.forceProcessAllFrontmatter, undefined, true);
 				// add frontmatter symbols to local symbols
 				const frontmatterSymbolsArray = Array.from(frontmatterSymbols.keys()).map(symbol => 'v|' + symbol);
 				localSymbols = [...new Set([...localSymbols, ...frontmatterSymbolsArray])];

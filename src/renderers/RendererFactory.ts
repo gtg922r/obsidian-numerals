@@ -17,8 +17,13 @@ import { SyntaxHighlightRenderer } from './SyntaxHighlightRenderer';
  * ```
  */
 export class RendererFactory {
+	private static readonly renderers = new Map<NumeralsRenderStyle, ILineRenderer>();
+
 	/**
-	 * Creates a renderer instance for the specified render style.
+	 * Returns a cached renderer instance for the specified render style,
+	 * creating one if it doesn't already exist.
+	 *
+	 * Renderers are stateless, so a single instance per style is reused.
 	 *
 	 * @param style - The rendering style (Plain, TeX, or SyntaxHighlight)
 	 * @returns A renderer instance implementing ILineRenderer
@@ -26,16 +31,22 @@ export class RendererFactory {
 	 * @throws Error if an unknown render style is provided
 	 */
 	static createRenderer(style: NumeralsRenderStyle): ILineRenderer {
+		const cached = this.renderers.get(style);
+		if (cached) return cached;
+
+		let renderer: ILineRenderer;
 		switch (style) {
 			case NumeralsRenderStyle.Plain:
-				return new PlainRenderer();
+				renderer = new PlainRenderer(); break;
 			case NumeralsRenderStyle.TeX:
-				return new TeXRenderer();
+				renderer = new TeXRenderer(); break;
 			case NumeralsRenderStyle.SyntaxHighlight:
-				return new SyntaxHighlightRenderer();
+				renderer = new SyntaxHighlightRenderer(); break;
 			default:
 				// This should never happen with TypeScript enum, but provides safety
 				throw new Error(`Unknown render style: ${style}`);
 		}
+		this.renderers.set(style, renderer);
+		return renderer;
 	}
 }

@@ -7,7 +7,7 @@ import {
 	mathjaxLoop,
 	replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw,
 	getLocaleFormatter,
-} from '../numeralsUtilities';
+} from '../rendering/displayUtils';
 
 /**
  * TeX renderer for Numerals blocks.

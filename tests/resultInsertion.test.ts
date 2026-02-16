@@ -15,6 +15,7 @@ type MockEditor = {
 
 type MockContext = {
 	getSectionInfo: jest.Mock;
+	sourcePath: string;
 };
 
 describe('handleResultInsertions', () => {
@@ -31,11 +32,16 @@ describe('handleResultInsertions', () => {
 			setLine: jest.fn(),
 		};
 
-		// Mock app
+		// Mock app with iterateAllLeaves that finds our mock editor
 		mockApp = {
 			workspace: {
-				getActiveViewOfType: jest.fn().mockReturnValue({
-					editor: mockEditor,
+				iterateAllLeaves: jest.fn((callback: (leaf: any) => void) => {
+					callback({
+						view: Object.assign(Object.create(MarkdownView.prototype), {
+							file: { path: 'test.md' },
+							editor: mockEditor,
+						}),
+					});
 				}),
 			} as any,
 		};
@@ -43,6 +49,7 @@ describe('handleResultInsertions', () => {
 		// Mock context
 		mockCtx = {
 			getSectionInfo: jest.fn(),
+			sourcePath: 'test.md',
 		};
 
 		// Mock element
@@ -242,7 +249,8 @@ describe('handleResultInsertions', () => {
 		const insertionLines = [0];
 
 		mockCtx.getSectionInfo.mockReturnValue({ lineStart: 0 });
-		(mockApp.workspace!.getActiveViewOfType as jest.Mock).mockReturnValue(null);
+		// Override iterateAllLeaves to provide no matching leaves
+		(mockApp.workspace as any).iterateAllLeaves = jest.fn();
 
 		handleResultInsertions(
 			results,

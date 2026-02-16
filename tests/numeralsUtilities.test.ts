@@ -362,7 +362,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
     });
 
     it("should return an empty scope for undefined frontmatter", () => {
-        const result = getScopeFromFrontmatter(undefined, scope, forceAll, stringReplaceMap, keysOnly);
+        const { scope: result } = getScopeFromFrontmatter(undefined, scope, forceAll, stringReplaceMap, keysOnly);
         expect(result.size).toBe(0);
     });
 
@@ -372,7 +372,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
             count: 5,
 			speed: "5 m/s"
         };
-        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
         expect(result.get("count")).toBe(5);
         expect(result.get("title")).toBe(undefined); // title = "test", but no "title" key in scope
 		expect(result.get("speed")).toEqual(math.evaluate("5 m/s"));
@@ -382,11 +382,12 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
         frontmatter = {
             objectKey: { nested: "value" }
         };
-        let result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        let result: NumeralsScope;
+        ({ scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly));
         expect(result.has("objectKey")).toBe(false);
 
         keysOnly = true;
-        result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        ({ scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly));
         expect(result.get("objectKey")).toBeUndefined();
     });
 
@@ -396,7 +397,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
             selectedKey: 10,
             ignoredKey: "ignored"
         };
-        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
         expect(result.get("selectedKey")).toBe(10);
         expect(result.has("ignoredKey")).toBe(false);
     });
@@ -406,7 +407,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
 			numerals: "expression",
             expression: "2 + 2"
         };
-        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
         expect(result.get("expression")).toEqual(math.evaluate("2 + 2"));
     });
 
@@ -415,11 +416,9 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
 			numerals: "missingValue",
 			missingValue: "missing"
 		};
-		const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-		const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+		const { scope: result, warnings } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
 		expect(result.get("missingValue")).toBeUndefined();
-		expect(consoleSpy).toHaveBeenCalled();
-		consoleSpy.mockRestore();
+		expect(warnings.length).toBeGreaterThan(0);
 	});
 
 
@@ -428,11 +427,9 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
 			numerals: "badExpression",
             badExpression: "2 +"
         };
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
-        expect(consoleSpy).toHaveBeenCalled();
+        const { scope: result, warnings } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(warnings.length).toBeGreaterThan(0);
         expect(result.has("badExpression")).toBe(false);
-        consoleSpy.mockRestore();
     });
 
     it("should respect the forceAll parameter", () => {
@@ -441,7 +438,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
             key2: "2+2"
         };
         forceAll = true;
-        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
         expect(result.get("key1")).toBe(2);
         expect(result.get("key2")).toEqual(math.evaluate("2+2"));
     });
@@ -454,7 +451,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
 			dollarCost: "$100",
 			currencyCost: "$100,000"
         };
-        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, preProcessors, keysOnly);
+        const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, preProcessors, keysOnly);
         expect(result.get("cost")).toEqual(math.evaluate("100 USD"));
 		expect(result.get("dollarCost")).toEqual(math.evaluate("100 USD"));
 		expect(result.get("currencyCost")).toEqual(math.evaluate("100000 USD"));
@@ -466,7 +463,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
             "$b": 5,
             "$v(x)": "x + $b - $a",  // Use function assignment syntax instead of JavaScript syntax
         };
-        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
         expect(result.get("$a")).toBe(2);
         expect(result.get("$b")).toBe(5);
         
@@ -482,7 +479,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
             "$b": 5,
             "$v(x)": "x + $b - $a",
         };
-        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
         expect(result.get("$a")).toBe(2);
         expect(result.get("$b")).toBe(5);
         
@@ -498,7 +495,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
             "$multiply(x, y)": "x * y",
             "$add(a, b, c)": "a + b + c"
         };
-        const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
         
         const multiplyFunc = result.get("$multiply") as any;
         const addFunc = result.get("$add") as any;
@@ -518,7 +515,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
             "$v(x)": "x + $b - $a"
         };
         
-        const firstScope = getScopeFromFrontmatter(firstBlockFrontmatter, new NumeralsScope(), forceAll, stringReplaceMap, keysOnly);
+        const { scope: firstScope } = getScopeFromFrontmatter(firstBlockFrontmatter, new NumeralsScope(), forceAll, stringReplaceMap, keysOnly);
         
         // Verify globals are created correctly
         expect(firstScope.get("$a")).toBe(2);
@@ -536,7 +533,7 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
             "$v": vFunc // Function object as it would be stored in cache
         };
         
-        const secondScope = getScopeFromFrontmatter(secondBlockFrontmatter, new NumeralsScope(), forceAll, stringReplaceMap, keysOnly);
+        const { scope: secondScope } = getScopeFromFrontmatter(secondBlockFrontmatter, new NumeralsScope(), forceAll, stringReplaceMap, keysOnly);
         
         // Verify that globals work in the second block
         expect(secondScope.get("$a")).toBe(2);

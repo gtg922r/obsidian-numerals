@@ -1,10 +1,7 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
-import {
-	defaultCurrencyMap,
-	processAndRenderNumeralsBlockFromSource,
-	getLocaleFormatter,
-	getMetadataForFileAtPath,
-	addGobalsFromScopeToPageCache } from "./numeralsUtilities";
+import { defaultCurrencyMap, getLocaleFormatter } from "./rendering/displayUtils";
+import { processAndRenderNumeralsBlockFromSource } from "./rendering/orchestrator";
+import { getMetadataForFileAtPath, addGlobalsFromScopeToPageCache } from "./processing/scope";
 import {
 	CurrencyType,
 	NumeralsLayout,
@@ -15,12 +12,12 @@ import {
 	DEFAULT_SETTINGS,
 	NumeralsScope,
 	StringReplaceMap,
-} from "./numerals.types";	
-import { 
+} from "./numerals.types";
+import {
 	NumeralsSettingTab,
 	currencyCodesForDollarSign,
 	currencyCodesForYenSign,
- } from "./settings";
+} from "./settings";
 import equal from 'fast-deep-equal';
 import {
 	Plugin,
@@ -28,16 +25,12 @@ import {
 	loadMathJax,
 	MarkdownPostProcessorContext,
 	MarkdownRenderChild,
+	EventRef,
 } from "obsidian";
 
 import { getAPI } from 'obsidian-dataview';
 
-// if use syntax tree directly will need "@codemirror/language": "^6.3.2", // Needed for accessing syntax tree
-// import {syntaxTree, tokenClassNodeProp} from '@codemirror/language';
-
 import * as math from 'mathjs';
-
-
 
 
 // Modify mathjs internal functions to allow for use of currency symbols
@@ -45,27 +38,24 @@ const currencySymbols: string[] = defaultCurrencyMap.map(m => m.symbol);
 const isAlphaOriginal = math.parse.isAlpha;
 math.parse.isAlpha = function (c, cPrev, cNext) {
 	return isAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
-	};	
+};
 
-// 														@ts-ignore
-const isUnitAlphaOriginal = math.Unit.isValidAlpha; // 	@ts-ignore
-math.Unit.isValidAlpha =
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function (c: string, cPrev: any, cNext: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- mathjs internal API
+const isUnitAlphaOriginal = (math.Unit as any).isValidAlpha;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- mathjs internal API
+(math.Unit as any).isValidAlpha =
+function (c: string) {
 	return isUnitAlphaOriginal(c) || currencySymbols.includes(c)
-	};			
+};
 
-	
+
 /**
  * Map Numerals Number Format to mathjs format options
- * @param format Numerals Number Format
- * @returns mathjs format object
- * @see https://mathjs.org/docs/reference/functions/format.html
  */
 function getMathjsFormat(format: NumeralsNumberFormat): mathjsFormat {
 	switch (format) {
 		case NumeralsNumberFormat.System:
-			return getLocaleFormatter();			
+			return getLocaleFormatter();
 		case NumeralsNumberFormat.Fixed:
 			return {notation: "fixed"};
 		case NumeralsNumberFormat.Exponential:
@@ -86,21 +76,43 @@ function getMathjsFormat(format: NumeralsNumberFormat): mathjsFormat {
 }
 
 export default class NumeralsPlugin extends Plugin {
-	settings: NumeralsSettings;
+	settings!: NumeralsSettings;
 	private currencyMap: CurrencyType[] = defaultCurrencyMap;
-	private preProcessors: StringReplaceMap[];
-	private currencyPreProcessors: StringReplaceMap[];
+	private preProcessors!: StringReplaceMap[];
+	private currencyPreProcessors!: StringReplaceMap[];
 	private numberFormat: mathjsFormat;
 	public scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
 
-	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {		
-		// TODO: Rendering is getting called twice. Once without newline at the end of the code block and once with.
-		//       This is causing the code block to be rendered twice. Need to figure out why and fix it.
+	/**
+	 * Tracks rendered source strings to deduplicate the double-render issue.
+	 * Obsidian calls the code block processor twice (with and without trailing newline).
+	 * We use a WeakMap keyed by the container element to detect and skip duplicates.
+	 */
+	private renderedBlocks: WeakMap<HTMLElement, string> = new WeakMap();
+
+	async numeralsMathBlockHandler(
+		type: NumeralsRenderStyle | undefined,
+		source: string,
+		el: HTMLElement,
+		ctx: MarkdownPostProcessorContext
+	): Promise<void> {
+		// Fix double-rendering: Obsidian calls processors twice (with/without trailing newline).
+		// Normalize source and skip if we've already rendered this block.
+		const normalizedSource = source.replace(/\n$/, '');
+		const parentEl = el.parentElement;
+		if (parentEl) {
+			const previousSource = this.renderedBlocks.get(parentEl);
+			if (previousSource === normalizedSource) {
+				el.remove();
+				return;
+			}
+			this.renderedBlocks.set(parentEl, normalizedSource);
+		}
 
 		let metadata = getMetadataForFileAtPath(ctx.sourcePath, this.app, this.scopeCache);
-		
+
 		const scope = processAndRenderNumeralsBlockFromSource(
-			el, 
+			el,
 			source,
 			ctx,
 			metadata,
@@ -111,17 +123,19 @@ export default class NumeralsPlugin extends Plugin {
 			this.app
 		);
 
-		addGobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
+		addGlobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
 
+		// TS-1 Fix: Register events on the MarkdownRenderChild, not on the Plugin.
+		// This ensures listeners are cleaned up when the render child is unloaded
+		// (e.g., when navigating away), preventing unbounded listener accumulation.
 		const numeralsBlockChild = new MarkdownRenderChild(el);
 
 		const numeralsBlockCallback = (_callbackType: unknown, _file: unknown, _oldPath?: unknown) => {
 			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath, this.app, this.scopeCache);
 			if (equal(currentMetadata, metadata)) {
 				return;
-			} else {
-				metadata = currentMetadata;
 			}
+			metadata = currentMetadata;
 
 			el.empty();
 
@@ -137,23 +151,24 @@ export default class NumeralsPlugin extends Plugin {
 				this.app
 			);
 
-			addGobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
-		}
+			addGlobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
+		};
 
 		const dataviewAPI = getAPI();
 		if (dataviewAPI) {
-			//@ts-expect-error: "No overload matches this call"
-			this.registerEvent(this.app.metadataCache.on("dataview:metadata-change", numeralsBlockCallback));
+			// Register on the child component so it auto-cleans on unload
+			const ref = this.app.metadataCache.on(
+				// @ts-expect-error: dataview custom event not in Obsidian types
+				"dataview:metadata-change",
+				numeralsBlockCallback
+			) as EventRef;
+			numeralsBlockChild.registerEvent(ref);
 		} else {
-			this.registerEvent(this.app.metadataCache.on("changed", numeralsBlockCallback));
+			const ref = this.app.metadataCache.on("changed", numeralsBlockCallback);
+			numeralsBlockChild.registerEvent(ref);
 		}
 
-		numeralsBlockChild.onunload = () => {
-			this.app.metadataCache.off("changed", numeralsBlockCallback);
-			this.app.metadataCache.off("dataview:metadata-change", numeralsBlockCallback);
-		}
 		ctx.addChild(numeralsBlockChild);
-
 	}
 
 	private createCurrencyMap(
@@ -172,19 +187,18 @@ export default class NumeralsPlugin extends Plugin {
 				}
 			}
 			return m;
-		})
+		});
 		if (customCurrency && customCurrency.symbol != "" && customCurrency.currency != "") {
 			const customCurrencyType: CurrencyType = {
 				name: customCurrency.name,
 				symbol: customCurrency.symbol,
 				unicode: customCurrency.unicode,
 				currency: customCurrency.currency,
-			}
-			// add custom currency to currency map if it doesn't already exist. if it does, replace it
+			};
 			currencyMap = currencyMap.map(m => m.symbol === customCurrencyType.symbol ? customCurrencyType : m);
 			if (!currencyMap.some(m => m.symbol === customCurrencyType.symbol)) {
 				currencyMap.push(customCurrencyType);
-			}					
+			}
 		}
 		return currencyMap;
 	}
@@ -200,18 +214,6 @@ export default class NumeralsPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		// // DEBUGGING PURPOSES ONLY: Add command to reset plugin settings
-		// this.addCommand({
-		// 	id: 'reset-numerals-settings',
-		// 	name: 'Reset Numerals Settings to Defaults',
-		// 	callback: async () => {
-		// 			this.settings = DEFAULT_SETTINGS;
-		// 			await this.saveSettings();
-		// 			new Notice('All Numerals settings reset to defaults')					
-		// 	}
-		// });		
-
-
 		// Load MathJax for TeX Rendering
 		await loadMathJax();
 
@@ -221,82 +223,85 @@ export default class NumeralsPlugin extends Plugin {
 		const configureCurrencyStr = this.currencyMap.map(m => '\\def\\' + m.name + '{\\unicode{' + m.unicode + '}}').join('\n');
 		renderMath(configureCurrencyStr, true);
 
-
-		// TODO: Once mathjs support removing units (josdejong/mathjs#2081),
-		//       rerun unit creation and regex preprocessors on settings change
+		// Create mathjs currency units (irreversible until mathjs supports unit removal)
 		for (const moneyType of this.currencyMap) {
 			if (moneyType.currency != '') {
-				math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
+				try {
+					math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
+				} catch {
+					// Unit already exists (e.g., plugin re-enabled without app restart)
+				}
 			}
 		}
-		// TODO: Incorporate this in a setup function that can be called when settings change, which should reduce need for restart after change
+
 		this.currencyPreProcessors = this.currencyMap.map(m => {
 			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
-		})
-		
+		});
+
 		this.preProcessors = [
-			// {regex: /\$((\d|\.|(,\d{3}))+)/g, replace: '$1 USD'}, // Use this if commas haven't been removed already
-			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands seperators. Will be wrong for add(100,100)
+			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands separators
 			...this.currencyPreProcessors
 		];
-		
-		// Register Markdown Code Block Processors and pass in the render style
-		const priority = 100;
-		this.registerMarkdownCodeBlockProcessor("math", this.numeralsMathBlockHandler.bind(this, null), priority);  
-		this.registerMarkdownCodeBlockProcessor("Math", this.numeralsMathBlockHandler.bind(this, null), priority);		  
-		this.registerMarkdownCodeBlockProcessor("math-plain", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.Plain), priority);		  
-		this.registerMarkdownCodeBlockProcessor("math-tex", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);  
-		this.registerMarkdownCodeBlockProcessor("math-TeX", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);  
-		this.registerMarkdownCodeBlockProcessor("math-highlight", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.SyntaxHighlight), priority); 
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
+		// Register Markdown Code Block Processors
+		const priority = 100;
+		this.registerMarkdownCodeBlockProcessor("math", this.numeralsMathBlockHandler.bind(this, undefined), priority);
+		this.registerMarkdownCodeBlockProcessor("Math", this.numeralsMathBlockHandler.bind(this, undefined), priority);
+		this.registerMarkdownCodeBlockProcessor("math-plain", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.Plain), priority);
+		this.registerMarkdownCodeBlockProcessor("math-tex", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);
+		this.registerMarkdownCodeBlockProcessor("math-TeX", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);
+		this.registerMarkdownCodeBlockProcessor("math-highlight", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.SyntaxHighlight), priority);
+
 		this.addSettingTab(new NumeralsSettingTab(this.app, this));
 
-		// Register editor suggest handler
+		// Register editor suggest handler (only once on load, not on settings toggle)
 		if (this.settings.provideSuggestions) {
 			this.registerEditorSuggest(new NumeralsSuggestor(this));
 		}
 
-		// Setup number formatting
 		this.updateLocale();
+	}
 
+	onunload() {
+		this.scopeCache.clear();
 	}
 
 	async loadSettings() {
-
 		const loadData = await this.loadData();
 		if (loadData) {
 			// Check for signature of old setting format, then port to new setting format
 			if (loadData.layoutStyle == undefined) {
-				const oldRenderStyleMap = {
+				const oldRenderStyleMap: Record<number, NumeralsLayout> = {
 					1: NumeralsLayout.TwoPanes,
 					2: NumeralsLayout.AnswerRight,
-					3: NumeralsLayout.AnswerBelow}
+					3: NumeralsLayout.AnswerBelow
+				};
 
-				loadData.layoutStyle = oldRenderStyleMap[loadData.renderStyle as keyof typeof oldRenderStyleMap];
-				if(loadData.layoutStyle) {
-					delete loadData.renderStyle
-					this.settings = loadData
-					this.saveSettings();			
+				loadData.layoutStyle = oldRenderStyleMap[loadData.renderStyle as number];
+				if (loadData.layoutStyle) {
+					delete loadData.renderStyle;
+					this.settings = loadData;
+					this.saveSettings();
 				} else {
-					console.log("Numerals: Error porting old layout style")
+					console.log("Numerals: Error porting old layout style");
 				}
 
-			} else if (loadData.layoutStyle in [0, 1, 2, 3]) {
-				const oldLayoutStyleMap = {
+			} else if ([0, 1, 2, 3].includes(loadData.layoutStyle)) {
+				// BP-1 Fix: was `in [0,1,2,3]` which checks array indices, not values
+				const oldLayoutStyleMap: Record<number, NumeralsLayout> = {
 					0: NumeralsLayout.TwoPanes,
 					1: NumeralsLayout.AnswerRight,
 					2: NumeralsLayout.AnswerBelow,
 					3: NumeralsLayout.AnswerInline,
-				}			
+				};
 
-				loadData.layoutStyle = oldLayoutStyleMap[loadData.layoutStyle as keyof typeof oldLayoutStyleMap];
-				if(loadData.layoutStyle) {
-					this.settings = loadData
-					this.saveSettings();			
+				loadData.layoutStyle = oldLayoutStyleMap[loadData.layoutStyle as number];
+				if (loadData.layoutStyle) {
+					this.settings = loadData;
+					this.saveSettings();
 				} else {
-					console.log("Numerals: Error porting old layout style")
-				}		
+					console.log("Numerals: Error porting old layout style");
+				}
 			}
 		}
 
@@ -307,10 +312,6 @@ export default class NumeralsPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	/**
-	 * Update the locale used for formatting numbers. Takes no arguments and returnings nothing
-	 * @returns {void}
-	 */
 	updateLocale(): void {
 		this.numberFormat = getMathjsFormat(this.settings.numberFormat);
 	}

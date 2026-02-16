@@ -1,5 +1,6 @@
+import * as math from 'mathjs';
 import { LineRenderData, RenderContext } from '../numerals.types';
-import { renderComment } from '../numeralsUtilities';
+import { renderComment } from '../rendering/linePreparation';
 import { ILineRenderer } from './ILineRenderer';
 
 /**
@@ -69,5 +70,27 @@ export abstract class BaseLineRenderer implements ILineRenderer {
 		const inputElement = container.createEl('span', { cls: 'numerals-input' });
 		const resultElement = container.createEl('span', { cls: 'numerals-result' });
 		return { inputElement, resultElement };
+	}
+
+	/**
+	 * Renders the result portion of a line.
+	 *
+	 * Formats the result using mathjs and prepends the result separator
+	 * from settings (typically " → ").
+	 *
+	 * @param resultElement - The result container element
+	 * @param lineData - Prepared line data
+	 * @param context - Rendering context with formatting options
+	 * @protected
+	 */
+	protected renderFormattedResult(
+		resultElement: HTMLElement,
+		lineData: LineRenderData,
+		context: RenderContext
+	): void {
+		const formattedResult =
+			context.settings.resultSeparator +
+			math.format(lineData.result, context.numberFormat);
+		resultElement.setText(formattedResult);
 	}
 }
