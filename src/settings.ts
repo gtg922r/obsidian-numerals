@@ -397,5 +397,62 @@ export class NumeralsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}
 			));
+
+		new Setting(containerEl)
+			.setHeading()
+			.setName('Inline Numerals');
+
+		new Setting(containerEl)
+			.setName('Enable Inline Numerals')
+			.setDesc(htmlToElements(
+				`Evaluate math expressions in inline code when prefixed with a trigger string.<br>`
+				+ `For example: <code>=: 3ft in inches</code> renders as the result, `
+				+ `and <code>==: 3ft + 2ft</code> shows the equation and result.`
+			))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enableInlineNumerals)
+				.onChange(async (value) => {
+					this.plugin.settings.enableInlineNumerals = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Result-Only Trigger')
+			.setDesc(htmlToElements(
+				`Prefix for inline code that shows only the result.<br>`
+				+ `Example: <code>=: 3 + 2</code> renders as <b>5</b>`
+			))
+			.addText(text => text
+				.setPlaceholder('=:')
+				.setValue(this.plugin.settings.inlineResultTrigger)
+				.onChange(async (value) => {
+					this.plugin.settings.inlineResultTrigger = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Equation Trigger')
+			.setDesc(htmlToElements(
+				`Prefix for inline code that shows input and result.<br>`
+				+ `Example: <code>==: 3 + 2</code> renders as <b>3 + 2 = 5</b>`
+			))
+			.addText(text => text
+				.setPlaceholder('==:')
+				.setValue(this.plugin.settings.inlineEquationTrigger)
+				.onChange(async (value) => {
+					this.plugin.settings.inlineEquationTrigger = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Equation Separator')
+			.setDesc('String shown between the expression and result in equation mode')
+			.addText(text => text
+				.setPlaceholder(' = ')
+				.setValue(this.plugin.settings.inlineEquationSeparator)
+				.onChange(async (value) => {
+					this.plugin.settings.inlineEquationSeparator = value;
+					await this.plugin.saveSettings();
+				}));
 	}
 }
