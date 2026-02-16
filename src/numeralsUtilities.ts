@@ -555,7 +555,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	source: string,
 	ctx: MarkdownPostProcessorContext,
 	metadata: {[key: string]: unknown} | undefined,
-	type: NumeralsRenderStyle,
+	type: NumeralsRenderStyle | undefined,
 	settings: NumeralsSettings,
 	numberFormat: mathjsFormat,
 	preProcessors: StringReplaceMap[],
@@ -945,7 +945,7 @@ export function evaluateMathFromSourceStrings(
 			if (partialResults.length > 1) {
 				try {
 					// eslint-disable-next-line prefer-spread
-					const rollingSum = math.add.apply(math, partialResults);
+					const rollingSum = math.add.apply(math, partialResults as [math.MathType, math.MathType, ...math.MathType[]]);
 					scope.set("__total", rollingSum);
 				} catch (error) {
 					scope.set("__total", undefined);
@@ -964,8 +964,8 @@ export function evaluateMathFromSourceStrings(
 			}
 			results.push(math.evaluate(row, scope));
 			inputs.push(row); // Only pushes if evaluate is successful
-		} catch (error) {
-			errorMsg = error;
+		} catch (error: unknown) {
+			errorMsg = error instanceof Error ? error : new Error(String(error));
 			errorInput = row;
 			break;
 		}

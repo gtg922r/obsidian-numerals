@@ -86,14 +86,14 @@ function getMathjsFormat(format: NumeralsNumberFormat): mathjsFormat {
 }
 
 export default class NumeralsPlugin extends Plugin {
-	settings: NumeralsSettings;
+	settings!: NumeralsSettings;
 	private currencyMap: CurrencyType[] = defaultCurrencyMap;
-	private preProcessors: StringReplaceMap[];
-	private currencyPreProcessors: StringReplaceMap[];
+	private preProcessors!: StringReplaceMap[];
+	private currencyPreProcessors!: StringReplaceMap[];
 	private numberFormat: mathjsFormat;
 	public scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
 
-	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {		
+	async numeralsMathBlockHandler(type: NumeralsRenderStyle | undefined, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {		
 		// TODO: Rendering is getting called twice. Once without newline at the end of the code block and once with.
 		//       This is causing the code block to be rendered twice. Need to figure out why and fix it.
 
@@ -242,8 +242,8 @@ export default class NumeralsPlugin extends Plugin {
 		
 		// Register Markdown Code Block Processors and pass in the render style
 		const priority = 100;
-		this.registerMarkdownCodeBlockProcessor("math", this.numeralsMathBlockHandler.bind(this, null), priority);  
-		this.registerMarkdownCodeBlockProcessor("Math", this.numeralsMathBlockHandler.bind(this, null), priority);		  
+		this.registerMarkdownCodeBlockProcessor("math", this.numeralsMathBlockHandler.bind(this, undefined), priority);  
+		this.registerMarkdownCodeBlockProcessor("Math", this.numeralsMathBlockHandler.bind(this, undefined), priority);		  
 		this.registerMarkdownCodeBlockProcessor("math-plain", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.Plain), priority);		  
 		this.registerMarkdownCodeBlockProcessor("math-tex", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);  
 		this.registerMarkdownCodeBlockProcessor("math-TeX", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);  
