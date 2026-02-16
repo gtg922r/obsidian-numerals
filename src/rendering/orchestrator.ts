@@ -181,7 +181,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	source: string,
 	ctx: MarkdownPostProcessorContext,
 	metadata: { [key: string]: unknown } | undefined,
-	type: NumeralsRenderStyle,
+	type: NumeralsRenderStyle | null,
 	settings: NumeralsSettings,
 	numberFormat: mathjsFormat,
 	preProcessors: StringReplaceMap[],

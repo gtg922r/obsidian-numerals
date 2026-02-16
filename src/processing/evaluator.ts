@@ -53,8 +53,10 @@ export function evaluateMathFromSourceStrings(
 
 			if (partialResults.length > 1) {
 				try {
-					// eslint-disable-next-line prefer-spread
-					const rollingSum = math.add.apply(math, partialResults);
+					let rollingSum = partialResults[0] as math.MathType;
+					for (const value of partialResults.slice(1)) {
+						rollingSum = math.add(rollingSum, value as math.MathType);
+					}
 					scope.set(ROLLING_TOTAL_MAGIC_VARIABLE, rollingSum);
 				} catch (_error) {
 					scope.set(ROLLING_TOTAL_MAGIC_VARIABLE, undefined);

@@ -72,11 +72,11 @@ function getMathjsFormat(format: NumeralsNumberFormat): mathjsFormat {
 }
 
 export default class NumeralsPlugin extends Plugin {
-	settings: NumeralsSettings;
+	settings!: NumeralsSettings;
 	private currencyMap: CurrencyType[] = defaultCurrencyMap;
-	private preProcessors: StringReplaceMap[];
-	private currencyPreProcessors: StringReplaceMap[];
-	private numberFormat: mathjsFormat;
+	private preProcessors: StringReplaceMap[] = [];
+	private currencyPreProcessors: StringReplaceMap[] = [];
+	private numberFormat: mathjsFormat = getLocaleFormatter();
 	public scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
 	private suggestor: NumeralsSuggestor | null = null;
 	private renderedBlockSignatures: WeakMap<HTMLElement, string> = new WeakMap();
@@ -86,7 +86,7 @@ export default class NumeralsPlugin extends Plugin {
 	}
 
 	private getBlockRenderSignature(
-		type: NumeralsRenderStyle,
+		type: NumeralsRenderStyle | null,
 		source: string,
 		sourcePath: string
 	): string {
@@ -120,7 +120,7 @@ export default class NumeralsPlugin extends Plugin {
 		this.registerEditorSuggest(this.suggestor);
 	}
 
-	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {		
+	async numeralsMathBlockHandler(type: NumeralsRenderStyle | null, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {		
 		const renderSignature = this.getBlockRenderSignature(type, source, ctx.sourcePath);
 		if (this.renderedBlockSignatures.get(el) === renderSignature) {
 			return;
