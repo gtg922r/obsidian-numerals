@@ -1,11 +1,26 @@
 import * as math from 'mathjs';
-import { App, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
+import { App, Editor, MarkdownPostProcessorContext, MarkdownView, WorkspaceLeaf } from 'obsidian';
 import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, mathjsFormat, NumeralsScope, numeralsBlockInfo, StringReplaceMap, LineRenderData, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
 import { RendererFactory } from '../renderers';
 import { getScopeFromFrontmatter } from '../processing/scope';
 import { preProcessBlockForNumeralsDirectives } from '../processing/preprocessor';
 import { evaluateMathFromSourceStrings } from '../processing/evaluator';
-import { prepareLineData, extractComment, cleanRawInput, renderComment } from './linePreparation';
+import { prepareLineData } from './linePreparation';
+
+/**
+ * Find the editor for a specific file path by searching all workspace leaves.
+ * More reliable than getActiveViewOfType which can return the wrong editor in split panes.
+ */
+function findEditorForPath(app: App, sourcePath: string): Editor | undefined {
+	let found: Editor | undefined;
+	app.workspace.iterateAllLeaves((leaf: WorkspaceLeaf) => {
+		if (found) return;
+		if (leaf.view instanceof MarkdownView && leaf.view.file?.path === sourcePath) {
+			found = leaf.view.editor;
+		}
+	});
+	return found;
+}
 
 /**
  * Renders error information into the container element.
@@ -134,7 +149,9 @@ export function handleResultInsertions(
 			continue;
 		}
 
-		const editor = app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+		// H-2 Fix: Find the editor for the specific file instead of using getActiveViewOfType,
+		// which can target the wrong editor in split panes.
+		const editor = findEditorForPath(app, ctx.sourcePath);
 		if (!editor) {
 			continue;
 		}
@@ -156,8 +173,9 @@ export function handleResultInsertions(
 
 		// Only update if the line actually changed
 		if (modifiedSource !== sourceLine) {
+			const targetEditor = editor;
 			setTimeout(() => {
-				editor.setLine(curLine, modifiedSource);
+				targetEditor.setLine(curLine, modifiedSource);
 			}, 0);
 		}
 	}

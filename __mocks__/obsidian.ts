@@ -43,3 +43,8 @@ export class Vault extends EventEmitter {
 export class Component {
     registerEvent() {}
 }
+
+export class MarkdownView {
+    file: TFile | null = null;
+    editor: unknown = null;
+}
