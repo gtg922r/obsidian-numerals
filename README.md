@@ -58,6 +58,12 @@ To get started, simply install and enable the plugin. Add a `math` code block wi
 	- Multiple properties can be specified as a list, e.g. `numerals: [apples, pears]` will makes both the `apples` and `pears` property available to Numerals
 	- Any property in the YAML frontmatter beginning with `$` automatically becomes a note-global variable (or function) accessible in every math block on the page
 	- Functions can be defined in YAML by name along with their arguments, e.g. `$f(x): x+2`
+- Inline Calculations
+	- Evaluate math expressions directly in inline code using trigger prefixes
+	- **Result only**: `` `=: 3ft in inches` `` → **36 in**
+	- **Equation mode**: `` `==: 3 + 2` `` → **3 + 2 = 5**
+	- Inline expressions have access to note-global variables (`$`-prefixed) and frontmatter properties
+	- Trigger prefixes and the equation separator are configurable in settings
 
 *Numerals* utilizes the [mathjs](https://mathjs.org/) library for all calculations. *Numerals* implements a preprocessor to allow more human-friendly syntax, such as currency symbols and thousands separators. For all available functions and capabilities (which includes matrices, vectors, symbolic algebra and calculus, etc), see the [mathjs documentation](https://mathjs.org/docs/index.html)
 
@@ -137,7 +143,7 @@ To try the latest features of *Numerals* before they are released, and provide h
 	- Support added in 1.0.5
 - [x] Autocompletion of functions and variable inside math code block ([#15](https://github.com/gtg922r/obsidian-numerals/issues/15))
 	- Support added in 1.0.8
-- [ ] Inline calculation for inline code blocks ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5))
+- [x] Inline calculation for inline code blocks ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5))
 
 Feel free to suggest additional features by creating an [issue](https://github.com/gtg922r/obsidian-numerals/issues)!
 

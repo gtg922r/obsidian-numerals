@@ -17,6 +17,12 @@ src/
 ├── NumeralsSuggestor.ts           # Auto-complete functionality
 ├── numeralsUtilities.ts           # Barrel re-export (backwards compat)
 │
+├── inline/                        # Inline math evaluation
+│   ├── index.ts                   # Barrel exports
+│   ├── inlineParser.ts            # Trigger detection and expression parsing
+│   ├── inlineEvaluator.ts         # Single-expression mathjs evaluation
+│   └── inlinePostProcessor.ts     # Markdown post-processor (renders <code> elements)
+│
 ├── processing/                    # Expression processing pipeline
 │   ├── scope.ts                   # Frontmatter/Dataview scope resolution
 │   ├── preprocessor.ts            # Directive parsing and text transforms
@@ -47,6 +53,9 @@ src/
 | **mathjsUtilities.ts** | 73 | Mathjs function/constant definitions | `getMathJsSymbols()` (reads `MATHJS_BUILT_IN_SYMBOLS` constant) |
 | **NumeralsSuggestor.ts** | 238 | Editor suggestions for variables/functions | `NumeralsSuggestor` |
 | **numeralsUtilities.ts** | 42 | Barrel re-export for backwards compatibility | Re-exports all public symbols from `processing/` and `rendering/` |
+| **inline/inlineParser.ts** | 35 | Trigger detection and expression extraction | `parseInlineExpression()` |
+| **inline/inlineEvaluator.ts** | 40 | Single-expression evaluation with scope cloning | `evaluateInlineExpression()` |
+| **inline/inlinePostProcessor.ts** | 145 | Markdown post-processor for `<code>` elements | `createInlineNumeralsPostProcessor()` |
 | **processing/scope.ts** | 203 | Frontmatter + Dataview scope building | `getScopeFromFrontmatter`, `addGlobalsFromScopeToPageCache`, `getMetadataForFileAtPath` |
 | **processing/preprocessor.ts** | 99 | Directive detection and text substitution | `preProcessBlockForNumeralsDirectives`, `replaceStringsInTextFromMap` |
 | **processing/evaluator.ts** | 89 | Per-line mathjs evaluation with `__prev`/`__total` | `evaluateMathFromSourceStrings` |
@@ -67,20 +76,24 @@ src/
 │                    NumeralsPlugin (main.ts)                       │
 │  • Plugin lifecycle (onload / onunload)                           │
 │  • Registers code block processors (math, math-tex, etc.)        │
+│  • Registers inline post-processor (inline/ module)              │
 │  • Mathjs currency setup                                         │
 │  • WeakMap deduplication (prevents double rendering)              │
 │  • Event listeners on MarkdownRenderChild (not Plugin)           │
 │  • Scope cache cleared in onunload()                             │
-└───────────┬──────────────┬───────────────┬───────────────────────┘
-            │              │               │
-   ┌────────┘     ┌────────┘               └──────────┐
-   ▼              ▼                                   ▼
-┌──────────┐ ┌──────────────┐                  ┌──────────────┐
-│ Settings │ │  Suggestor   │                  │ Types/Enums  │
-│  Tab     │ │              │                  │ NumeralsError│
-└──────────┘ └──────────────┘                  └──────────────┘
-            │
-            ▼
+└────┬──────┬──────────────┬───────────────┬───────────────────────┘
+     │      │              │               │
+     │ ┌────┘     ┌──────┘               └──────────┐
+     │ ▼          ▼                                   ▼
+     │ ┌────────┐ ┌──────────────┐                  ┌──────────────┐
+     │ │Settings│ │  Suggestor   │                  │ Types/Enums  │
+     │ │  Tab   │ │              │                  │ NumeralsError│
+     │ └────────┘ └──────────────┘                  └──────────────┘
+     │         │
+     │         ▼
+     │   Code Block Pipeline (rendering/orchestrator.ts)
+     │
+     ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │              rendering/orchestrator.ts                            │
 │  processAndRenderNumeralsBlockFromSource()                        │
@@ -167,6 +180,41 @@ Entry point: `processAndRenderNumeralsBlockFromSource()` in `rendering/orchestra
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+## Inline Numerals Pipeline
+
+Inline Numerals evaluates expressions in inline code spans (e.g., `` `=: 3+2` ``) using a Markdown post-processor. This follows the same pattern as Dataview's inline queries.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ Markdown Post-Processor (inline/inlinePostProcessor.ts)             │
+│ registerMarkdownPostProcessor() callback                            │
+│                                                                      │
+│ 1. Quick-reject: check if feature is enabled                        │
+│ 2. Query all <code> elements in the rendered HTML                   │
+│ 3. Quick-reject: check if any start with a trigger prefix           │
+│ 4. Build scope (frontmatter + note-globals from scopeCache)         │
+│ 5. For each matching <code> element:                                │
+│    a. Parse trigger → InlineNumeralsExpression (inlineParser.ts)    │
+│    b. Evaluate expression (inlineEvaluator.ts)                      │
+│       - Apply preprocessors (currency, thousands)                   │
+│       - Clone scope (isolate from shared state)                     │
+│       - math.evaluate() + math.format()                             │
+│    c. Render into <code> element:                                   │
+│       ResultOnly: <span class="value">result</span>                │
+│       Equation:   <span class="input">expr</span>                  │
+│                   <span class="separator"> = </span>               │
+│                   <span class="value">result</span>                │
+│    d. On error: show raw expression with error styling              │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Key inline design decisions:
+- **Post-processor approach**: Works in Live Preview, Reading mode, and mobile
+- **Scope cloning**: Inline expressions cannot write back to the shared scope
+- **No multi-line features**: No @sum/@total/@prev — those are block concepts
+- **No side effects**: No @[variable::result] insertion
+- **Quick-reject**: Skips scope building when no triggers are found in the DOM
+
 ## Key Design Decisions
 
 ### Module Split
@@ -238,6 +286,14 @@ Defined in `numerals.types.ts`:
 │ • Variables assigned in current block                        │
 │ • Magic variables: __prev, __total                           │
 └──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Inline Level (cloned scope, read-only)                      │
+│ • Global variables ($ prefix from scopeCache)               │
+│ • Frontmatter variables                                      │
+│ • Cannot write back to shared scope                          │
+│ • No __prev, __total (single expression only)                │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Metadata Integration
@@ -293,5 +349,7 @@ Test files:
 | `tests/renderers.test.ts` | Strategy Pattern renderers |
 | `tests/resultInsertion.test.ts` | Editor write-back side effects |
 | `tests/types.test.ts` | DTO and type validation |
+| `tests/inline.test.ts` | Inline parser and evaluator |
+| `tests/inlinePostProcessor.test.ts` | Inline integration pipeline |
 
 Run: `npm test` (Jest)
