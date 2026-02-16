@@ -167,6 +167,30 @@ describe('parseInlineExpression', () => {
 			expect(parse('=: 100', '@$:', '@=:')).toBeNull();
 		});
 	});
+
+	// --- Empty trigger safety -----------------------------------------------
+	describe('empty trigger safety', () => {
+		it('should ignore empty result trigger', () => {
+			// Empty trigger would match everything — must be filtered out
+			const result = parse('some code', '', '==:');
+			expect(result).toBeNull();
+		});
+
+		it('should ignore empty equation trigger', () => {
+			const result = parse('some code', '=:', '');
+			expect(result).toBeNull();
+		});
+
+		it('should still match valid trigger when the other is empty', () => {
+			const result = parse('=: 3+2', '=:', '');
+			expect(result).not.toBeNull();
+			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
+		});
+
+		it('should return null when both triggers are empty', () => {
+			expect(parse('anything', '', '')).toBeNull();
+		});
+	});
 });
 
 // ---------------------------------------------------------------------------
@@ -300,6 +324,12 @@ describe('evaluateInlineExpression', () => {
 			expect(() => {
 				evaluateInlineExpression('undefinedVar * 2', emptyScope, defaultFormat, noPreProcessors);
 			}).toThrow();
+		});
+
+		it('should throw when expression evaluates to undefined (e.g. comment)', () => {
+			expect(() => {
+				evaluateInlineExpression('# just a comment', emptyScope, defaultFormat, noPreProcessors);
+			}).toThrow('Expression produced no result');
 		});
 	});
 

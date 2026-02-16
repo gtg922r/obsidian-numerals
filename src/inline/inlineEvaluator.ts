@@ -34,6 +34,11 @@ export function evaluateInlineExpression(
 	// Evaluate — let mathjs errors propagate to caller
 	const result = math.evaluate(processed, localScope);
 
+	// mathjs returns undefined for comments/empty expressions
+	if (result === undefined) {
+		throw new Error('Expression produced no result');
+	}
+
 	return numberFormat !== undefined
 		? math.format(result, numberFormat)
 		: math.format(result);

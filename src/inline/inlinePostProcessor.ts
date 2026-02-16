@@ -1,6 +1,4 @@
-import * as math from 'mathjs';
-import { App, MarkdownPostProcessorContext, MarkdownRenderChild, EventRef } from 'obsidian';
-import { getAPI } from 'obsidian-dataview';
+import { App, MarkdownPostProcessorContext } from 'obsidian';
 import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap, InlineNumeralsMode } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
 import { parseInlineExpression } from './inlineParser';
@@ -126,20 +124,26 @@ export function createInlineNumeralsPostProcessor(
 		const settings = getSettings();
 		if (!settings.enableInlineNumerals) return;
 
+		const resultTrigger = settings.inlineResultTrigger;
+		const equationTrigger = settings.inlineEquationTrigger;
+
+		// Guard against empty triggers (would match every <code> element)
+		if (!resultTrigger && !equationTrigger) return;
+
 		const codeElements = el.querySelectorAll<HTMLElement>('code');
 		if (codeElements.length === 0) return;
 
 		// Quick-reject: check if any code element starts with a trigger
 		// before building scope (which is the expensive part)
-		const resultTrigger = settings.inlineResultTrigger;
-		const equationTrigger = settings.inlineEquationTrigger;
 		const hasMatch = Array.from(codeElements).some(code =>
 			code.innerText.startsWith(resultTrigger) ||
 			code.innerText.startsWith(equationTrigger)
 		);
 		if (!hasMatch) return;
 
-		// Build scope from frontmatter + note-global cache
+		// Build scope from frontmatter + note-global cache.
+		// getMetadataForFileAtPath already merges scopeCache entries
+		// into the metadata, so no separate merge step is needed.
 		const metadata = getMetadataForFileAtPath(ctx.sourcePath, app, scopeCache);
 		const { scope } = getScopeFromFrontmatter(
 			metadata,
@@ -147,14 +151,6 @@ export function createInlineNumeralsPostProcessor(
 			settings.forceProcessAllFrontmatter,
 			preProcessors
 		);
-
-		// Merge note-global scope from cache
-		const pageScope = scopeCache.get(ctx.sourcePath);
-		if (pageScope) {
-			for (const [key, value] of pageScope.entries()) {
-				scope.set(key, value);
-			}
-		}
 
 		const numberFormat = getNumberFormat();
 
