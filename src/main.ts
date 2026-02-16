@@ -2,6 +2,7 @@ import { NumeralsSuggestor } from "./NumeralsSuggestor";
 import { defaultCurrencyMap, getLocaleFormatter } from "./rendering/displayUtils";
 import { processAndRenderNumeralsBlockFromSource } from "./rendering/orchestrator";
 import { getMetadataForFileAtPath, addGlobalsFromScopeToPageCache } from "./processing/scope";
+import { createInlineNumeralsPostProcessor } from "./inline";
 import {
 	CurrencyType,
 	NumeralsLayout,
@@ -251,6 +252,17 @@ export default class NumeralsPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor("math-tex", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);
 		this.registerMarkdownCodeBlockProcessor("math-TeX", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);
 		this.registerMarkdownCodeBlockProcessor("math-highlight", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.SyntaxHighlight), priority);
+
+		// Register inline Numerals post-processor
+		this.registerMarkdownPostProcessor(
+			createInlineNumeralsPostProcessor(
+				this.app,
+				() => this.settings,
+				() => this.numberFormat,
+				this.preProcessors,
+				this.scopeCache
+			)
+		);
 
 		this.addSettingTab(new NumeralsSettingTab(this.app, this));
 
