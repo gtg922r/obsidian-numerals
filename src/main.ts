@@ -2,7 +2,7 @@ import { NumeralsSuggestor } from "./NumeralsSuggestor";
 import { defaultCurrencyMap, getLocaleFormatter } from "./rendering/displayUtils";
 import { processAndRenderNumeralsBlockFromSource } from "./rendering/orchestrator";
 import { getMetadataForFileAtPath, addGlobalsFromScopeToPageCache } from "./processing/scope";
-import { createInlineNumeralsPostProcessor } from "./inline";
+import { createInlineNumeralsPostProcessor, createInlineLivePreviewExtension } from "./inline";
 import {
 	CurrencyType,
 	NumeralsLayout,
@@ -253,7 +253,7 @@ export default class NumeralsPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor("math-TeX", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);
 		this.registerMarkdownCodeBlockProcessor("math-highlight", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.SyntaxHighlight), priority);
 
-		// Register inline Numerals post-processor
+		// Register inline Numerals post-processor (Reading mode)
 		this.registerMarkdownPostProcessor(
 			createInlineNumeralsPostProcessor(
 				this.app,
@@ -261,6 +261,17 @@ export default class NumeralsPlugin extends Plugin {
 				() => this.numberFormat,
 				this.preProcessors,
 				this.scopeCache
+			)
+		);
+
+		// Register inline Numerals CM6 extension (Live Preview mode)
+		this.registerEditorExtension(
+			createInlineLivePreviewExtension(
+				() => this.settings,
+				() => this.numberFormat,
+				this.preProcessors,
+				this.scopeCache,
+				this.app
 			)
 		);
 
