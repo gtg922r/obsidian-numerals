@@ -60,8 +60,8 @@ To get started, simply install and enable the plugin. Add a `math` code block wi
 	- Functions can be defined in YAML by name along with their arguments, e.g. `$f(x): x+2`
 - Inline Calculations
 	- Evaluate math expressions directly in inline code using trigger prefixes
-	- **Result only**: `` `=: 3ft in inches` `` → **36 in**
-	- **Equation mode**: `` `==: 3 + 2` `` → **3 + 2 = 5**
+	- **Result only**: `` `#: 3ft in inches` `` → **36 in**
+	- **Equation mode**: `` `#=: 3 + 2` `` → **3 + 2 = 5**
 	- Inline expressions have access to note-global variables (`$`-prefixed) and frontmatter properties
 	- Trigger prefixes and the equation separator are configurable in settings
 

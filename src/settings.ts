@@ -406,8 +406,8 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setName('Enable Inline Numerals')
 			.setDesc(htmlToElements(
 				`Evaluate math expressions in inline code when prefixed with a trigger string.<br>`
-				+ `For example: <code>=: 3ft in inches</code> renders as the result, `
-				+ `and <code>==: 3ft + 2ft</code> shows the equation and result.`
+				+ `For example: <code>#: 3ft in inches</code> renders as the result, `
+				+ `and <code>#=: 3ft + 2ft</code> shows the equation and result.`
 			))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableInlineNumerals)
@@ -420,10 +420,10 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setName('Result-Only Trigger')
 			.setDesc(htmlToElements(
 				`Prefix for inline code that shows only the result.<br>`
-				+ `Example: <code>=: 3 + 2</code> renders as <b>5</b>`
+				+ `Example: <code>#: 3 + 2</code> renders as <b>5</b>`
 			))
 			.addText(text => text
-				.setPlaceholder('=:')
+				.setPlaceholder('#:')
 				.setValue(this.plugin.settings.inlineResultTrigger)
 				.onChange(async (value) => {
 					this.plugin.settings.inlineResultTrigger = value;
@@ -434,10 +434,10 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setName('Equation Trigger')
 			.setDesc(htmlToElements(
 				`Prefix for inline code that shows input and result.<br>`
-				+ `Example: <code>==: 3 + 2</code> renders as <b>3 + 2 = 5</b>`
+				+ `Example: <code>#=: 3 + 2</code> renders as <b>3 + 2 = 5</b>`
 			))
 			.addText(text => text
-				.setPlaceholder('==:')
+				.setPlaceholder('#=:')
 				.setValue(this.plugin.settings.inlineEquationTrigger)
 				.onChange(async (value) => {
 					this.plugin.settings.inlineEquationTrigger = value;

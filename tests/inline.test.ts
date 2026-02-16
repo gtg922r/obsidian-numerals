@@ -53,8 +53,8 @@ for (const moneyType of defaultCurrencyMap) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-const DEFAULT_RESULT_TRIGGER = '=:';
-const DEFAULT_EQUATION_TRIGGER = '==:';
+const DEFAULT_RESULT_TRIGGER = '#:';
+const DEFAULT_EQUATION_TRIGGER = '#=:';
 
 function parse(text: string, resultTrigger = DEFAULT_RESULT_TRIGGER, equationTrigger = DEFAULT_EQUATION_TRIGGER) {
 	return parseInlineExpression(text, resultTrigger, equationTrigger);
@@ -67,15 +67,15 @@ describe('parseInlineExpression', () => {
 
 	// --- Trigger matching ---------------------------------------------------
 	describe('trigger matching', () => {
-		it('should parse result-only trigger "=: 3+2"', () => {
-			const result = parse('=: 3+2');
+		it('should parse result-only trigger "#: 3+2"', () => {
+			const result = parse('#: 3+2');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
 			expect(result!.expression).toBe('3+2');
 		});
 
-		it('should parse equation trigger "==: 3+2"', () => {
-			const result = parse('==: 3+2');
+		it('should parse equation trigger "#=: 3+2"', () => {
+			const result = parse('#=: 3+2');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
 			expect(result!.expression).toBe('3+2');
@@ -85,16 +85,16 @@ describe('parseInlineExpression', () => {
 			expect(parse('some random code')).toBeNull();
 		});
 
-		it('should parse trigger with no space before expression "=:3+2"', () => {
-			const result = parse('=:3+2');
+		it('should parse trigger with no space before expression "#:3+2"', () => {
+			const result = parse('#:3+2');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
 			expect(result!.expression).toBe('3+2');
 		});
 
 		it('should return null when trigger is followed only by whitespace', () => {
-			expect(parse('==: ')).toBeNull();
-			expect(parse('=:  ')).toBeNull();
+			expect(parse('#=: ')).toBeNull();
+			expect(parse('#:  ')).toBeNull();
 		});
 
 		it('should return null for an empty string', () => {
@@ -104,20 +104,20 @@ describe('parseInlineExpression', () => {
 
 	// --- Trigger precedence (critical!) ------------------------------------
 	describe('trigger precedence', () => {
-		it('should check "==:" before "=:" so "==: 5*3" is Equation mode', () => {
-			const result = parse('==: 5*3');
+		it('should check "#=:" before "#:" so "#=: 5*3" is Equation mode', () => {
+			const result = parse('#=: 5*3');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
 			expect(result!.expression).toBe('5*3');
 		});
 
-		it('should NOT mis-parse "==: 5*3" as ResultOnly with leftover "=: 5*3"', () => {
-			const result = parse('==: 5*3');
+		it('should NOT mis-parse "#=: 5*3" as ResultOnly with leftover "=: 5*3"', () => {
+			const result = parse('#=: 5*3');
 			expect(result!.mode).not.toBe(InlineNumeralsMode.ResultOnly);
 		});
 
-		it('should still correctly parse "=: 5*3" as ResultOnly', () => {
-			const result = parse('=: 5*3');
+		it('should still correctly parse "#: 5*3" as ResultOnly', () => {
+			const result = parse('#: 5*3');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
 			expect(result!.expression).toBe('5*3');
@@ -127,13 +127,13 @@ describe('parseInlineExpression', () => {
 	// --- Whitespace handling ------------------------------------------------
 	describe('whitespace handling', () => {
 		it('should trim leading and trailing whitespace from the expression', () => {
-			const result = parse('=:  3 + 2  ');
+			const result = parse('#:  3 + 2  ');
 			expect(result).not.toBeNull();
 			expect(result!.expression).toBe('3 + 2');
 		});
 
 		it('should trim expression for equation trigger without space', () => {
-			const result = parse('==:3ft in inches');
+			const result = parse('#=:3ft in inches');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
 			expect(result!.expression).toBe('3ft in inches');
@@ -172,7 +172,7 @@ describe('parseInlineExpression', () => {
 	describe('empty trigger safety', () => {
 		it('should ignore empty result trigger', () => {
 			// Empty trigger would match everything — must be filtered out
-			const result = parse('some code', '', '==:');
+			const result = parse('some code', '', '#=:');
 			expect(result).toBeNull();
 		});
 
@@ -182,7 +182,7 @@ describe('parseInlineExpression', () => {
 		});
 
 		it('should still match valid trigger when the other is empty', () => {
-			const result = parse('=: 3+2', '=:', '');
+			const result = parse('#: 3+2', '#:', '');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
 		});

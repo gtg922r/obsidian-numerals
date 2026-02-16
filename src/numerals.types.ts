@@ -88,8 +88,8 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	enableGreekAutoComplete: 			true,
 	// Inline Numerals settings
 	enableInlineNumerals:				true,
-	inlineResultTrigger:				"=:",
-	inlineEquationTrigger:				"==:",
+	inlineResultTrigger:				"#:",
+	inlineEquationTrigger:				"#=:",
 	inlineEquationSeparator:				" = ",
 }
 

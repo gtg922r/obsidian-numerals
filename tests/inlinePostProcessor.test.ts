@@ -78,33 +78,33 @@ function simulateInlinePipeline(
 describe('inline numerals integration', () => {
 
 	describe('result-only mode', () => {
-		it('should evaluate "=: 3ft in inches" to a result containing "36"', () => {
-			const output = simulateInlinePipeline('=: 3ft in inches');
+		it('should evaluate "#: 3ft in inches" to a result containing "36"', () => {
+			const output = simulateInlinePipeline('#: 3ft in inches');
 			expect(output).not.toBeNull();
 			expect(output!.mode).toBe('ResultOnly');
 			expect(output!.result).toContain('36');
 		});
 
-		it('should evaluate "=: $36.03 + $2*3 + $pizza" with scope', () => {
+		it('should evaluate "#: $36.03 + $2*3 + $pizza" with scope', () => {
 			const scope = new NumeralsScope();
 			scope.set('$pizza', math.evaluate('10 USD'));
-			const output = simulateInlinePipeline('=: $36.03 + $2*3 + $pizza', scope);
+			const output = simulateInlinePipeline('#: $36.03 + $2*3 + $pizza', scope);
 			expect(output).not.toBeNull();
 			expect(output!.result).toContain('52.03');
 		});
 	});
 
 	describe('equation mode', () => {
-		it('should evaluate "==: 3ft + 2ft" and preserve expression', () => {
-			const output = simulateInlinePipeline('==: 3ft + 2ft');
+		it('should evaluate "#=: 3ft + 2ft" and preserve expression', () => {
+			const output = simulateInlinePipeline('#=: 3ft + 2ft');
 			expect(output).not.toBeNull();
 			expect(output!.mode).toBe('Equation');
 			expect(output!.expression).toBe('3ft + 2ft');
 			expect(output!.result).toContain('5');
 		});
 
-		it('should evaluate "==: sqrt(144)" correctly', () => {
-			const output = simulateInlinePipeline('==: sqrt(144)');
+		it('should evaluate "#=: sqrt(144)" correctly', () => {
+			const output = simulateInlinePipeline('#=: sqrt(144)');
 			expect(output).not.toBeNull();
 			expect(output!.result).toBe('12');
 		});
@@ -116,7 +116,7 @@ describe('inline numerals integration', () => {
 			scope.set('x', 10);
 
 			// This expression assigns y = x + 5 in mathjs
-			simulateInlinePipeline('=: y = x + 5', scope);
+			simulateInlinePipeline('#: y = x + 5', scope);
 
 			// y should NOT leak into the original scope
 			expect(scope.has('y')).toBe(false);
@@ -135,7 +135,7 @@ describe('inline numerals integration', () => {
 
 	describe('error handling', () => {
 		it('should throw on invalid expression', () => {
-			const parsed = parseInlineExpression('=: @@invalid@@', '=:', '==:');
+			const parsed = parseInlineExpression('#: @@invalid@@', '#:', '#=:');
 			expect(parsed).not.toBeNull();
 			expect(() => {
 				evaluateInlineExpression(parsed!.expression, new NumeralsScope(), undefined, []);
