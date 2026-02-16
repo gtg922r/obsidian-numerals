@@ -1,4 +1,21 @@
 /****************************************************
+ * Error Types
+ ****************************************************/
+
+/**
+ * Custom error class for Numerals evaluation errors.
+ * Provides structured error information for display in rendered blocks.
+ */
+export class NumeralsError extends Error {
+	constructor(name: string, message: string) {
+		super(message);
+		this.name = name;
+		// Fix prototype chain for instanceof checks
+		Object.setPrototypeOf(this, NumeralsError.prototype);
+	}
+}
+
+/****************************************************
  * Settings Related Types and Interfaces
  ****************************************************/
 

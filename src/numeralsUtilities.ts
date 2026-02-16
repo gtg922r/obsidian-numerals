@@ -1,7 +1,7 @@
 import * as math from 'mathjs';
 import { getAPI } from 'obsidian-dataview';
 import { App, TFile, finishRenderMath, renderMath, sanitizeHTMLToDom, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo, StringReplaceMap, LineRenderData, ProcessedBlock, EvaluationResult, RenderContext } from './numerals.types';
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, NumeralsError, CurrencyType, mathjsFormat, NumeralsScope, numeralsBlockInfo, StringReplaceMap, LineRenderData, ProcessedBlock, EvaluationResult, RenderContext } from './numerals.types';
 import { RendererFactory } from './renderers';
 
 // TODO: Addition of variables not adding up
@@ -20,13 +20,19 @@ import { RendererFactory } from './renderers';
  * @param frontmatter Frontmatter object
  * @returns Updated scope object
  */
+export interface ScopeResult {
+	scope: NumeralsScope;
+	warnings: string[];
+}
+
 export function getScopeFromFrontmatter(
 	frontmatter: { [key: string]: unknown } | undefined,
 	scope: NumeralsScope|undefined,
 	forceAll=false,
 	stringReplaceMap: StringReplaceMap[] = [],
 	keysOnly=false
-): NumeralsScope {
+): ScopeResult {
+	const warnings: string[] = [];
 	
 	if (!scope) {
 		scope = new NumeralsScope();
@@ -101,16 +107,16 @@ export function getScopeFromFrontmatter(
 							const evaluatedFunction = math.evaluate(fullExpression, scope);
 							// Store the function under the function name (without parentheses)
 							scope.set(functionName, evaluatedFunction);
-						} catch (error) {
-							console.error(`Error evaluating function assignment for key ${key}: ${error}`);
+						} catch (error: unknown) {
+							warnings.push(`Frontmatter: error evaluating function "${key}": ${error instanceof Error ? error.message : String(error)}`);
 						}
 					} else {
 						// Regular variable assignment
 						let evaluatedValue;
 						try {
 							evaluatedValue = math.evaluate(processedValue, scope);
-						} catch (error) {
-							console.error(`Error evaluating frontmatter value for key ${key}: ${error}`);
+						} catch (error: unknown) {
+							warnings.push(`Frontmatter: error evaluating "${key}": ${error instanceof Error ? error.message : String(error)}`);
 							evaluatedValue = undefined;
 						}
 						if (evaluatedValue !== undefined) {
@@ -120,12 +126,9 @@ export function getScopeFromFrontmatter(
 				} else if (typeof value === "function") {
 					// Functions (like those cached from previous evaluations) should be stored directly
 					scope.set(key, value);
-				} else if (typeof value === "object") { // TODO this is only a problem with Dataview. Can we only use dataview for inline?
-					// ignore objects
-
-					// TODO. RIght now this means data objects just get dropped. If we could instead use the data from obsidian we could handle it
-					console.error(`Frontmatter value for key ${key} is an object and will be ignored. ` +
-						`Considering surrounding the value with quotes (eg \`${key}: "value"\`) to treat it as a string.`);
+				} else if (typeof value === "object") {
+					warnings.push(`Frontmatter: value for "${key}" is an object and will be ignored. ` +
+						`Consider surrounding the value with quotes (e.g. \`${key}: "value"\`).`);
 				}
 			}
 		} else {
@@ -134,9 +137,9 @@ export function getScopeFromFrontmatter(
 			}
 		}
 
-		return scope;
+		return { scope, warnings };
 	} else {
-		return scope;
+		return { scope, warnings };
 	}
 }	
 
@@ -577,7 +580,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	});
 
 	// Phase 4: Build scope
-	const scope = getScopeFromFrontmatter(
+	const { scope, warnings } = getScopeFromFrontmatter(
 		metadata,
 		undefined,
 		settings.forceProcessAllFrontmatter,
@@ -609,6 +612,12 @@ export function processAndRenderNumeralsBlockFromSource(
 	};
 
 	renderNumeralsBlock(el, evaluationResult, processedBlock, renderContext);
+
+	// Phase 8: Render warnings (frontmatter errors, etc.)
+	for (const warning of warnings) {
+		const warningEl = el.createEl('div', { cls: 'numerals-warning' });
+		warningEl.createEl('span', { cls: 'numerals-warning-message', text: warning });
+	}
 
 	return scope;
 
@@ -935,7 +944,7 @@ export function evaluateMathFromSourceStrings(
 			} else {
 				scope.set("__prev", undefined);
 				if (/__prev/i.test(row)) {
-					errorMsg = {name: "Previous Value Error", message: 'Error evaluating @prev directive. There is no previous result.'};
+					errorMsg = new NumeralsError("Previous Value Error", 'Error evaluating @prev directive. There is no previous result.');
 					errorInput = row;
 					break;
 				}
@@ -951,7 +960,7 @@ export function evaluateMathFromSourceStrings(
 					scope.set("__total", undefined);
 					// TODO consider doing this check before evaluating
 					if (/__total/i.test(row)) {
-						errorMsg = {name: "Summing Error", message: 'Error evaluating @sum or @total directive. Previous lines may not be summable.'};
+						errorMsg = new NumeralsError("Summing Error", 'Error evaluating @sum or @total directive. Previous lines may not be summable.');
 						errorInput = row;
 						break;
 					}						
