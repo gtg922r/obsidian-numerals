@@ -705,7 +705,11 @@ export const defaultCurrencyMap: CurrencyType[] = [
 	{	symbol: "₹", unicode: "x20B9",	name: "rupee", 	currency: "INR"}	
 ];
 
-// TODO: see if would be faster to return a single set of RegEx to get executed, rather than re-computing regex each time
+const currencyTexReplacements = defaultCurrencyMap.map(m => ({
+	regex: new RegExp('\\\\*\\' + m.symbol, 'g'),
+	replacement: '\\' + m.name + ' ',
+}));
+
 /**
  * Replaces currency symbols in a given TeX string with their corresponding TeX command.
  *
@@ -719,8 +723,8 @@ export const defaultCurrencyMap: CurrencyType[] = [
  * @returns The input string with all currency symbols replaced with their corresponding TeX command.
  */
 export function texCurrencyReplacement(input_tex:string) {
-	for (const symbolType of defaultCurrencyMap) {
-		input_tex = input_tex.replace(RegExp("\\\\*\\"+symbolType.symbol,'g'),"\\" + symbolType.name  + " ");
+	for (const { regex, replacement } of currencyTexReplacements) {
+		input_tex = input_tex.replace(regex, replacement);
 	}
 	return input_tex
 }

@@ -1,4 +1,3 @@
-import * as math from 'mathjs';
 import { LineRenderData, RenderContext } from '../numerals.types';
 import { BaseLineRenderer } from './BaseLineRenderer';
 
@@ -35,7 +34,7 @@ export class PlainRenderer extends BaseLineRenderer {
 		} else {
 			// Non-empty line: render input and result
 			this.renderInput(inputElement, lineData);
-			this.renderResult(resultElement, lineData, context);
+			this.renderFormattedResult(resultElement, lineData, context);
 
 			// Add comment if present
 			if (lineData.comment) {
@@ -88,25 +87,4 @@ export class PlainRenderer extends BaseLineRenderer {
 		inputElement.createEl('span', { text: parts[3] });
 	}
 
-	/**
-	 * Renders the result portion of the line.
-	 *
-	 * Formats the result using mathjs and prepends the result separator
-	 * from settings (typically " → ").
-	 *
-	 * @param resultElement - The result container element
-	 * @param lineData - Prepared line data
-	 * @param context - Rendering context with formatting options
-	 * @private
-	 */
-	private renderResult(
-		resultElement: HTMLElement,
-		lineData: LineRenderData,
-		context: RenderContext
-	): void {
-		const formattedResult =
-			context.settings.resultSeparator +
-			math.format(lineData.result, context.numberFormat);
-		resultElement.setText(formattedResult);
-	}
 }
