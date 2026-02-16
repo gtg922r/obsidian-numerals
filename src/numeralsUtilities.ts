@@ -151,7 +151,7 @@ export function getScopeFromFrontmatter(
  * @param scope Scope object
  * @returns void
  */
-export function addGobalsFromScopeToPageCache(sourcePath: string, scope: NumeralsScope, scopeCache: Map<string, NumeralsScope>) {
+export function addGlobalsFromScopeToPageCache(sourcePath: string, scope: NumeralsScope, scopeCache: Map<string, NumeralsScope>) {
 	for (const [key, value] of scope.entries()) {
 		if (key.startsWith('$')) {
 			if (scopeCache.has(sourcePath)) {
