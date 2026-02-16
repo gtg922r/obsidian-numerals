@@ -313,7 +313,8 @@ describe('evaluateInlineExpression', () => {
 
 		it('should handle multiple thousands separators: "$1,000,000"', () => {
 			const result = evaluateInlineExpression('$1,000,000 + $0', emptyScope, defaultFormat, preProcessors);
-			expect(result).toContain('1000000');
+			// mathjs uses exponential notation for large numbers by default
+			expect(result).toMatch(/1e\+6|1000000/);
 		});
 
 		it('should apply custom preprocessors', () => {
