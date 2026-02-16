@@ -3,8 +3,9 @@ import { LineRenderData, RenderContext } from '../numerals.types';
 import { BaseLineRenderer } from './BaseLineRenderer';
 import {
 	htmlToElements,
-	replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw,
-} from '../numeralsUtilities';
+	normalizeHighlightedNumberNotation,
+} from '../rendering/displayUtils';
+import { replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw } from '../processing/preprocessor';
 
 /**
  * Syntax highlighting renderer for Numerals blocks.
@@ -39,7 +40,7 @@ export class SyntaxHighlightRenderer extends BaseLineRenderer {
 		} else {
 			// Non-empty line: render input with syntax highlighting
 			this.renderInputHighlighted(inputElement, lineData);
-			this.renderResult(resultElement, lineData, context);
+			this.renderFormattedResult(resultElement, lineData, context);
 
 			// Add comment if present
 			if (lineData.comment) {
@@ -73,31 +74,10 @@ export class SyntaxHighlightRenderer extends BaseLineRenderer {
 			inputHtml,
 			lineData.rawInput + (lineData.comment || '')
 		);
+		const normalizedHtml = normalizeHighlightedNumberNotation(processedHtml);
 
 		// Convert HTML string to sanitized DOM elements
-		const inputElements = htmlToElements(processedHtml);
+		const inputElements = htmlToElements(normalizedHtml);
 		inputElement.appendChild(inputElements);
-	}
-
-	/**
-	 * Renders the result portion as formatted text.
-	 *
-	 * Formats the result using mathjs and prepends the result separator
-	 * from settings (typically " → ").
-	 *
-	 * @param resultElement - The result container element
-	 * @param lineData - Prepared line data
-	 * @param context - Rendering context with formatting options
-	 * @private
-	 */
-	private renderResult(
-		resultElement: HTMLElement,
-		lineData: LineRenderData,
-		context: RenderContext
-	): void {
-		const formattedResult =
-			context.settings.resultSeparator +
-			math.format(lineData.result, context.numberFormat);
-		resultElement.setText(formattedResult);
 	}
 }

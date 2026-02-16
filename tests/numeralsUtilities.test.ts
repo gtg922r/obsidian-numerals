@@ -25,6 +25,7 @@ import {
 	evaluateMathFromSourceStrings,
 	getLocaleFormatter,
 	getScopeFromFrontmatter,
+	getScopeFromFrontmatterWithWarnings,
 	numeralsLayoutClasses,
 	numeralsRenderStyleClasses,
 	preProcessBlockForNumeralsDirectives,
@@ -149,6 +150,18 @@ describe("numeralsUtilities: applyBlockStyles()", () => {
 
 		expect(el.classList.contains("numerals-emitters-present")).toBe(true);
 		expect(el.classList.contains("numerals-hide-non-emitters")).toBe(false);
+	});
+});
+
+describe("numeralsUtilities: getLocaleFormatter", () => {
+	it("preserves precision for very small numbers", () => {
+		const formatter = getLocaleFormatter("en-US");
+		expect(formatter(0.0000004)).toContain("0.0000004");
+	});
+
+	it("preserves negative exponent values", () => {
+		const formatter = getLocaleFormatter("en-US");
+		expect(formatter(-1e-8)).toContain("-0.00000001");
 	});
 });
 
@@ -546,6 +559,28 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
         expect(typeof vFunc2).toBe("function");
         expect(vFunc2(0)).toBe(3); // Global function should work across blocks!
     });
+
+	it("should resolve frontmatter expressions that reference later keys", () => {
+		frontmatter = {
+			numerals: "all",
+			total: "a + b",
+			a: 2,
+			b: 3,
+		};
+		const result = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+		expect(result.get("total")).toBe(5);
+	});
+
+	it("should return frontmatter evaluation warnings for unresolved expressions", () => {
+		frontmatter = {
+			numerals: "all",
+			value: "missing + 1",
+		};
+		const result = getScopeFromFrontmatterWithWarnings(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+		expect(result.scope.get("value")).toBeUndefined();
+		expect(result.warnings.length).toBeGreaterThan(0);
+		expect(result.warnings[0].key).toBe("value");
+	});
 });
 describe("numeralsUtilities: evaluateMathFromSourceStrings", () => {
     let scope: NumeralsScope;

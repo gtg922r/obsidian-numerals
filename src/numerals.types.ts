@@ -166,3 +166,9 @@ export interface StringReplaceMap {
 	/** String to replace matches with */
 	replaceStr: string;
 }
+
+export interface FrontmatterProcessingWarning {
+	key: string;
+	value: unknown;
+	message: string;
+}

@@ -4,7 +4,13 @@ import {
 	processAndRenderNumeralsBlockFromSource,
 	getLocaleFormatter,
 	getMetadataForFileAtPath,
-	addGobalsFromScopeToPageCache } from "./numeralsUtilities";
+	addGlobalsFromScopeToPageCache,
+} from "./numeralsUtilities";
+import {
+	ensureCurrencyUnits,
+	setupMathjsCurrencySupport,
+	teardownMathjsCurrencySupport,
+} from "./mathjsIntegration";
 import {
 	CurrencyType,
 	NumeralsLayout,
@@ -28,6 +34,7 @@ import {
 	loadMathJax,
 	MarkdownPostProcessorContext,
 	MarkdownRenderChild,
+	TFile,
 } from "obsidian";
 
 import { getAPI } from 'obsidian-dataview';
@@ -35,27 +42,6 @@ import { getAPI } from 'obsidian-dataview';
 // if use syntax tree directly will need "@codemirror/language": "^6.3.2", // Needed for accessing syntax tree
 // import {syntaxTree, tokenClassNodeProp} from '@codemirror/language';
 
-import * as math from 'mathjs';
-
-
-
-
-// Modify mathjs internal functions to allow for use of currency symbols
-const currencySymbols: string[] = defaultCurrencyMap.map(m => m.symbol);
-const isAlphaOriginal = math.parse.isAlpha;
-math.parse.isAlpha = function (c, cPrev, cNext) {
-	return isAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
-	};	
-
-// 														@ts-ignore
-const isUnitAlphaOriginal = math.Unit.isValidAlpha; // 	@ts-ignore
-math.Unit.isValidAlpha =
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function (c: string, cPrev: any, cNext: any) {
-	return isUnitAlphaOriginal(c) || currencySymbols.includes(c)
-	};			
-
-	
 /**
  * Map Numerals Number Format to mathjs format options
  * @param format Numerals Number Format
@@ -92,10 +78,54 @@ export default class NumeralsPlugin extends Plugin {
 	private currencyPreProcessors: StringReplaceMap[];
 	private numberFormat: mathjsFormat;
 	public scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
+	private suggestor: NumeralsSuggestor | null = null;
+	private renderedBlockSignatures: WeakMap<HTMLElement, string> = new WeakMap();
+
+	private normalizeBlockSource(source: string): string {
+		return source.replace(/(?:\r?\n)+$/g, "");
+	}
+
+	private getBlockRenderSignature(
+		type: NumeralsRenderStyle,
+		source: string,
+		sourcePath: string
+	): string {
+		return [
+			sourcePath,
+			type ?? this.settings.defaultRenderStyle,
+			this.normalizeBlockSource(source),
+		].join("::");
+	}
+
+	private isMetadataEventForSourcePath(
+		args: unknown[],
+		sourcePath: string
+	): boolean {
+		const normalizedPaths = args
+			.filter((arg): arg is TFile | string => arg instanceof TFile || typeof arg === "string")
+			.map((arg) => (arg instanceof TFile ? arg.path : arg));
+
+		// Some metadata events do not provide a file path. In that case, re-check metadata hash below.
+		if (normalizedPaths.length === 0) {
+			return true;
+		}
+		return normalizedPaths.includes(sourcePath);
+	}
+
+	private ensureSuggestorRegistered(): void {
+		if (this.suggestor) {
+			return;
+		}
+		this.suggestor = new NumeralsSuggestor(this);
+		this.registerEditorSuggest(this.suggestor);
+	}
 
 	async numeralsMathBlockHandler(type: NumeralsRenderStyle, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {		
-		// TODO: Rendering is getting called twice. Once without newline at the end of the code block and once with.
-		//       This is causing the code block to be rendered twice. Need to figure out why and fix it.
+		const renderSignature = this.getBlockRenderSignature(type, source, ctx.sourcePath);
+		if (this.renderedBlockSignatures.get(el) === renderSignature) {
+			return;
+		}
+		this.renderedBlockSignatures.set(el, renderSignature);
 
 		let metadata = getMetadataForFileAtPath(ctx.sourcePath, this.app, this.scopeCache);
 		
@@ -111,11 +141,15 @@ export default class NumeralsPlugin extends Plugin {
 			this.app
 		);
 
-		addGobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
+		addGlobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
 
 		const numeralsBlockChild = new MarkdownRenderChild(el);
 
-		const numeralsBlockCallback = (_callbackType: unknown, _file: unknown, _oldPath?: unknown) => {
+		const numeralsBlockCallback = (...callbackArgs: unknown[]) => {
+			if (!this.isMetadataEventForSourcePath(callbackArgs, ctx.sourcePath)) {
+				return;
+			}
+
 			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath, this.app, this.scopeCache);
 			if (equal(currentMetadata, metadata)) {
 				return;
@@ -137,20 +171,19 @@ export default class NumeralsPlugin extends Plugin {
 				this.app
 			);
 
-			addGobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
+			addGlobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
 		}
 
 		const dataviewAPI = getAPI();
 		if (dataviewAPI) {
 			//@ts-expect-error: "No overload matches this call"
-			this.registerEvent(this.app.metadataCache.on("dataview:metadata-change", numeralsBlockCallback));
+			numeralsBlockChild.registerEvent(this.app.metadataCache.on("dataview:metadata-change", numeralsBlockCallback));
 		} else {
-			this.registerEvent(this.app.metadataCache.on("changed", numeralsBlockCallback));
+			numeralsBlockChild.registerEvent(this.app.metadataCache.on("changed", numeralsBlockCallback));
 		}
 
 		numeralsBlockChild.onunload = () => {
-			this.app.metadataCache.off("changed", numeralsBlockCallback);
-			this.app.metadataCache.off("dataview:metadata-change", numeralsBlockCallback);
+			this.renderedBlockSignatures.delete(el);
 		}
 		ctx.addChild(numeralsBlockChild);
 
@@ -224,11 +257,9 @@ export default class NumeralsPlugin extends Plugin {
 
 		// TODO: Once mathjs support removing units (josdejong/mathjs#2081),
 		//       rerun unit creation and regex preprocessors on settings change
-		for (const moneyType of this.currencyMap) {
-			if (moneyType.currency != '') {
-				math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
-			}
-		}
+		setupMathjsCurrencySupport(this.currencyMap.map((currency) => currency.symbol));
+		ensureCurrencyUnits(this.currencyMap);
+
 		// TODO: Incorporate this in a setup function that can be called when settings change, which should reduce need for restart after change
 		this.currencyPreProcessors = this.currencyMap.map(m => {
 			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
@@ -252,14 +283,20 @@ export default class NumeralsPlugin extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new NumeralsSettingTab(this.app, this));
 
-		// Register editor suggest handler
-		if (this.settings.provideSuggestions) {
-			this.registerEditorSuggest(new NumeralsSuggestor(this));
-		}
+		// Register exactly one suggestor instance and gate behavior by settings.
+		this.ensureSuggestorRegistered();
 
 		// Setup number formatting
 		this.updateLocale();
 
+	}
+
+	onunload() {
+		this.scopeCache.clear();
+		this.suggestor?.close();
+		this.suggestor = null;
+		this.renderedBlockSignatures = new WeakMap();
+		teardownMathjsCurrencySupport();
 	}
 
 	async loadSettings() {
@@ -282,7 +319,7 @@ export default class NumeralsPlugin extends Plugin {
 					console.log("Numerals: Error porting old layout style")
 				}
 
-			} else if (loadData.layoutStyle in [0, 1, 2, 3]) {
+			} else if ([0, 1, 2, 3].includes(loadData.layoutStyle)) {
 				const oldLayoutStyleMap = {
 					0: NumeralsLayout.TwoPanes,
 					1: NumeralsLayout.AnswerRight,

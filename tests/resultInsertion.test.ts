@@ -34,6 +34,7 @@ describe('handleResultInsertions', () => {
 		// Mock app
 		mockApp = {
 			workspace: {
+				getLeavesOfType: jest.fn().mockReturnValue([]),
 				getActiveViewOfType: jest.fn().mockReturnValue({
 					editor: mockEditor,
 				}),
@@ -324,6 +325,54 @@ describe('handleResultInsertions', () => {
 			1,
 			'@[count::99] = total # comment'
 		);
+	});
+
+	it('should use editor for matching source path in split panes', () => {
+		const activeEditor = {
+			getLine: jest.fn().mockReturnValue('@[active::0]'),
+			setLine: jest.fn(),
+		};
+		const matchingEditor = {
+			getLine: jest.fn().mockReturnValue('@[target::0]'),
+			setLine: jest.fn(),
+		};
+
+		(mockApp.workspace!.getLeavesOfType as jest.Mock).mockReturnValue([
+			{
+				view: {
+					file: { path: 'other-note.md' },
+					editor: activeEditor,
+				},
+			},
+			{
+				view: {
+					file: { path: 'target-note.md' },
+					editor: matchingEditor,
+				},
+			},
+		]);
+		(mockApp.workspace!.getActiveViewOfType as jest.Mock).mockReturnValue({
+			editor: activeEditor,
+		});
+
+		mockCtx.getSectionInfo.mockReturnValue({ lineStart: 0 });
+
+		handleResultInsertions(
+			[42],
+			[0],
+			numberFormat,
+			{
+				...(mockCtx as unknown as MarkdownPostProcessorContext),
+				sourcePath: 'target-note.md',
+			},
+			mockApp as App,
+			mockEl
+		);
+
+		jest.runAllTimers();
+
+		expect(matchingEditor.setLine).toHaveBeenCalledWith(1, '@[target::42]');
+		expect(activeEditor.setLine).not.toHaveBeenCalled();
 	});
 
 	it('should use setTimeout to defer editor modification', () => {

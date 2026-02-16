@@ -5,9 +5,9 @@ import {
 	texCurrencyReplacement,
 	unescapeSubscripts,
 	mathjaxLoop,
-	replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw,
 	getLocaleFormatter,
-} from '../numeralsUtilities';
+} from '../rendering/displayUtils';
+import { replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw } from '../processing/preprocessor';
 
 /**
  * TeX renderer for Numerals blocks.
@@ -84,7 +84,7 @@ export class TeXRenderer extends BaseLineRenderer {
 
 		// Render with MathJax
 		const inputTexElement = inputElement.createEl('span', { cls: 'numerals-tex' });
-		mathjaxLoop(inputTexElement, inputTex);
+		void mathjaxLoop(inputTexElement, inputTex);
 	}
 
 	/**
@@ -124,6 +124,6 @@ export class TeXRenderer extends BaseLineRenderer {
 
 		// Render with MathJax
 		const resultTexElement = resultElement.createEl('span', { cls: 'numerals-tex' });
-		mathjaxLoop(resultTexElement, texResult);
+		void mathjaxLoop(resultTexElement, texResult);
 	}
 }

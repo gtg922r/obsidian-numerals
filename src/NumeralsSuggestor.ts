@@ -76,6 +76,33 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		this.plugin = plugin;
 	}
 
+	private getMathBlockTextToCursor(
+		editor: Editor,
+		cursor: EditorPosition
+	): string | null {
+		const linesToCursor: string[] = [];
+
+		for (let line = cursor.line; line >= 0; line--) {
+			const fullLine = editor.getLine(line);
+			const lineText = line === cursor.line ? fullLine.slice(0, cursor.ch) : fullLine;
+			linesToCursor.unshift(lineText);
+
+			const fenceMatch = fullLine.match(/^```([^\s]*)?/);
+			if (!fenceMatch) {
+				continue;
+			}
+
+			const fenceLanguage = (fenceMatch[1] ?? "").toLowerCase();
+			if (fenceLanguage.startsWith("math")) {
+				return linesToCursor.join("\n");
+			}
+
+			return null;
+		}
+
+		return null;
+	}
+
 	/**
 	 * This function is triggered when the user starts typing in the editor. It checks if the user is in a math block and if there is a word in the current line.
 	 * If these conditions are met, it returns an object with the start and end positions of the word and the word itself as the query.
@@ -86,13 +113,13 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	 * @param file - The current file being edited.
 	 * @returns An object with the start and end positions of the word and the word itself as the query, or null if the conditions are not met.
 	 */
-	onTrigger(cursor: EditorPosition, editor: Editor, file: TFile): EditorSuggestTriggerInfo | null {
-		const currentFileToCursor = editor.getRange({line: 0, ch: 0}, cursor);
-		const indexOfLastCodeBlockStart = currentFileToCursor.lastIndexOf('```');
-		// check if the next 4 characters after the last ``` are math or MATH
-		const isMathBlock = currentFileToCursor.slice(indexOfLastCodeBlockStart + 3, indexOfLastCodeBlockStart + 7).toLowerCase() === 'math';
+	onTrigger(cursor: EditorPosition, editor: Editor, _file: TFile): EditorSuggestTriggerInfo | null {
+		if (!this.plugin.settings.provideSuggestions) {
+			return null;
+		}
 
-		if (!isMathBlock) {
+		const currentBlockToCursor = this.getMathBlockTextToCursor(editor, cursor);
+		if (!currentBlockToCursor) {
 			return null;
 		}
 
@@ -115,17 +142,16 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		let localSymbols: string [] = [];	
 
 		// check if the last suggestion list update was less than 200ms ago
-		if (performance.now() - this.lastSuggestionListUpdate > 200) {
-			const currentFileToStart = context.editor.getRange({line: 0, ch: 0}, context.start);
-			const indexOfLastCodeBlockStart = currentFileToStart.lastIndexOf('```');
+		const shouldRefreshCache =
+			this.localSuggestionCache.length === 0 ||
+			performance.now() - this.lastSuggestionListUpdate > 200;
+		if (shouldRefreshCache) {
+			const currentBlockToCursor = this.getMathBlockTextToCursor(context.editor, context.start);
 	
-			if (indexOfLastCodeBlockStart > -1) {
+			if (currentBlockToCursor) {
 				//technically there is a risk we aren't in a math block, but we shouldn't have been triggered if we weren't
-				const lastCodeBlockStart = currentFileToStart.lastIndexOf('```');
-				const lastCodeBlockStartToCursor = currentFileToStart.slice(lastCodeBlockStart);
-	
 				// Return all variable names in the last codeblock up to the cursor
-				const matches = lastCodeBlockStartToCursor.matchAll(/^\s*(\S*?)\s*=.*$/gm);
+				const matches = currentBlockToCursor.matchAll(/^\s*(\S*?)\s*=.*$/gm);
 				// create array from first capture group of matches and remove duplicates
 				localSymbols = [...new Set(Array.from(matches, (match) => 'v|' + match[1]))];
 			}

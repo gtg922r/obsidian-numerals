@@ -176,6 +176,25 @@ describe('renderNumeralsBlock', () => {
 		expect(errorLine?.querySelector('.numerals-input')?.textContent).toBe('bad');
 	});
 
+	it('should render frontmatter warnings as in-block lines', () => {
+		const evaluationResult: EvaluationResult = {
+			results: [2],
+			inputs: ['1 + 1'],
+			errorMsg: null,
+			errorInput: ''
+		};
+		processedBlock.rawRows = ['1 + 1'];
+
+		renderNumeralsBlock(container, evaluationResult, processedBlock, context, [
+			{ key: 'price', value: 'invalid', message: 'Undefined symbol invalid' },
+		]);
+
+		const warningLine = container.querySelector('.numerals-warning-line');
+		expect(warningLine).toBeTruthy();
+		expect(warningLine?.textContent).toContain('Frontmatter price');
+		expect(warningLine?.textContent).toContain('Undefined symbol invalid');
+	});
+
 	it('should hide non-emitter lines when shouldHideNonEmitterLines is true', () => {
 		processedBlock.blockInfo.shouldHideNonEmitterLines = true;
 		processedBlock.blockInfo.emitter_lines = [0, 2];
