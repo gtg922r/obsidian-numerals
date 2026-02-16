@@ -1,10 +1,7 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
-import {
-	defaultCurrencyMap,
-	processAndRenderNumeralsBlockFromSource,
-	getLocaleFormatter,
-	getMetadataForFileAtPath,
-	addGlobalsFromScopeToPageCache } from "./numeralsUtilities";
+import { defaultCurrencyMap, getLocaleFormatter } from "./rendering/displayUtils";
+import { processAndRenderNumeralsBlockFromSource } from "./rendering/orchestrator";
+import { getMetadataForFileAtPath, addGlobalsFromScopeToPageCache } from "./processing/scope";
 import {
 	CurrencyType,
 	NumeralsLayout,

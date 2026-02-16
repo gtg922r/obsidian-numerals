@@ -1,6 +1,6 @@
 import * as math from 'mathjs';
 import { LineRenderData, RenderContext } from '../numerals.types';
-import { renderComment } from '../numeralsUtilities';
+import { renderComment } from '../rendering/linePreparation';
 import { ILineRenderer } from './ILineRenderer';
 
 /**

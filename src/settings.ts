@@ -4,7 +4,7 @@
 
 import NumeralsPlugin from "./main";
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
-import { htmlToElements } from "./numeralsUtilities";
+import { htmlToElements } from "./rendering/displayUtils";
 import { NumeralsRenderStyle, NumeralsNumberFormat, NumeralsLayout } from "./numerals.types";
 
 import {

@@ -4,7 +4,7 @@ import { BaseLineRenderer } from './BaseLineRenderer';
 import {
 	htmlToElements,
 	replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw,
-} from '../numeralsUtilities';
+} from '../rendering/displayUtils';
 
 /**
  * Syntax highlighting renderer for Numerals blocks.

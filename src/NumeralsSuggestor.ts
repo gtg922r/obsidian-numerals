@@ -1,5 +1,5 @@
 import NumeralsPlugin from "./main";
-import { getMetadataForFileAtPath, getScopeFromFrontmatter } from "./numeralsUtilities";
+import { getMetadataForFileAtPath, getScopeFromFrontmatter } from "./processing/scope";
 import {
     EditorSuggest,
     EditorPosition,
