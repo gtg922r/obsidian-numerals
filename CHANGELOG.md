@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-02-16
+### Changed
+- Upgraded TypeScript from 4.7 to 5.4 with full `strict` mode enabled.
+- Split `numeralsUtilities.ts` (976 lines) into 6 focused modules under `src/processing/` and `src/rendering/`.
+- Renderers now share result formatting logic via `BaseLineRenderer` (DRY refactor).
+- `RendererFactory` now caches renderer instances (singleton pattern).
+- Architecture documentation (`ARCHITECTURE.md`) fully rewritten to reflect new structure.
+
+### Fixed
+- **Memory leak**: Event listeners were registered on the Plugin and accumulated indefinitely. Now registered on `MarkdownRenderChild` and cleaned up on navigation. Relates to [#108](https://github.com/gtg922r/obsidian-numerals/issues/108).
+- **Double rendering**: Math blocks were evaluated and rendered twice per display (with/without trailing newline). Added deduplication. Relates to [#108](https://github.com/gtg922r/obsidian-numerals/issues/108).
+- **Wrong editor in split panes**: Result insertions (`@[var::result]`) could write to the wrong file when multiple panes were open.
+- **Silent frontmatter errors**: Errors evaluating frontmatter values were swallowed via `console.error`. Now surfaced as visible warnings in the math block.
+- **Error type inconsistency**: Evaluation errors were plain objects instead of `Error` instances. Created `NumeralsError` class.
+- **Settings migration bug**: `layoutStyle in [0,1,2,3]` checked array indices instead of values (dead code path). Fixed to `.includes()`.
+- **Unit redefinition on re-enable**: `math.createUnit()` now wrapped in try/catch so the plugin can be disabled and re-enabled without an app restart. Relates to [#90](https://github.com/gtg922r/obsidian-numerals/issues/90).
+- **Suggestor accumulation**: Toggling "Provide Suggestions" on/off registered a new suggestor each time. Now registered once on load.
+- Plugin now properly cleans up `scopeCache` on unload.
+- Pre-compiled TeX currency regexes (were re-created on every call).
+- `getMathJsSymbols()` no longer allocates a new array on every keystroke.
+- Fixed typo: `addGobals` → `addGlobals`.
+
 ## [1.6.0] - 2025-07-12
 ### Changed
 - Upgraded mathjs from `^11.3.3` to `^14.5.3` for latest features and security fixes.
