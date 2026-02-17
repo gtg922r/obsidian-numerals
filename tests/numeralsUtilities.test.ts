@@ -29,6 +29,7 @@ import {
 	numeralsRenderStyleClasses,
 	preProcessBlockForNumeralsDirectives,
 	processAndRenderNumeralsBlockFromSource,
+	removeCanonicalizedDuplicates,
 	replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw,
 } from "../src/numeralsUtilities";
 import {
@@ -346,6 +347,64 @@ apples = 2
  * 'numerals' is an array. Each test sets up the necessary environment and asserts the expected outcomes
  * for the scope object after processing the frontmatter.
  */
+describe("numeralsUtilities: removeCanonicalizedDuplicates", () => {
+	it("should remove phantom key 'fx' when 'f(x)' exists", () => {
+		const metadata = { "f(x)": "x+2", "fx": "x+2", "y": 5 };
+		const result = removeCanonicalizedDuplicates(metadata);
+		expect(result).toEqual({ "f(x)": "x+2", "y": 5 });
+	});
+
+	it("should remove phantom key 'gx' when '$g(x)' exists", () => {
+		const metadata = { "$g(x)": "x+2", "gx": "x+2", "count": 10 };
+		const result = removeCanonicalizedDuplicates(metadata);
+		expect(result).toEqual({ "$g(x)": "x+2", "count": 10 });
+	});
+
+	it("should not remove keys that are not canonicalized duplicates", () => {
+		const metadata = { "apples": 3, "pears": 4, "total": 7 };
+		const result = removeCanonicalizedDuplicates(metadata);
+		expect(result).toEqual(metadata);
+	});
+
+	it("should return same object reference when no phantoms exist", () => {
+		const metadata = { "x": 1, "y": 2 };
+		const result = removeCanonicalizedDuplicates(metadata);
+		expect(result).toBe(metadata); // same reference, no copy needed
+	});
+
+	it("should handle multiple function-like keys", () => {
+		const metadata = {
+			"f(x)": "x+1", "fx": "x+1",
+			"$g(x, y)": "x*y", "gx-y": "x*y",
+			"simple": 42
+		};
+		const result = removeCanonicalizedDuplicates(metadata);
+		expect(result).toEqual({
+			"f(x)": "x+1",
+			"$g(x, y)": "x*y",
+			"simple": 42
+		});
+	});
+
+	it("should handle empty metadata", () => {
+		const result = removeCanonicalizedDuplicates({});
+		expect(result).toEqual({});
+	});
+
+	it("should not remove a key that happens to be a substring match but not a canonical match", () => {
+		// 'fx' is only a phantom if some other key canonicalizes to 'fx'
+		const metadata = { "fx": "x+2", "fy": 5 };
+		const result = removeCanonicalizedDuplicates(metadata);
+		expect(result).toEqual(metadata);
+	});
+
+	it("should handle keys with unicode letters", () => {
+		const metadata = { "μ(x)": "x*3", "μx": "x*3", "α": 1 };
+		const result = removeCanonicalizedDuplicates(metadata);
+		expect(result).toEqual({ "μ(x)": "x*3", "α": 1 });
+	});
+});
+
 describe("numeralsUtilities: getScopeFromFrontmatter", () => {
     let scope: NumeralsScope;
     let frontmatter: { [key: string]: unknown };
@@ -505,6 +564,39 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
         
         expect(multiplyFunc(3, 4)).toBe(12);
         expect(addFunc(1, 2, 3)).toBe(6);
+    });
+
+    it("should not produce warnings for Dataview-canonicalized phantom keys", () => {
+        // Simulates metadata after getMetadataForFileAtPath merges frontmatter + Dataview.
+        // Dataview adds 'fx' as a canonicalized duplicate of 'f(x)'.
+        // After removeCanonicalizedDuplicates, 'fx' should be gone.
+        const rawMetadata = {
+            numerals: "all",
+            "f(x)": "x+2",
+            "fx": "x+2",  // phantom from Dataview canonicalization
+        };
+        const cleaned = removeCanonicalizedDuplicates(rawMetadata);
+        const { scope: result, warnings } = getScopeFromFrontmatter(cleaned, new NumeralsScope(), forceAll, stringReplaceMap, keysOnly);
+
+        // Function should be defined and work
+        const func = result.get("f") as any;
+        expect(typeof func).toBe("function");
+        expect(func(3)).toBe(5); // 3 + 2 = 5
+
+        // No warnings about phantom 'fx' key
+        expect(warnings).toEqual([]);
+    });
+
+    it("should produce a warning when evaluating a phantom key without cleanup", () => {
+        // Without removeCanonicalizedDuplicates, the phantom 'fx' key causes an error
+        const metadata = {
+            numerals: "all",
+            "f(x)": "x+2",
+            "fx": "x+2",  // phantom — will fail because x is undefined
+        };
+        const { warnings } = getScopeFromFrontmatter(metadata, new NumeralsScope(), forceAll, stringReplaceMap, keysOnly);
+        expect(warnings.length).toBeGreaterThan(0);
+        expect(warnings[0]).toContain("fx");
     });
 
     it("should handle global functions defined in math block (from the GitHub issue #101)", () => {
