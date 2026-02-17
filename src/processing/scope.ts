@@ -141,6 +141,47 @@ export function getScopeFromFrontmatter(
 	}
 }	
 
+/**
+ * Remove keys from a metadata object that are Dataview-canonicalized duplicates
+ * of other keys in the same object.
+ *
+ * Dataview normalizes property names by stripping characters outside
+ * `[0-9\p{L}_-]` and lowercasing (see `canonicalizeVarName` in Dataview).
+ * For keys like `f(x)` or `$g(x)`, this produces phantom keys (`fx`, `gx`)
+ * that shadow the originals and cause evaluation errors.
+ *
+ * This function detects and removes those phantoms: a key is a phantom if
+ * some *other* key in the object canonicalizes to it.
+ */
+export function removeCanonicalizedDuplicates(
+	metadata: Record<string, unknown>
+): Record<string, unknown> {
+	const keys = Object.keys(metadata);
+	// Mirrors Dataview's canonicalizeVarName: whitespace → '-', other
+	// non-alphanumeric/non-underscore/non-dash characters are stripped, then lowercase.
+	const canonicalize = (k: string) =>
+		k.replace(/\s+/g, '-').replace(/[^0-9\p{L}_-]/gu, '').toLowerCase();
+
+	// Build a set of canonicalized forms of keys that differ from their canonical form
+	const phantomNames = new Set<string>();
+	for (const key of keys) {
+		const canon = canonicalize(key);
+		if (canon !== key) {
+			phantomNames.add(canon);
+		}
+	}
+
+	if (phantomNames.size === 0) return metadata;
+
+	const result: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(metadata)) {
+		if (!phantomNames.has(key)) {
+			result[key] = value;
+		}
+	}
+	return result;
+}
+
 /** 
  * Add globals from a scope to the Numerals page cache
  * 
@@ -198,6 +239,8 @@ export function getMetadataForFileAtPath(
 	const numeralsPageScopeMetadata:{[key: string]: unknown} = numeralsPageScope ? Object.fromEntries(numeralsPageScope) : {};
   
 	// combine frontmatter and dataview metadata, with dataview metadata taking precedence and numerals scope taking precedence over both
-	const metadata = {...frontmatter, ...dataviewMetadata, ...numeralsPageScopeMetadata};		
+	// Remove phantom keys created by Dataview's key canonicalization (e.g. `f(x)` → `fx`)
+	const cleanedDataview = dataviewMetadata ? removeCanonicalizedDuplicates(dataviewMetadata) : undefined;
+	const metadata = {...frontmatter, ...cleanedDataview, ...numeralsPageScopeMetadata};		
 	return metadata;
 }
