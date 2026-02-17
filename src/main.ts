@@ -214,6 +214,7 @@ export default class NumeralsPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		this.updateLocale();
 
 		// Load MathJax for TeX Rendering
 		await loadMathJax();
@@ -281,8 +282,6 @@ export default class NumeralsPlugin extends Plugin {
 		if (this.settings.provideSuggestions) {
 			this.registerEditorSuggest(new NumeralsSuggestor(this));
 		}
-
-		this.updateLocale();
 	}
 
 	onunload() {
