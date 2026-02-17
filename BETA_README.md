@@ -1,7 +1,7 @@
 # Numerals Obsidian Plugin
 ![Obsidian Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=%23483699&label=downloads&query=%24%5B%22numerals%22%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/gtg922r/obsidian-numerals?color=%23483699) ![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/gtg922r/obsidian-numerals?include_prereleases&label=BRAT%20beta)
 
-*Numerals* gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can perform calculations inline with your notes, and see both the input and the evaluated result. *Numerals* works with Live Preview as well as Reader view, and offers TeX-style rendering or Syntax Highlighting as well as auto-completion suggestions. Comments or explanations can be added with `#`, and important results can be indicated with `=>` after the calculation. 
+*Numerals* gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can also perform calculations **inline** — right in the flow of your sentences — and see results without breaking your writing. *Numerals* works with Live Preview as well as Reader view, and offers TeX-style rendering or Syntax Highlighting as well as auto-completion suggestions. Comments or explanations can be added with `#`, and important results can be indicated with `=>` after the calculation. 
 ![Numerals Lemonade Stand - Side by Side](https://user-images.githubusercontent.com/1195174/200186757-a71b5e7a-df96-4350-b6a4-366d758e696d.png)
 ![Numerals Tex Example](https://user-images.githubusercontent.com/1195174/201516487-75bb7a08-76ab-4ff3-bf6b-d654aa284ab7.png)
 
@@ -11,6 +11,24 @@ To get started, simply install and enable the plugin. Add a `math` code block wi
 20 mi / 4 hr to m/s
 ```
 ````
+
+Or use inline with your notes: `#: 20 mi / 4 hr to m/s`.
+
+## Inline Calculations
+Need a quick calculation without a full code block? Use **inline calculations** to evaluate expressions right in the middle of your sentences. Just use inline code with a trigger prefix:
+
+| Syntax | Result | Use when… |
+|--------|--------|-----------|
+| `` `#: 3ft * 4ft` `` | **12 ft^2** | You just want the answer |
+| `` `#=: 2 * (3ft + 4ft)` `` | **2 * (3 ft + 4 ft) = 14 ft** | You want to show your work |
+
+Inline calculations are perfect for:
+- 📝 **Writing reports** — *"The total cost is `` `#: $150/hr * 8hr` `` for the project."*
+- 🍳 **Recipe scaling** — *"For 6 servings, use `` `#: 1.5 cups * (6/4)` `` of flour."*
+- 🏠 **Quick conversions** — *"The room is `` `#: 12ft in meters` `` long."*
+- 📊 **Inline references** — Define `$rate` in a math block, then use `` `#: $rate * 40hr` `` anywhere in your note.
+
+Inline expressions have full access to **note-global variables** (`$`-prefixed), **frontmatter properties**, and **`$`-prefixed Dataview inline fields**, and all the same units, currencies, and functions available in math blocks. Trigger prefixes are configurable in settings.
 
 ## Features
 - Units
@@ -58,6 +76,13 @@ To get started, simply install and enable the plugin. Add a `math` code block wi
 	- Multiple properties can be specified as a list, e.g. `numerals: [apples, pears]` will makes both the `apples` and `pears` property available to Numerals
 	- Any property in the YAML frontmatter beginning with `$` automatically becomes a note-global variable (or function) accessible in every math block on the page
 	- Functions can be defined in YAML by name along with their arguments, e.g. `$f(x): x+2`
+- Inline Calculations ✨ *New*
+	- Evaluate math expressions right in your sentences using inline code with a trigger prefix
+	- **Result only**: `` `#: 3ft in inches` `` → **36 in** — shows just the answer
+	- **Equation mode**: `` `#=: 3 + 2` `` → **3 + 2 = 5** — shows the expression and result
+	- Works in both **Live Preview** and **Reading mode**
+	- Inline expressions have access to note-global variables (`$`-prefixed) and frontmatter properties — define once, use everywhere
+	- Trigger prefixes and the equation separator are configurable in settings
 
 *Numerals* utilizes the [mathjs](https://mathjs.org/) library for all calculations. *Numerals* implements a preprocessor to allow more human-friendly syntax, such as currency symbols and thousands separators. For all available functions and capabilities (which includes matrices, vectors, symbolic algebra and calculus, etc), see the [mathjs documentation](https://mathjs.org/docs/index.html)
 
@@ -137,7 +162,8 @@ To try the latest features of *Numerals* before they are released, and provide h
 	- Support added in 1.0.5
 - [x] Autocompletion of functions and variable inside math code block ([#15](https://github.com/gtg922r/obsidian-numerals/issues/15))
 	- Support added in 1.0.8
-- [ ] Inline calculation for inline code blocks ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5))
+- [x] Inline calculation for inline code blocks ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5))
+	- Support added in 1.9.0
 
 Feel free to suggest additional features by creating an [issue](https://github.com/gtg922r/obsidian-numerals/issues)!
 
