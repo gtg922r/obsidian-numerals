@@ -42,6 +42,21 @@ All notable changes to this project will be documented in this file. The format 
 - `getMathJsSymbols()` no longer allocates a new array on every keystroke.
 - Fixed typo: `addGobals` → `addGlobals`.
 
+## [1.7.0] - 2025-10-02
+### Changed
+- **Rendering pipeline refactor**: Rewrote the monolithic 187-line `processAndRenderNumeralsBlockFromSource` function into a clean 7-phase pipeline across 6 refactoring phases.
+  - Phase 1: Introduced typed DTOs (`NumeralsLineData`, `NumeralsBlockData`, etc.) for data flowing through the pipeline.
+  - Phase 2: Extracted 4 pure line-preparation functions.
+  - Phase 3: Implemented Strategy Pattern for renderers (Plain, TeX, Syntax Highlight), replacing switch statements.
+  - Phase 4: Isolated result-insertion side effect into its own module.
+  - Phase 5: Composed the above into a readable 30-line orchestrator pipeline.
+  - Phase 6: Verification, cleanup, and documentation.
+- All rendering transformations are now pure functions.
+- 70+ new tests added (148 total at the time of release), 100% backward compatibility maintained.
+
+### Fixed
+- **Result insertion crash on partial evaluation**: When evaluation aborted early (e.g., due to an error), result insertions for later lines would crash with a `TypeError`. Added guard clause to skip lines where results are missing.
+
 ## [1.6.0] - 2025-07-12
 ### Changed
 - Upgraded mathjs from `^11.3.3` to `^14.5.3` for latest features and security fixes.
