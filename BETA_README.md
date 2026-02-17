@@ -2,7 +2,7 @@
 ![Obsidian Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=%23483699&label=downloads&query=%24%5B%22numerals%22%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/gtg922r/obsidian-numerals?color=%23483699) ![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/gtg922r/obsidian-numerals?include_prereleases&label=BRAT%20beta)
 
 *Numerals* gives you the power of an advanced calculator inside a `math` code block, complete with currencies, units, variables, and math functions! Now you can also perform calculations **inline** — right in the flow of your sentences — and see results without breaking your writing. *Numerals* works with Live Preview as well as Reader view, and offers TeX-style rendering or Syntax Highlighting as well as auto-completion suggestions. Comments or explanations can be added with `#`, and important results can be indicated with `=>` after the calculation. 
-![Numerals Lemonade Stand - Side by Side](https://user-images.githubusercontent.com/1195174/200186757-a71b5e7a-df96-4350-b6a4-366d758e696d.png)
+![Numerals Lemonade Stand - Side by Side](docs/images/Numerals-LemonadeStand-SideBySide.png)
 ![Numerals Tex Example](https://user-images.githubusercontent.com/1195174/201516487-75bb7a08-76ab-4ff3-bf6b-d654aa284ab7.png)
 
 To get started, simply install and enable the plugin. Add a `math` code block with your desired calculations:
