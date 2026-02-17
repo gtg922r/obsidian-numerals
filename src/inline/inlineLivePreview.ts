@@ -144,7 +144,7 @@ export class InlineNumeralsWidget extends WidgetType {
 
 	toDOM(): HTMLElement {
 		const span = document.createElement('span');
-		span.classList.add('numerals-inline');
+		span.classList.add('cm-inline-code', 'numerals-inline');
 
 		// Apply inherited formatting (bold, italic, etc.)
 		for (const cls of this.formattingClasses) {

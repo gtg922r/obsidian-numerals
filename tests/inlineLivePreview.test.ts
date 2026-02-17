@@ -119,6 +119,7 @@ describe('InlineNumeralsWidget', () => {
 			const el = widget.toDOM();
 
 			expect(el.tagName).toBe('SPAN');
+			expect(el.classList.contains('cm-inline-code')).toBe(true);
 			expect(el.classList.contains('numerals-inline')).toBe(true);
 			expect(el.classList.contains('numerals-inline-result')).toBe(true);
 			expect(el.querySelector('.numerals-inline-value')?.textContent).toBe('36 in');

@@ -306,30 +306,20 @@ body {
 /***************************/
 /* ** Inline Numerals ** */
 
-/* Base: inline numerals replaces a <code> element */
-.numerals-inline {
-    font-family: var(--numerals-font);
-    font-size: var(--numerals-size);
-}
+/* Inline numerals styling.
+ * In Reading mode, this sits on a <code> element (inherits code styling).
+ * In Live Preview, the widget also gets cm-inline-code (inherits code styling).
+ * Only numerals-specific overrides below. */
 
-/* Result-only mode: just show the computed value */
-.numerals-inline-result .numerals-inline-value {
+/* Accent the computed value in both result-only and equation modes */
+.numerals-inline .numerals-inline-value {
     color: var(--text-accent);
     font-weight: var(--font-semibold, 600);
 }
 
-/* Equation mode: input = result */
-.numerals-inline-equation .numerals-inline-input {
-    color: var(--code-normal);
-}
-
+/* Faint separator between input and result in equation mode */
 .numerals-inline-equation .numerals-inline-separator {
     color: var(--text-faint);
-}
-
-.numerals-inline-equation .numerals-inline-value {
-    color: var(--text-accent);
-    font-weight: var(--font-semibold, 600);
 }
 
 /* Error state: show the raw expression in error color */
