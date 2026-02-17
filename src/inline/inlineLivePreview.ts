@@ -442,15 +442,15 @@ function updateDecorations(
  *
  * @param getSettings     - Returns current plugin settings (called on each update for hot-reload)
  * @param getNumberFormat - Returns the active mathjs number format
- * @param preProcessors   - String replacement preprocessors (currency symbols, etc.)
- * @param scopeCache      - Shared cache of per-file variable scopes
- * @param app             - The Obsidian App instance
+ * @param getPreProcessors - Returns current string replacement preprocessors (currency symbols, etc.)
+ * @param scopeCache        - Shared cache of per-file variable scopes
+ * @param app               - The Obsidian App instance
  * @returns A CM6 Extension to register via `Plugin.registerEditorExtension()`
  */
 export function createInlineLivePreviewExtension(
 	getSettings: () => NumeralsSettings,
 	getNumberFormat: () => mathjsFormat | undefined,
-	preProcessors: StringReplaceMap[],
+	getPreProcessors: () => StringReplaceMap[],
 	scopeCache: Map<string, NumeralsScope>,
 	app: App,
 ) {
@@ -526,7 +526,7 @@ export function createInlineLivePreviewExtension(
 				return createDecorationContext(
 					getSettings,
 					getNumberFormat,
-					preProcessors,
+					getPreProcessors(),
 					scopeCache,
 					app,
 					filePath,

@@ -80,7 +80,6 @@ export default class NumeralsPlugin extends Plugin {
 	settings!: NumeralsSettings;
 	private currencyMap: CurrencyType[] = defaultCurrencyMap;
 	private preProcessors!: StringReplaceMap[];
-	private currencyPreProcessors!: StringReplaceMap[];
 	private numberFormat: mathjsFormat;
 	public scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
 
@@ -210,6 +209,18 @@ export default class NumeralsPlugin extends Plugin {
 			this.settings.yenSymbolCurrency.currency,
 			this.settings.customCurrencySymbol
 		);
+		this.updatePreProcessors();
+	}
+
+	private updatePreProcessors() {
+		const currencyPreProcessors = this.currencyMap.map(m => {
+			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
+		});
+
+		this.preProcessors = [
+			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands separators
+			...currencyPreProcessors
+		];
 	}
 
 	async onload() {
@@ -236,15 +247,6 @@ export default class NumeralsPlugin extends Plugin {
 			}
 		}
 
-		this.currencyPreProcessors = this.currencyMap.map(m => {
-			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
-		});
-
-		this.preProcessors = [
-			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands separators
-			...this.currencyPreProcessors
-		];
-
 		// Register Markdown Code Block Processors
 		const priority = 100;
 		this.registerMarkdownCodeBlockProcessor("math", this.numeralsMathBlockHandler.bind(this, undefined), priority);
@@ -260,7 +262,7 @@ export default class NumeralsPlugin extends Plugin {
 				this.app,
 				() => this.settings,
 				() => this.numberFormat,
-				this.preProcessors,
+				() => this.preProcessors,
 				this.scopeCache
 			)
 		);
@@ -270,7 +272,7 @@ export default class NumeralsPlugin extends Plugin {
 			createInlineLivePreviewExtension(
 				() => this.settings,
 				() => this.numberFormat,
-				this.preProcessors,
+				() => this.preProcessors,
 				this.scopeCache,
 				this.app
 			)

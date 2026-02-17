@@ -109,7 +109,7 @@ function processInlineCodeElement(
  * @param app - The Obsidian App instance
  * @param settings - Plugin settings (read at call time for hot-reload)
  * @param numberFormat - Number formatting configuration
- * @param preProcessors - Preprocessing rules (currency, thousands, etc.)
+ * @param getPreProcessors - Returns current preprocessing rules (currency, thousands, etc.)
  * @param scopeCache - Shared scope cache for note-global variables
  * @returns The post-processor function (for registration with Plugin.registerMarkdownPostProcessor)
  */
@@ -117,7 +117,7 @@ export function createInlineNumeralsPostProcessor(
 	app: App,
 	getSettings: () => NumeralsSettings,
 	getNumberFormat: () => mathjsFormat,
-	preProcessors: StringReplaceMap[],
+	getPreProcessors: () => StringReplaceMap[],
 	scopeCache: Map<string, NumeralsScope>
 ): (el: HTMLElement, ctx: MarkdownPostProcessorContext) => void {
 	return (el: HTMLElement, ctx: MarkdownPostProcessorContext): void => {
@@ -144,6 +144,8 @@ export function createInlineNumeralsPostProcessor(
 		// Build scope from frontmatter + note-global cache.
 		// getMetadataForFileAtPath already merges scopeCache entries
 		// into the metadata, so no separate merge step is needed.
+		const preProcessors = getPreProcessors();
+
 		const metadata = getMetadataForFileAtPath(ctx.sourcePath, app, scopeCache);
 		const { scope } = getScopeFromFrontmatter(
 			metadata,
