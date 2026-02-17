@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-02-18
+### Added
+- **Inline Calculations** ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5)): Evaluate math expressions directly in inline code using trigger prefixes. Works in both Live Preview and Reading mode.
+  - **Result-only** mode (`` `#: expr` ``): Renders just the computed result.
+  - **Equation** mode (`` `#=: expr` ``): Renders the expression, a separator, and the result.
+  - Inline expressions have access to note-global variables (`$`-prefixed) and frontmatter properties.
+  - Trigger prefixes and equation separator are configurable in settings.
+  - Errors display the raw expression with a wavy red underline.
+- New settings: *Enable Inline Numerals*, *Result-only Trigger*, *Equation Trigger*, *Equation Separator*.
+
+### Fixed
+- **Dataview phantom key errors**: Dataview's `canonicalizeVarName` creates additional keys (e.g., `f(x)` → `fx`) that caused "Undefined symbol" errors when `numerals: all` was set. These phantom keys are now automatically filtered.
+- **Source mode decorations on load**: Inline numerals widgets briefly appeared in source mode before the first editor update. The Live Preview check now runs on initialization.
+- **Currency changes not taking effect**: Changing currency symbol mappings in settings required a restart. Pre-processors are now resolved dynamically.
+- **Editor extensions registered before formatting ready**: `numberFormat` is now initialized before editor extensions are registered, preventing potential errors on plugin load.
+
 ## [1.8.0] - 2026-02-16
 ### Changed
 - Upgraded TypeScript from 4.7 to 5.4 with full `strict` mode enabled.
