@@ -459,6 +459,15 @@ export function createInlineLivePreviewExtension(
 			decorations: DecorationSet;
 
 			constructor(view: EditorView) {
+				try {
+					if (!view.state.field(editorLivePreviewField)) {
+						this.decorations = Decoration.none;
+						return;
+					}
+				} catch {
+					this.decorations = Decoration.none;
+					return;
+				}
 				this.decorations = this.build(view) ?? Decoration.none;
 			}
 
