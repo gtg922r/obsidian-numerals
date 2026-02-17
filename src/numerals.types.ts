@@ -62,7 +62,12 @@ export interface NumeralsSettings {
 	numberFormat: NumeralsNumberFormat;
 	forceProcessAllFrontmatter: boolean;
 	customCurrencySymbol: CurrencyType | null;
-	enableGreekAutoComplete: boolean; 
+	enableGreekAutoComplete: boolean;
+	// Inline Numerals settings
+	enableInlineNumerals: boolean;
+	inlineResultTrigger: string;
+	inlineEquationTrigger: string;
+	inlineEquationSeparator: string;
 }
 
 
@@ -80,7 +85,12 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	numberFormat: 						NumeralsNumberFormat.System,
 	forceProcessAllFrontmatter: 		false,
 	customCurrencySymbol: 				null,
-	enableGreekAutoComplete: 			true, 
+	enableGreekAutoComplete: 			true,
+	// Inline Numerals settings
+	enableInlineNumerals:				true,
+	inlineResultTrigger:				"#:",
+	inlineEquationTrigger:				"#=:",
+	inlineEquationSeparator:				" = ",
 }
 
 
@@ -182,4 +192,22 @@ export interface StringReplaceMap {
 	regex: RegExp;
 	/** String to replace matches with */
 	replaceStr: string;
+}
+
+/****************************************************
+ * Inline Numerals Types
+ ****************************************************/
+
+/** Mode of inline numerals rendering */
+export enum InlineNumeralsMode {
+	ResultOnly = "ResultOnly",
+	Equation = "Equation",
+}
+
+/** Parsed inline numerals expression */
+export interface InlineNumeralsExpression {
+	/** The rendering mode determined by which trigger was matched */
+	mode: InlineNumeralsMode;
+	/** The raw expression text after the trigger prefix */
+	expression: string;
 }

@@ -2,6 +2,7 @@ import { NumeralsSuggestor } from "./NumeralsSuggestor";
 import { defaultCurrencyMap, getLocaleFormatter } from "./rendering/displayUtils";
 import { processAndRenderNumeralsBlockFromSource } from "./rendering/orchestrator";
 import { getMetadataForFileAtPath, addGlobalsFromScopeToPageCache } from "./processing/scope";
+import { createInlineNumeralsPostProcessor, createInlineLivePreviewExtension } from "./inline";
 import {
 	CurrencyType,
 	NumeralsLayout,
@@ -79,7 +80,6 @@ export default class NumeralsPlugin extends Plugin {
 	settings!: NumeralsSettings;
 	private currencyMap: CurrencyType[] = defaultCurrencyMap;
 	private preProcessors!: StringReplaceMap[];
-	private currencyPreProcessors!: StringReplaceMap[];
 	private numberFormat: mathjsFormat;
 	public scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
 
@@ -209,10 +209,23 @@ export default class NumeralsPlugin extends Plugin {
 			this.settings.yenSymbolCurrency.currency,
 			this.settings.customCurrencySymbol
 		);
+		this.updatePreProcessors();
+	}
+
+	private updatePreProcessors() {
+		const currencyPreProcessors = this.currencyMap.map(m => {
+			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
+		});
+
+		this.preProcessors = [
+			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands separators
+			...currencyPreProcessors
+		];
 	}
 
 	async onload() {
 		await this.loadSettings();
+		this.updateLocale();
 
 		// Load MathJax for TeX Rendering
 		await loadMathJax();
@@ -234,15 +247,6 @@ export default class NumeralsPlugin extends Plugin {
 			}
 		}
 
-		this.currencyPreProcessors = this.currencyMap.map(m => {
-			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
-		});
-
-		this.preProcessors = [
-			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands separators
-			...this.currencyPreProcessors
-		];
-
 		// Register Markdown Code Block Processors
 		const priority = 100;
 		this.registerMarkdownCodeBlockProcessor("math", this.numeralsMathBlockHandler.bind(this, undefined), priority);
@@ -252,14 +256,34 @@ export default class NumeralsPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor("math-TeX", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.TeX), priority);
 		this.registerMarkdownCodeBlockProcessor("math-highlight", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.SyntaxHighlight), priority);
 
+		// Register inline Numerals post-processor (Reading mode)
+		this.registerMarkdownPostProcessor(
+			createInlineNumeralsPostProcessor(
+				this.app,
+				() => this.settings,
+				() => this.numberFormat,
+				() => this.preProcessors,
+				this.scopeCache
+			)
+		);
+
+		// Register inline Numerals CM6 extension (Live Preview mode)
+		this.registerEditorExtension(
+			createInlineLivePreviewExtension(
+				() => this.settings,
+				() => this.numberFormat,
+				() => this.preProcessors,
+				this.scopeCache,
+				this.app
+			)
+		);
+
 		this.addSettingTab(new NumeralsSettingTab(this.app, this));
 
 		// Register editor suggest handler (only once on load, not on settings toggle)
 		if (this.settings.provideSuggestions) {
 			this.registerEditorSuggest(new NumeralsSuggestor(this));
 		}
-
-		this.updateLocale();
 	}
 
 	onunload() {

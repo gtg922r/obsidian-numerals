@@ -302,3 +302,31 @@ body {
     font-family: var(--numerals-font);
     font-size: var(--numerals-size);
 }
+
+/***************************/
+/* ** Inline Numerals ** */
+
+/* Inline numerals styling.
+ * In Reading mode, this sits on a <code> element (inherits code styling).
+ * In Live Preview, the widget also gets cm-inline-code (inherits code styling).
+ * Only numerals-specific overrides below. */
+
+/* Accent the computed value in both result-only and equation modes */
+.numerals-inline .numerals-inline-value {
+    color: var(--text-accent);
+    font-weight: var(--font-semibold, 600);
+}
+
+/* Faint separator between input and result in equation mode */
+.numerals-inline-equation .numerals-inline-separator {
+    color: var(--text-faint);
+}
+
+/* Error state: show the raw expression in error color */
+.numerals-inline-error {
+    color: var(--text-error);
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: var(--text-error);
+    text-underline-offset: 3px;
+}

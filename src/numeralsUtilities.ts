@@ -15,7 +15,7 @@
  */
 
 // Processing
-export { getScopeFromFrontmatter, addGlobalsFromScopeToPageCache, getMetadataForFileAtPath } from './processing/scope';
+export { getScopeFromFrontmatter, addGlobalsFromScopeToPageCache, getMetadataForFileAtPath, removeCanonicalizedDuplicates } from './processing/scope';
 export type { ScopeResult } from './processing/scope';
 export { preProcessBlockForNumeralsDirectives, replaceStringsInTextFromMap } from './processing/preprocessor';
 export { evaluateMathFromSourceStrings } from './processing/evaluator';
