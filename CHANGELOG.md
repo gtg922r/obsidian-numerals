@@ -13,6 +13,16 @@ All notable changes to this project will be documented in this file. The format 
 ### Changed
 - Migrated ESLint from legacy `.eslintrc` to flat config (`eslint.config.mjs`, ESLint v9).
 - Updated dev dependencies: tslib 2.4→2.8, esbuild 0.25→0.27, @types/node 16→22, TypeScript 5.4→5.8.
+- Settings UI text converted to sentence case per Obsidian style guidelines.
+- Replaced inline styles in currency settings UI with CSS classes for better theming.
+- Removed redundant "Numerals Plugin Settings" heading (settings tab already shows plugin name).
+
+### Fixed
+- Resolved all 172 lint errors from `eslint-plugin-obsidianmd` (now 0 errors, 0 warnings).
+- Added type safety to untyped API boundaries (loadData, Dataview, mathjs).
+- Fixed floating promises in settings migration and TeX rendering.
+- Removed unnecessary type assertions and unused imports.
+- Fixed unbound method reference for mathjs `isAlpha`.
 - Moved `ARCHITECTURE.md` to `doc/ARCHITECTURE.md` and cleaned up: removed line counts and other volatile details.
 
 ### Removed
