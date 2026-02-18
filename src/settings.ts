@@ -96,8 +96,6 @@ export class NumeralsSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h1', {text: 'Numerals Plugin Settings'});
-
 		new Setting(containerEl)
 		.setHeading()
 		.setName('Layout and Render Settings');	
@@ -366,7 +364,6 @@ export class NumeralsSettingTab extends PluginSettingTab {
 									this.plugin.settings.customCurrencySymbol = null;
 								}
 								await this.plugin.saveSettings();
-								console.log(this.plugin.settings.customCurrencySymbol);
 								button.setDisabled(true);
 								button.buttonEl.style.color = "var(--text-faint)";
 								button.setButtonText('✓');

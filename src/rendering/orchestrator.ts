@@ -1,6 +1,6 @@
 import * as math from 'mathjs';
 import { App, Editor, MarkdownPostProcessorContext, MarkdownView, WorkspaceLeaf } from 'obsidian';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, mathjsFormat, NumeralsScope, numeralsBlockInfo, StringReplaceMap, LineRenderData, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, mathjsFormat, NumeralsScope, StringReplaceMap, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
 import { RendererFactory } from '../renderers';
 import { getScopeFromFrontmatter } from '../processing/scope';
 import { preProcessBlockForNumeralsDirectives } from '../processing/preprocessor';

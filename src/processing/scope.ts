@@ -225,7 +225,7 @@ export function getMetadataForFileAtPath(
 	const f_path:string = sourcePath;
 	const handle = app.vault.getAbstractFileByPath(f_path);
 	const f_handle = (handle instanceof TFile) ? handle : undefined;
-	const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle as TFile) : undefined;
+	const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle) : undefined;
 	const frontmatter:{[key: string]: unknown} | undefined = {...(f_cache?.frontmatter), position: undefined};
 
 	const dataviewAPI = getAPI();

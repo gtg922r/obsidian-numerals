@@ -26,7 +26,6 @@ import {
 	loadMathJax,
 	MarkdownPostProcessorContext,
 	MarkdownRenderChild,
-	EventRef,
 } from "obsidian";
 
 import { getAPI } from 'obsidian-dataview';
@@ -36,18 +35,22 @@ import * as math from 'mathjs';
 
 // Modify mathjs internal functions to allow for use of currency symbols
 const currencySymbols: string[] = defaultCurrencyMap.map(m => m.symbol);
-const isAlphaOriginal = math.parse.isAlpha;
-math.parse.isAlpha = function (c, cPrev, cNext) {
+const isAlphaOriginal = math.parse.isAlpha.bind(math.parse);
+math.parse.isAlpha = function (c: string, cPrev: string, cNext: string) {
 	return isAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- mathjs internal API
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment,
+   @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call,
+   @typescript-eslint/no-unsafe-return -- mathjs internal API not typed */
 const isUnitAlphaOriginal = (math.Unit as any).isValidAlpha;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- mathjs internal API
 (math.Unit as any).isValidAlpha =
 function (c: string) {
 	return isUnitAlphaOriginal(c) || currencySymbols.includes(c)
 };
+/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment,
+   @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call,
+   @typescript-eslint/no-unsafe-return */
 
 
 /**
@@ -161,7 +164,7 @@ export default class NumeralsPlugin extends Plugin {
 				// @ts-expect-error: dataview custom event not in Obsidian types
 				"dataview:metadata-change",
 				numeralsBlockCallback
-			) as EventRef;
+			);
 			numeralsBlockChild.registerEvent(ref);
 		} else {
 			const ref = this.app.metadataCache.on("changed", numeralsBlockCallback);
@@ -305,9 +308,9 @@ export default class NumeralsPlugin extends Plugin {
 				if (loadData.layoutStyle) {
 					delete loadData.renderStyle;
 					this.settings = loadData;
-					this.saveSettings();
+					void this.saveSettings();
 				} else {
-					console.log("Numerals: Error porting old layout style");
+					console.warn("Numerals: Error porting old layout style");
 				}
 
 			} else if ([0, 1, 2, 3].includes(loadData.layoutStyle)) {
@@ -322,9 +325,9 @@ export default class NumeralsPlugin extends Plugin {
 				loadData.layoutStyle = oldLayoutStyleMap[loadData.layoutStyle as number];
 				if (loadData.layoutStyle) {
 					this.settings = loadData;
-					this.saveSettings();
+					void this.saveSettings();
 				} else {
-					console.log("Numerals: Error porting old layout style");
+					console.warn("Numerals: Error porting old layout style");
 				}
 			}
 		}

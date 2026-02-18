@@ -186,7 +186,6 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		const suggestionAux = el.createDiv({cls: 'suggestion-aux'});
 		const suggestionFlair = suggestionAux.createDiv({cls: 'suggestion-flair'});
 
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const [iconType, suggestionText, noteText] = value.split('|');
 
 		if (iconType === 'f') {
