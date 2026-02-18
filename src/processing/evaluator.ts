@@ -1,5 +1,5 @@
 import * as math from 'mathjs';
-import { NumeralsScope, NumeralsError, EvaluationResult } from '../numerals.types';
+import { NumeralsScope, NumeralsError } from '../numerals.types';
 
 /**
  * Evaluates a block of math expressions and returns the results. Each row is evaluated separately
@@ -61,7 +61,7 @@ export function evaluateMathFromSourceStrings(
 					// eslint-disable-next-line prefer-spread
 					const rollingSum = math.add.apply(math, partialResults as [math.MathType, math.MathType, ...math.MathType[]]);
 					scope.set("__total", rollingSum);
-				} catch (error) {
+				} catch {
 					scope.set("__total", undefined);
 					// TODO consider doing this check before evaluating
 					if (/__total/i.test(row)) {

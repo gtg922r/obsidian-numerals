@@ -124,7 +124,6 @@ export function prepareLineData(
 ): LineRenderData {
 	const {
 		emitter_lines,
-		insertion_lines,
 		hidden_lines,
 		shouldHideNonEmitterLines,
 	} = blockInfo;

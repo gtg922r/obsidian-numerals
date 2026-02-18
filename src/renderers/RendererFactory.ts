@@ -44,7 +44,7 @@ export class RendererFactory {
 				renderer = new SyntaxHighlightRenderer(); break;
 			default:
 				// This should never happen with TypeScript enum, but provides safety
-				throw new Error(`Unknown render style: ${style}`);
+				throw new Error(`Unknown render style: ${String(style)}`);
 		}
 		this.renderers.set(style, renderer);
 		return renderer;
