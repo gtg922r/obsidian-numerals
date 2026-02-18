@@ -293,22 +293,24 @@ export class NumeralsSettingTab extends PluginSettingTab {
 								) && currencySaveButton) {
 								if (value.match(/^\p{Sc}$/u) || value.length == 0) {
 									currencySaveButton.setDisabled(false);
-									currencySaveButton.buttonEl.style.color = "var(--text-normal)";
-									currencySaveButton.setButtonText('Save');
-								} else {
-									currencySaveButton.setDisabled(true);
-									currencySaveButton.buttonEl.style.color = "var(--text-error)";
-									currencySaveButton.setButtonText('Error');
-								}
-							} else if (currencySaveButton) {
-								currencySaveButton.setDisabled(true);
-								currencySaveButton.buttonEl.style.color = "var(--text-faint)";
+								currencySaveButton.buttonEl.removeClass('numerals-settings-btn-disabled', 'numerals-settings-btn-error');
+								currencySaveButton.buttonEl.addClass('numerals-settings-btn-ready');
 								currencySaveButton.setButtonText('Save');
-							}		
-						});					
-						text.inputEl.setAttribute("maxlength", "1");
-						text.inputEl.style.width = "5em";
-						text.inputEl.style.textAlign = "center";
+							} else {
+								currencySaveButton.setDisabled(true);
+								currencySaveButton.buttonEl.removeClass('numerals-settings-btn-disabled', 'numerals-settings-btn-ready');
+								currencySaveButton.buttonEl.addClass('numerals-settings-btn-error');
+								currencySaveButton.setButtonText('Error');
+							}
+						} else if (currencySaveButton) {
+							currencySaveButton.setDisabled(true);
+							currencySaveButton.buttonEl.removeClass('numerals-settings-btn-ready', 'numerals-settings-btn-error');
+							currencySaveButton.buttonEl.addClass('numerals-settings-btn-disabled');
+							currencySaveButton.setButtonText('Save');
+						}		
+					});					
+					text.inputEl.setAttribute("maxlength", "1");
+					text.inputEl.addClass('numerals-settings-currency-input', 'numerals-settings-currency-symbol');
 						currencySymbolInput = text;
 					})
 					.addText(text => { text
@@ -323,22 +325,24 @@ export class NumeralsSettingTab extends PluginSettingTab {
 								) && currencySaveButton) {
 								if (currencySymbolInput?.getValue().match(/^\p{Sc}$/u) || value.length == 0) {
 									currencySaveButton.setDisabled(false);
-									currencySaveButton.buttonEl.style.color = "var(--text-normal)";
-									currencySaveButton.setButtonText('Save');
-								} else {
-									currencySaveButton.setDisabled(true);
-									currencySaveButton.buttonEl.style.color = "var(--text-error)";
-									currencySaveButton.setButtonText('Error');
-								}
-							} else if (currencySaveButton) {
-								currencySaveButton.setDisabled(true);
-								currencySaveButton.buttonEl.style.color = "var(--text-faint)";
+								currencySaveButton.buttonEl.removeClass('numerals-settings-btn-disabled', 'numerals-settings-btn-error');
+								currencySaveButton.buttonEl.addClass('numerals-settings-btn-ready');
 								currencySaveButton.setButtonText('Save');
-							}		
-						});				
-						text.inputEl.setAttribute("maxlength", "3");
-						text.inputEl.style.width = "6em";
-						text.inputEl.style.textAlign = "center";
+							} else {
+								currencySaveButton.setDisabled(true);
+								currencySaveButton.buttonEl.removeClass('numerals-settings-btn-disabled', 'numerals-settings-btn-ready');
+								currencySaveButton.buttonEl.addClass('numerals-settings-btn-error');
+								currencySaveButton.setButtonText('Error');
+							}
+						} else if (currencySaveButton) {
+							currencySaveButton.setDisabled(true);
+							currencySaveButton.buttonEl.removeClass('numerals-settings-btn-ready', 'numerals-settings-btn-error');
+							currencySaveButton.buttonEl.addClass('numerals-settings-btn-disabled');
+							currencySaveButton.setButtonText('Save');
+						}		
+					});				
+					text.inputEl.setAttribute("maxlength", "3");
+					text.inputEl.addClass('numerals-settings-currency-input', 'numerals-settings-currency-code');
 						currencyCodeInput = text;					
 					})		
 					.addButton(button => { button
@@ -365,7 +369,8 @@ export class NumeralsSettingTab extends PluginSettingTab {
 								}
 								await this.plugin.saveSettings();
 								button.setDisabled(true);
-								button.buttonEl.style.color = "var(--text-faint)";
+								button.buttonEl.removeClass('numerals-settings-btn-ready');
+								button.buttonEl.addClass('numerals-settings-btn-disabled');
 								button.setButtonText('✓');
 								setTimeout(() => {
 									button.setButtonText('Save');
@@ -373,8 +378,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 								this.plugin.updateCurrencyMap();
 							}
 						});
-						button.buttonEl.style.color = "var(--text-faint)";
-						button.buttonEl.style.width = "4em";				
+						button.buttonEl.addClass('numerals-settings-save-btn', 'numerals-settings-btn-disabled');				
 						currencySaveButton = button;
 									
 					});				

@@ -330,3 +330,28 @@ body {
     text-decoration-color: var(--text-error);
     text-underline-offset: 3px;
 }
+
+/* Settings: currency mapping input fields */
+.numerals-settings-currency-input {
+    text-align: center;
+}
+.numerals-settings-currency-symbol {
+    width: 5em;
+}
+.numerals-settings-currency-code {
+    width: 6em;
+}
+
+/* Settings: currency save button states */
+.numerals-settings-save-btn {
+    width: 4em;
+}
+.numerals-settings-btn-disabled {
+    color: var(--text-faint);
+}
+.numerals-settings-btn-ready {
+    color: var(--text-normal);
+}
+.numerals-settings-btn-error {
+    color: var(--text-error);
+}
