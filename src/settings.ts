@@ -83,6 +83,7 @@ export const currencyCodesForYenSign: {[key:string]: string} = {
  * @property {NumeralsPlugin} plugin
  */
 export class NumeralsSettingTab extends PluginSettingTab {
+	icon = 'calculator';
 	plugin: NumeralsPlugin;
 
 	constructor(app: App, plugin: NumeralsPlugin) {
