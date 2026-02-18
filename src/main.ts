@@ -157,7 +157,7 @@ export default class NumeralsPlugin extends Plugin {
 			addGlobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
 		};
 
-		const dataviewAPI = getAPI();
+		const dataviewAPI = getAPI(); // eslint-disable-line @typescript-eslint/no-unsafe-assignment -- dataview API untyped
 		if (dataviewAPI) {
 			// Register on the child component so it auto-cleans on unload
 			const ref = this.app.metadataCache.on(
@@ -294,7 +294,7 @@ export default class NumeralsPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const loadData = await this.loadData();
+		const loadData = await this.loadData() as Partial<NumeralsSettings> & Record<string, unknown> | undefined;
 		if (loadData) {
 			// Check for signature of old setting format, then port to new setting format
 			if (loadData.layoutStyle == undefined) {
@@ -304,16 +304,16 @@ export default class NumeralsPlugin extends Plugin {
 					3: NumeralsLayout.AnswerBelow
 				};
 
-				loadData.layoutStyle = oldRenderStyleMap[loadData.renderStyle as number];
+				loadData.layoutStyle = oldRenderStyleMap[loadData['renderStyle'] as number];
 				if (loadData.layoutStyle) {
-					delete loadData.renderStyle;
-					this.settings = loadData;
+					delete loadData['renderStyle'];
+					this.settings = loadData as NumeralsSettings;
 					void this.saveSettings();
 				} else {
 					console.warn("Numerals: Error porting old layout style");
 				}
 
-			} else if ([0, 1, 2, 3].includes(loadData.layoutStyle)) {
+			} else if ([0, 1, 2, 3].includes(loadData.layoutStyle as unknown as number)) {
 				// BP-1 Fix: was `in [0,1,2,3]` which checks array indices, not values
 				const oldLayoutStyleMap: Record<number, NumeralsLayout> = {
 					0: NumeralsLayout.TwoPanes,
@@ -322,9 +322,9 @@ export default class NumeralsPlugin extends Plugin {
 					3: NumeralsLayout.AnswerInline,
 				};
 
-				loadData.layoutStyle = oldLayoutStyleMap[loadData.layoutStyle as number];
+				loadData.layoutStyle = oldLayoutStyleMap[loadData.layoutStyle as unknown as number];
 				if (loadData.layoutStyle) {
-					this.settings = loadData;
+					this.settings = loadData as NumeralsSettings;
 					void this.saveSettings();
 				} else {
 					console.warn("Numerals: Error porting old layout style");
@@ -332,7 +332,7 @@ export default class NumeralsPlugin extends Plugin {
 			}
 		}
 
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadData);
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadData) as NumeralsSettings;
 	}
 
 	async saveSettings() {

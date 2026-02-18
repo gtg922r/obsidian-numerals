@@ -32,6 +32,7 @@ export function evaluateInlineExpression(
 	const localScope = new NumeralsScope(scope);
 
 	// Evaluate — let mathjs errors propagate to caller
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- mathjs evaluate() returns `any`
 	const result = math.evaluate(processed, localScope);
 
 	// mathjs returns undefined for comments/empty expressions

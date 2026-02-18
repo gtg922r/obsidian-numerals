@@ -55,7 +55,8 @@ export function getScopeFromFrontmatter(
 					frontmatter_process[frontmatter["numerals"]] = frontmatter[frontmatter["numerals"]];
 				}
 			} else if (Array.isArray(frontmatter["numerals"])) {
-				for (const key of frontmatter["numerals"]) {
+				for (const entry of frontmatter["numerals"] as unknown[]) {
+					const key = String(entry);
 					if (frontmatter.hasOwnProperty(key)) {
 						frontmatter_process[key] = frontmatter[key];
 					}
@@ -102,6 +103,7 @@ export function getScopeFromFrontmatter(
 						
 						try {
 							// Evaluate the complete function assignment expression
+							// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- mathjs evaluate() returns `any`
 							const evaluatedFunction = math.evaluate(fullExpression, scope);
 							// Store the function under the function name (without parentheses)
 							scope.set(functionName, evaluatedFunction);
@@ -110,7 +112,7 @@ export function getScopeFromFrontmatter(
 						}
 					} else {
 						// Regular variable assignment
-						let evaluatedValue;
+						let evaluatedValue: unknown;
 						try {
 							evaluatedValue = math.evaluate(processedValue, scope);
 						} catch (error: unknown) {
@@ -228,10 +230,11 @@ export function getMetadataForFileAtPath(
 	const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle) : undefined;
 	const frontmatter:{[key: string]: unknown} | undefined = {...(f_cache?.frontmatter), position: undefined};
 
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- dataview API returns untyped data
 	const dataviewAPI = getAPI();
 	let dataviewMetadata:{[key: string]: unknown} | undefined;
 	if (dataviewAPI) {
-		const dataviewPage = dataviewAPI.page(f_path)
+		const dataviewPage: Record<string, unknown> = (dataviewAPI as { page: (path: string) => Record<string, unknown> }).page(f_path);
 		dataviewMetadata = {...dataviewPage, file: undefined, position: undefined}
 	}
  
