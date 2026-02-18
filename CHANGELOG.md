@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Changed
 - Migrated ESLint from legacy `.eslintrc` to flat config (`eslint.config.mjs`, ESLint v9).
+- Moved `ARCHITECTURE.md` to `doc/ARCHITECTURE.md` and cleaned up: removed line counts and other volatile details.
+
+### Removed
+- Deleted `REFACTOR_REVIEW.md` and `RENDER_REFACTOR.md` (one-time planning documents, no longer needed).
 
 ## [1.9.0] - 2026-02-18
 ### Added
