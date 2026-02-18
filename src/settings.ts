@@ -98,13 +98,13 @@ export class NumeralsSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 		.setHeading()
-		.setName('Layout and Render Settings');	
+		.setName('Layout and render settings');	
 
 		new Setting(containerEl)
-			.setName('Numerals Layout Style')
-			.setDesc('Layout of math blocks in Live Preview and Reading mode')
+			.setName('Numerals layout style')
+			.setDesc('Layout of math blocks in live preview and reading mode')
 			.addDropdown(dropDown => {
-				dropDown.addOption(NumeralsLayout.TwoPanes, '2 Panes');
+				dropDown.addOption(NumeralsLayout.TwoPanes, '2 panes');
 				dropDown.addOption(NumeralsLayout.AnswerRight, 'Answer to the right');
 				dropDown.addOption(NumeralsLayout.AnswerBelow, 'Answer below each line');
 				dropDown.addOption(NumeralsLayout.AnswerInline, 'Answer inline, beside input');				
@@ -117,12 +117,12 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			});		
 
 		new Setting(containerEl)
-			.setName('Default Numerals Rendering Style')
+			.setName('Default numerals rendering style')
 			.setDesc('Choose how the input and results are rendered by default. Note that you can specify the rendering style on a per block basis, by using `math-plain`, ``math-tex``, or ``math-highlight``')
 			.addDropdown(dropDown => {
-				dropDown.addOption(NumeralsRenderStyle.Plain, 'Plain Text');
-				dropDown.addOption(NumeralsRenderStyle.TeX, 'TeX Style');
-				dropDown.addOption(NumeralsRenderStyle.SyntaxHighlight, 'Syntax Highlighting of Plain Text');
+				dropDown.addOption(NumeralsRenderStyle.Plain, 'Plain text');
+				dropDown.addOption(NumeralsRenderStyle.TeX, 'TeX style'); // eslint-disable-line obsidianmd/ui/sentence-case
+				dropDown.addOption(NumeralsRenderStyle.SyntaxHighlight, 'Syntax highlighting of plain text');
 				dropDown.setValue(this.plugin.settings.defaultRenderStyle);
 				dropDown.onChange(async (value) => {
 					const renderStyleStr = value as keyof typeof NumeralsRenderStyle;
@@ -133,11 +133,11 @@ export class NumeralsSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 		.setHeading()
-		.setName('Auto-Complete Suggestion Settings');		
+		.setName('Auto-complete suggestion settings');		
 
 		new Setting(containerEl)
-			.setName('Provide Auto-Complete Suggestions')
-			.setDesc('Enable auto-complete suggestions when inside a math codeblock. Will base suggestions on variables in current codeblock, as well as mathjs functions and constants if enabled below (Disabling requires restart to take effect)')
+			.setName('Provide auto-complete suggestions')
+			.setDesc('Enable auto-complete suggestions when inside a math codeblock. Will base suggestions on variables in current codeblock, as well as mathjs functions and constants if enabled below (disabling requires restart to take effect)')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.provideSuggestions)
 				.onChange(async (value) => {
@@ -148,7 +148,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 		new Setting(containerEl)
-			.setName('Include Functions and Constants in Suggestions')
+			.setName('Include functions and constants in suggestions')
 			.setDesc('Auto-complete suggestions will include mathjs functions, constants, and physical constants.')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.suggestionsIncludeMathjsSymbols)
@@ -157,7 +157,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));	
 		new Setting(containerEl)
-			.setName('Enable Greek Character Auto-Complete')
+			.setName('Enable greek character auto-complete')
 			.setDesc('Auto-complete suggestions for Greek characters by typing ":" and then greek letter name (e.g. `:alpha`).')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableGreekAutoComplete)
@@ -168,10 +168,10 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			
 		new Setting(containerEl)
 			.setHeading()
-			.setName('Styling Settings');			
+			.setName('Styling settings');			
 
 		new Setting(containerEl)
-			.setName('Result Indicator')
+			.setName('Result indicator')
 			.setDesc('String to show preceeding the calculation result')
 			.addText(text => text
 				.setPlaceholder('" → "')
@@ -192,7 +192,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				}));	
 
 		new Setting(containerEl)
-			.setName('Hide Result on Lines without Result Annotation')
+			.setName('Hide result on lines without result annotation')
 			.setDesc('If a math block uses result annotation (`=>`) on any line, hide the results for lines that are not annotated as a result. If off, results of non-annotated lines will be shown in faint text color.')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.hideLinesWithoutMarkupWhenEmitting)
@@ -206,7 +206,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 		resultAnnotationMarkupDesc.append('Result Annotation markup (`=>`) is used to indicate which line is the result of the calculation. It can be used on any line, and can be used multiple times in a single block. If used, the result of the last line with the markup will be shown in the result column. If not used, the result of the last line will be shown in the result column.');
 		
 		new Setting(containerEl)
-			.setName('Hide Result Annotation Markup in Input')
+			.setName('Hide result annotation markup in input')
 			.setDesc('Result Annotation markup (`=>`) will be hidden in the input when rendering the math block')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.hideEmitterMarkupInInput)
@@ -219,10 +219,10 @@ export class NumeralsSettingTab extends PluginSettingTab {
 		// Dropdown for number formatting locale setting
 		new Setting(containerEl)
 			.setHeading()
-			.setName("Number and Currency Formatting");
+			.setName("Number and currency formatting");
 
 		new Setting(containerEl)
-			.setName('Rendered Number Format')
+			.setName('Rendered number format')
 			.setDesc(htmlToElements(`Choose how to format numbers in the results.<br>`
 				+ `<b>System Formatted:</b> Use your local system settings for number formatting (Currently <code>${navigator.language}</code>)<br>`
 				+ `<b>Fixed:</b> No thousands seperator and full precision.<br>`
@@ -282,7 +282,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 					.setName('Custom currency mapping')
 					.setDesc('Specify a custom currency. Note that this may be used for custom mapping of `$` and `¥`. Requires Obsidian reload to take effect')
 					.addText(text => { text
-						.setPlaceholder('symbol')
+						.setPlaceholder('Symbol')
 						.setValue(this.plugin.settings.customCurrencySymbol?.symbol ?? "")
 						.onChange(async (value) => {
 							if(
@@ -312,7 +312,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 						currencySymbolInput = text;
 					})
 					.addText(text => { text
-						.setPlaceholder('code')				
+						.setPlaceholder('Code')				
 						.setValue(this.plugin.settings.customCurrencySymbol?.currency ?? "")
 						.onChange(async (value) => {
 							if(
@@ -381,10 +381,10 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			
 		new Setting(containerEl)
 		.setHeading()
-		.setName('Obsidian Integration');	
+		.setName('Obsidian integration');	
 
 		new Setting(containerEl)
-			.setName('Always Process All Frontmatter')
+			.setName('Always process all frontmatter')
 			.setDesc(htmlToElements(`Always process all frontmatter values and make them available as variables in <code>\`math\`</code> blocks<br>`
 				+ `<br><b><i>Note:</i></b> To process frontmatter values on a per file and/or per property basis, set a value for the <code>\`numerals\`</code> property in a file's frontmatter.`
 				+ ` Supported values are:<ul><li><code>all</code></li><li>specific property to process</li><li>a list/array of properties to process</li></ul><br>`))
@@ -398,10 +398,10 @@ export class NumeralsSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setHeading()
-			.setName('Inline Numerals');
+			.setName('Inline numerals');
 
 		new Setting(containerEl)
-			.setName('Enable Inline Numerals')
+			.setName('Enable inline numerals')
 			.setDesc(htmlToElements(
 				`Evaluate math expressions in inline code when prefixed with a trigger string.<br>`
 				+ `For example: <code>#: 3ft in inches</code> renders as the result, `
@@ -415,7 +415,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Result-Only Trigger')
+			.setName('Result-only trigger')
 			.setDesc(htmlToElements(
 				`Prefix for inline code that shows only the result.<br>`
 				+ `Example: <code>#: 3 + 2</code> renders as <b>5</b>`
@@ -429,7 +429,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Equation Trigger')
+			.setName('Equation trigger')
 			.setDesc(htmlToElements(
 				`Prefix for inline code that shows input and result.<br>`
 				+ `Example: <code>#=: 3 + 2</code> renders as <b>3 + 2 = 5</b>`
@@ -443,7 +443,7 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Equation Separator')
+			.setName('Equation separator')
 			.setDesc('String shown between the expression and result in equation mode')
 			.addText(text => text
 				.setPlaceholder(' = ')
