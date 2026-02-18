@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Added
+- Settings tab icon (`calculator`) for upcoming Obsidian settings tab icon feature.
+- `AGENTS.md` with project conventions for AI coding assistants (conventional commits, atomic commits, CHANGELOG maintenance).
+- `eslint-plugin-obsidianmd` with recommended ruleset for Obsidian plugin best practices.
+- `npm run lint` script.
+
+### Changed
+- Migrated ESLint from legacy `.eslintrc` to flat config (`eslint.config.mjs`, ESLint v9).
+- Moved `ARCHITECTURE.md` to `doc/ARCHITECTURE.md` and cleaned up: removed line counts and other volatile details.
+
+### Removed
+- Deleted `REFACTOR_REVIEW.md` and `RENDER_REFACTOR.md` (one-time planning documents, no longer needed).
+
 ## [1.9.0] - 2026-02-18
 ### Added
 - **Inline Calculations** ([#5](https://github.com/gtg922r/obsidian-numerals/issues/5)): Evaluate math expressions directly in inline code using trigger prefixes. Works in both Live Preview and Reading mode.

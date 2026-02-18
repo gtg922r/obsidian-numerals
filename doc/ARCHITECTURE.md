@@ -1,0 +1,280 @@
+# Numerals Plugin Architecture
+
+## Overview
+
+Numerals is an Obsidian plugin that transforms `math` code blocks into interactive calculators with support for units, currency, variables, and mathematical functions. It leverages [mathjs](https://mathjs.org/) for evaluation and provides multiple rendering styles (Plain, TeX, Syntax Highlighting).
+
+## File Structure
+
+```
+src/
+├── main.ts                        # Plugin entry point and lifecycle
+├── settings.ts                    # Settings UI and configuration
+├── numerals.types.ts              # Type definitions, enums, NumeralsError
+├── mathjsUtilities.ts             # Mathjs symbol definitions
+├── NumeralsSuggestor.ts           # Auto-complete functionality
+├── numeralsUtilities.ts           # Barrel re-export (backwards compat)
+│
+├── inline/                        # Inline math evaluation
+│   ├── index.ts                   # Barrel exports
+│   ├── inlineParser.ts            # Trigger detection and expression parsing
+│   ├── inlineEvaluator.ts         # Single-expression mathjs evaluation
+│   ├── inlinePostProcessor.ts     # Markdown post-processor (Reading mode)
+│   └── inlineLivePreview.ts       # CM6 ViewPlugin (Live Preview mode)
+│
+├── processing/                    # Expression processing pipeline
+│   ├── scope.ts                   # Frontmatter/Dataview scope resolution
+│   ├── preprocessor.ts            # Directive parsing and text transforms
+│   └── evaluator.ts               # Mathjs expression evaluation
+│
+├── rendering/                     # Output generation
+│   ├── orchestrator.ts            # Block processing → DOM orchestration
+│   ├── linePreparation.ts         # Line data extraction and cleaning
+│   └── displayUtils.ts            # TeX currency, formatting, DOM helpers
+│
+└── renderers/                     # Strategy Pattern renderers
+    ├── index.ts                   # Barrel exports
+    ├── ILineRenderer.ts           # Renderer interface
+    ├── BaseLineRenderer.ts        # Shared logic (renderFormattedResult)
+    ├── PlainRenderer.ts           # Plain text rendering
+    ├── TeXRenderer.ts             # TeX/MathJax rendering
+    ├── SyntaxHighlightRenderer.ts # Syntax-highlighted rendering
+    └── RendererFactory.ts         # Singleton-cached factory
+```
+
+### Module Responsibilities
+
+| Module | Purpose |
+|--------|--------|
+| **main.ts** | Plugin lifecycle, code block registration, currency setup |
+| **settings.ts** | Settings tab UI, configuration options |
+| **numerals.types.ts** | Enums, interfaces, DTOs |
+| **mathjsUtilities.ts** | Mathjs function/constant definitions |
+| **NumeralsSuggestor.ts** | Editor suggestions for variables/functions |
+| **numeralsUtilities.ts** | Barrel re-export for backwards compatibility |
+| **inline/inlineParser.ts** | Trigger detection and expression extraction |
+| **inline/inlineEvaluator.ts** | Single-expression evaluation with scope cloning |
+| **inline/inlinePostProcessor.ts** | Markdown post-processor for Reading mode |
+| **inline/inlineLivePreview.ts** | CM6 ViewPlugin for Live Preview mode |
+| **processing/scope.ts** | Frontmatter + Dataview scope building |
+| **processing/preprocessor.ts** | Directive detection and text substitution |
+| **processing/evaluator.ts** | Per-line mathjs evaluation with `__prev`/`__total` |
+| **rendering/orchestrator.ts** | End-to-end block processing and DOM rendering |
+| **rendering/linePreparation.ts** | Builds `LineRenderData` from raw evaluation results |
+| **rendering/displayUtils.ts** | TeX transforms, locale formatting, DOM helpers |
+| **renderers/*** | Strategy Pattern renderer implementations |
+
+## Architecture Diagram
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                       Obsidian Plugin API                        │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    NumeralsPlugin (main.ts)                       │
+│  • Plugin lifecycle (onload / onunload)                           │
+│  • Registers code block processors (math, math-tex, etc.)        │
+│  • Registers inline post-processor + CM6 extension               │
+│  • Mathjs currency setup                                         │
+│  • WeakMap deduplication (prevents double rendering)              │
+│  • Event listeners on MarkdownRenderChild (not Plugin)           │
+│  • Scope cache cleared in onunload()                             │
+└────┬──────┬──────────────┬───────────────┬───────────────────────┘
+     │      │              │               │
+     │ ┌────┘     ┌───────┘               └──────────┐
+     │ ▼          ▼                                   ▼
+     │ Settings  Suggestor                        Types/Enums
+     │                                            NumeralsError
+     │
+     ▼
+   Code Block Pipeline (rendering/orchestrator.ts)
+```
+
+## Processing Pipeline
+
+Entry point: `processAndRenderNumeralsBlockFromSource()` in `rendering/orchestrator.ts`
+
+```
+1. PREPROCESSING (processing/preprocessor.ts)
+   • Split source into lines
+   • Identify emitter lines (=>) and insertion lines (@[...])
+   • Replace directives (@sum/@total → __total, @prev → __prev)
+   • Apply currency/thousands separator replacements
+   • Output: rawRows[], processedSource, blockInfo
+        │
+        ▼
+2. SCOPE PREPARATION (processing/scope.ts)
+   • Load frontmatter variables into scope
+   • Process Dataview metadata (if available)
+   • Add page-global variables ($ prefix) from scopeCache
+   • Evaluate frontmatter expressions through mathjs
+        │
+        ▼
+3. EVALUATION (processing/evaluator.ts)
+   • For each line: set __prev, calculate __total, evaluate, store result
+   • Handle errors (break on first error)
+   • Output: EvaluationResult { results[], inputs[], errorMsg }
+        │
+        ▼
+4. SIDE EFFECTS (rendering/orchestrator.ts)
+   • Write @[variable::result] values back to the editor
+   • Deferred via setTimeout(0) to avoid rendering conflicts
+        │
+        ▼
+5. RENDERING (rendering/ + renderers/)
+   • For each line: prepareLineData() → renderer.renderLine()
+   • RendererFactory selects cached singleton by style
+   • If error: renderError() appends formatted error display
+```
+
+## Inline Numerals Pipeline
+
+Inline Numerals evaluates expressions in inline code spans (e.g., `` `#: 3+2` ``). Two rendering paths ensure it works everywhere:
+
+1. **Reading mode** — `registerMarkdownPostProcessor` walks rendered `<code>` elements
+2. **Live Preview** — CM6 `ViewPlugin` walks the Lezer syntax tree for `inline-code` nodes
+
+Both paths share the same core logic (`inlineParser.ts` + `inlineEvaluator.ts`).
+
+### Key inline design decisions
+
+- **Dual rendering paths**: Post-processor (Reading) + ViewPlugin (Live Preview) share parser + evaluator
+- **Cursor guard** (Live Preview): Widget is removed when cursor enters the code span, revealing raw source for editing
+- **Scope cloning**: Inline expressions cannot write back to the shared scope
+- **No multi-line features**: No @sum/@total/@prev — those are block concepts
+- **No side effects**: No @[variable::result] insertion
+- **Source mode**: ViewPlugin checks `editorLivePreviewField` and is a no-op in Source mode
+
+## Key Design Decisions
+
+### Module Split
+
+The original `numeralsUtilities.ts` was split into focused modules under `processing/` and `rendering/`. The original file remains as a **barrel re-export module** so existing imports are not broken.
+
+**New code should import directly from the specific modules**, not from `numeralsUtilities.ts`.
+
+### Strategy Pattern (Renderers)
+
+Rendering uses the Strategy Pattern:
+
+- **`ILineRenderer`** — interface with `renderLine(container, lineData, context)`
+- **`BaseLineRenderer`** — abstract base class with shared formatting and element creation
+- **`PlainRenderer`**, **`TeXRenderer`**, **`SyntaxHighlightRenderer`** — concrete implementations
+- **`RendererFactory`** — returns singleton-cached renderer instances (renderers are stateless)
+
+Adding a new render style requires only a new renderer class and a factory entry.
+
+### Event Listener Lifecycle
+
+Event listeners for metadata changes are registered on a **`MarkdownRenderChild`** scoped to each code block, not on the Plugin instance. This ensures listeners are automatically cleaned up when a block leaves the DOM.
+
+### Double Rendering Prevention
+
+A **`WeakMap<HTMLElement, string>`** on the plugin instance tracks already-rendered containers. If a container is seen again with the same source, the handler returns early. The `WeakMap` allows garbage collection when containers are removed from the DOM.
+
+### Performance
+
+- **Pre-compiled regexes**: Currency TeX replacements and subscript matching compiled once at module level
+- **Module-level constants**: Mathjs symbol list allocated once as `readonly`
+- **Singleton renderers**: `RendererFactory` caches one instance per style
+- **Scope caching**: Global variables cached per page to avoid re-evaluation
+- **Suggestion caching**: Auto-complete suggestions cached with debounce
+
+## Data Structures
+
+Defined in `numerals.types.ts`:
+
+| Type | Purpose |
+|------|--------|
+| `NumeralsError` | Custom error class for evaluation errors |
+| `ProcessedBlock` | Output of preprocessing: `rawRows`, `processedSource`, `blockInfo` |
+| `EvaluationResult` | Output of evaluation: `results[]`, `inputs[]`, `errorMsg`, `errorInput` |
+| `LineRenderData` | Per-line rendering data: index, raw/processed input, result, metadata flags, comment |
+| `RenderContext` | Rendering configuration: style, settings, number format, preprocessors |
+| `StringReplaceMap` | Pattern replacement: `regex` + `replaceStr` |
+| `NumeralsScope` | Variable scope (extends `Map`) |
+| `numeralsBlockInfo` | Block metadata: emitter lines, insertion lines, hidden rows, etc. |
+
+## Variable Scoping
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Global Level (scopeCache: Map<filepath, NumeralsScope>)     │
+│ • Variables prefixed with $ from frontmatter                 │
+│ • Variables prefixed with $ from any math block on page     │
+└──────────────────────────┬───────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────┐
+│ Block Level (scope: NumeralsScope extends Map)              │
+│ • Frontmatter variables (based on 'numerals:' property)     │
+│ • Variables assigned in current block                        │
+│ • Magic variables: __prev, __total                           │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Inline Level (cloned scope, read-only)                      │
+│ • Global variables ($ prefix from scopeCache)               │
+│ • Frontmatter variables                                      │
+│ • Cannot write back to shared scope                          │
+│ • No __prev, __total (single expression only)                │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Metadata Integration
+
+Handled in `processing/scope.ts`:
+
+1. **Obsidian Frontmatter**: `app.metadataCache.getFileCache()`
+2. **Dataview** (optional): `getAPI().page(filepath)`
+3. **Page Globals**: `scopeCache.get(filepath)`
+
+Combined with priority: `{...frontmatter, ...dataview, ...globals}`
+
+## Extension Points
+
+### Adding New Render Styles
+
+1. Add enum value to `NumeralsRenderStyle` in `numerals.types.ts`
+2. Create a new renderer class extending `BaseLineRenderer` in `renderers/`
+3. Register it in `RendererFactory.createRenderer()`
+4. Add CSS class mapping in `numeralsRenderStyleClasses` (in `rendering/orchestrator.ts`)
+5. Add styles in `styles.css`
+
+### Adding New Directives
+
+1. Detect in `preProcessBlockForNumeralsDirectives()` in `processing/preprocessor.ts`
+2. Transform to magic variable or process directly
+3. Handle magic variable in `evaluateMathFromSourceStrings()` in `processing/evaluator.ts`
+
+### Adding Settings
+
+1. Update `NumeralsSettings` interface in `numerals.types.ts`
+2. Update `DEFAULT_SETTINGS` in `numerals.types.ts`
+3. Add UI in `NumeralsSettingTab.display()` in `settings.ts`
+4. Use setting in processing/rendering logic
+
+## Key Dependencies
+
+- **mathjs**: Expression evaluation, units, currency
+- **obsidian**: Plugin API, markdown processing, DOM rendering
+- **obsidian-dataview** (optional): Extended metadata support
+- **fast-deep-equal**: Settings comparison for reactive updates
+
+## Testing
+
+Tests use Jest. Run with `npm test`.
+
+| File | Coverage |
+|------|----------|
+| `tests/numeralsUtilities.test.ts` | Utility function tests |
+| `tests/linePreparation.test.ts` | Line data extraction |
+| `tests/orchestrator.test.ts` | Block orchestration |
+| `tests/renderers.test.ts` | Strategy Pattern renderers |
+| `tests/resultInsertion.test.ts` | Editor write-back side effects |
+| `tests/types.test.ts` | DTO and type validation |
+| `tests/inline.test.ts` | Inline parser and evaluator |
+| `tests/inlinePostProcessor.test.ts` | Inline integration pipeline (Reading mode) |
+| `tests/inlineLivePreview.test.ts` | InlineNumeralsWidget DOM output and equality |

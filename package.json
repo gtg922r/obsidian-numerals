@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "node scripts/esbuild.config.mjs",
 		"test": "jest",
+		"lint": "eslint src/",
 		"build": "tsc -noEmit -skipLibCheck && node scripts/esbuild.config.mjs production",
 		"release": "node scripts/release-production.mjs",
 		"release:beta": "node scripts/release-beta.mjs",
@@ -19,19 +20,24 @@
 	"author": "RyanC",
 	"license": "UNLICENSED",
 	"devDependencies": {
+		"@eslint/js": "^9.39.2",
+		"@eslint/json": "^0.14.0",
 		"@types/jest": "^29.5.2",
 		"@types/node": "^16.11.6",
-		"@typescript-eslint/eslint-plugin": "5.29.0",
-		"@typescript-eslint/parser": "5.29.0",
+		"@typescript-eslint/eslint-plugin": "^8.56.0",
+		"@typescript-eslint/parser": "^8.56.0",
 		"builtin-modules": "3.3.0",
 		"esbuild": "0.25.0",
+		"eslint": "^9.39.2",
+		"eslint-plugin-obsidianmd": "^0.1.9",
 		"jest": "^29.5.0",
 		"jest-environment-jsdom": "^29.7.0",
 		"obsidian": "^1.8.7",
 		"obsidian-dataview": "^0.5.56",
 		"ts-jest": "^29.1.0",
 		"tslib": "2.4.0",
-		"typescript": "~5.4"
+		"typescript": "~5.4",
+		"typescript-eslint": "^8.56.0"
 	},
 	"dependencies": {
 		"fast-deep-equal": "^3.1.3",
