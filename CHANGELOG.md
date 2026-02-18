@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Changed
 - Migrated ESLint from legacy `.eslintrc` to flat config (`eslint.config.mjs`, ESLint v9).
+- Updated dev dependencies: tslib 2.4→2.8, esbuild 0.25→0.27, @types/node 16→22, TypeScript 5.4→5.8.
 - Moved `ARCHITECTURE.md` to `doc/ARCHITECTURE.md` and cleaned up: removed line counts and other volatile details.
 
 ### Removed
