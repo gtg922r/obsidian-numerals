@@ -10,6 +10,7 @@ import {
     setIcon,
  } from "obsidian";
 import { getMathJsSymbols } from "./mathjsUtilities";
+import { findInlineNumeralsContext } from "./inlineSuggestorUtils";
 
 const greekSymbols = [
     { trigger: 'alpha', symbol: 'α' },
@@ -55,8 +56,17 @@ const numeralsDirectives = [
 	"@Prev",
 ]
 
+/** Whether the suggestor was triggered from a math code block or an inline code span. */
+type SuggestorTriggerContext = 'block' | 'inline';
+
 export class NumeralsSuggestor extends EditorSuggest<string> {
 	plugin: NumeralsPlugin;
+
+	/**
+	 * Tracks whether the current trigger came from a math code block or
+	 * an inline Numerals code span. Set in `onTrigger`, read in `getSuggestions`.
+	 */
+	private triggerContext: SuggestorTriggerContext = 'block';
 	
 	/**
 	 * Time of last suggestion list update
@@ -92,22 +102,56 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		// check if the next 4 characters after the last ``` are math or MATH
 		const isMathBlock = currentFileToCursor.slice(indexOfLastCodeBlockStart + 3, indexOfLastCodeBlockStart + 7).toLowerCase() === 'math';
 
-		if (!isMathBlock) {
+		if (isMathBlock) {
+			// Math code block context
+			this.triggerContext = 'block';
+
+			const currentLineToCursor = editor.getLine(cursor.line).slice(0, cursor.ch);
+			const currentLineLastWordStart = currentLineToCursor.search(/[:]?[$@\w\u0370-\u03FF]+$/);
+			if (currentLineLastWordStart === -1) {
+				return null;
+			}
+
+			return {
+				start: {line: cursor.line, ch: currentLineLastWordStart},
+				end: cursor,
+				query: currentLineToCursor.slice(currentLineLastWordStart)
+			};
+		}
+
+		// Not in a math block — check for inline Numerals code span
+		if (!this.plugin.settings.enableInlineNumerals || !this.plugin.settings.provideInlineSuggestions) {
 			return null;
 		}
 
-		// Get last word in current line
-		const currentLineToCursor = editor.getLine(cursor.line).slice(0, cursor.ch);
-		const currentLineLastWordStart = currentLineToCursor.search(/[:]?[$@\w\u0370-\u03FF]+$/);
-		// if there is no word, return null
-		if (currentLineLastWordStart === -1) {
+		const currentLine = editor.getLine(cursor.line);
+		const inlineCtx = findInlineNumeralsContext(
+			currentLine,
+			cursor.ch,
+			this.plugin.settings.inlineResultTrigger,
+			this.plugin.settings.inlineEquationTrigger,
+		);
+
+		if (!inlineCtx) {
 			return null;
 		}
+
+		this.triggerContext = 'inline';
+
+		// Find the last word in the expression up to cursor (same regex as block mode)
+		const exprToCursor = inlineCtx.expressionUpToCursor;
+		const lastWordStart = exprToCursor.search(/[:]?[$@\w\u0370-\u03FF]+$/);
+		if (lastWordStart === -1) {
+			return null;
+		}
+
+		// Convert expression-relative offset to line-relative column
+		const wordStartCh = inlineCtx.expressionStartCh + lastWordStart;
 
 		return {
-			start: {line: cursor.line, ch: currentLineLastWordStart},
+			start: {line: cursor.line, ch: wordStartCh},
 			end: cursor,
-			query: currentLineToCursor.slice(currentLineLastWordStart)
+			query: exprToCursor.slice(lastWordStart)
 		};
 	}
 
@@ -116,23 +160,30 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 
 		// check if the last suggestion list update was less than 200ms ago
 		if (performance.now() - this.lastSuggestionListUpdate > 200) {
-			const currentFileToStart = context.editor.getRange({line: 0, ch: 0}, context.start);
-			const indexOfLastCodeBlockStart = currentFileToStart.lastIndexOf('```');
-	
-			if (indexOfLastCodeBlockStart > -1) {
-				//technically there is a risk we aren't in a math block, but we shouldn't have been triggered if we weren't
-				const lastCodeBlockStart = currentFileToStart.lastIndexOf('```');
-				const lastCodeBlockStartToCursor = currentFileToStart.slice(lastCodeBlockStart);
-	
-				// Return all variable names in the last codeblock up to the cursor
-				const matches = lastCodeBlockStartToCursor.matchAll(/^\s*(\S*?)\s*=.*$/gm);
-				// create array from first capture group of matches and remove duplicates
-				localSymbols = [...new Set(Array.from(matches, (match) => 'v|' + match[1]))];
+			if (this.triggerContext === 'block') {
+				// Block context: scan the current code block for local variable definitions
+				const currentFileToStart = context.editor.getRange({line: 0, ch: 0}, context.start);
+				const indexOfLastCodeBlockStart = currentFileToStart.lastIndexOf('```');
+		
+				if (indexOfLastCodeBlockStart > -1) {
+					const lastCodeBlockStartToCursor = currentFileToStart.slice(indexOfLastCodeBlockStart);
+		
+					// Return all variable names in the last codeblock up to the cursor
+					const matches = lastCodeBlockStartToCursor.matchAll(/^\s*(\S*?)\s*=.*$/gm);
+					// create array from first capture group of matches and remove duplicates
+					localSymbols = [...new Set(Array.from(matches, (match) => 'v|' + match[1]))];
+				}
+			} else {
+				// Inline context: use page-level scope cache for note-global variables
+				const cachedScope = this.plugin.scopeCache.get(context.file.path);
+				if (cachedScope) {
+					const scopeSymbols = Array.from(cachedScope.keys()).map(symbol => 'v|' + symbol);
+					localSymbols = [...new Set(scopeSymbols)];
+				}
 			}
 
 			// combine frontmatter and dataview metadata, with dataview metadata taking precedence
 			const metadata = getMetadataForFileAtPath(context.file.path, this.app, this.plugin.scopeCache);
-
 
 			if (metadata) {
 				const { scope: frontmatterSymbols } = getScopeFromFrontmatter(metadata, undefined, this.plugin.settings.forceProcessAllFrontmatter, undefined, true);
@@ -162,11 +213,14 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			suggestions = local_suggestions;
 		}
 
-		suggestions = suggestions.concat(
-			numeralsDirectives
-				.filter((value) => value.slice(0,-1).toLowerCase().startsWith(query_lower, 0))
-				.map((value) => 'm|' + value)
-			);
+		// Directives only apply in block context (they don't work in inline expressions)
+		if (this.triggerContext === 'block') {
+			suggestions = suggestions.concat(
+				numeralsDirectives
+					.filter((value) => value.slice(0,-1).toLowerCase().startsWith(query_lower, 0))
+					.map((value) => 'm|' + value)
+				);
+		}
 
 		// TODO MOVE THESE UP INTO THE CACHED portion. also trigger isn't the right name
 		if (this.plugin.settings.enableGreekAutoComplete) {

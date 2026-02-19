@@ -68,6 +68,7 @@ export interface NumeralsSettings {
 	inlineResultTrigger: string;
 	inlineEquationTrigger: string;
 	inlineEquationSeparator: string;
+	provideInlineSuggestions: boolean;
 }
 
 
@@ -91,6 +92,7 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	inlineResultTrigger:				"#:",
 	inlineEquationTrigger:				"#=:",
 	inlineEquationSeparator:				" = ",
+	provideInlineSuggestions:			true,
 }
 
 
@@ -198,13 +200,13 @@ export interface StringReplaceMap {
  * Inline Numerals Types
  ****************************************************/
 
-/** Mode of inline numerals rendering */
+/** Mode of Inline Numerals rendering */
 export enum InlineNumeralsMode {
 	ResultOnly = "ResultOnly",
 	Equation = "Equation",
 }
 
-/** Parsed inline numerals expression */
+/** Parsed Inline Numerals expression */
 export interface InlineNumeralsExpression {
 	/** The rendering mode determined by which trigger was matched */
 	mode: InlineNumeralsMode;

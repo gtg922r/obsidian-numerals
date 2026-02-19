@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. The format 
 ## [Unreleased]
 
 ### Added
+- Auto-complete suggestions now work inside inline Numerals code spans (e.g. `` `#: `` and `` `#=: ``), providing variable names, functions, constants, and Greek letter completions — the same suggestions available in math code blocks.
 - Settings tab icon (`calculator`) for upcoming Obsidian settings tab icon feature.
 - `AGENTS.md` with project conventions for AI coding assistants (conventional commits, atomic commits, CHANGELOG maintenance).
 - `eslint-plugin-obsidianmd` with recommended ruleset for Obsidian plugin best practices.
