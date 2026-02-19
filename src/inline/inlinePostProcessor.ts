@@ -56,6 +56,14 @@ function renderInlineError(
 }
 
 /**
+ * Mutable reference to the previous inline evaluation result.
+ * Used to thread `@prev` values through sequential inline expression processing.
+ */
+interface PrevResultRef {
+	value: unknown;
+}
+
+/**
  * Process a single <code> element for inline Numerals.
  *
  * @param codeEl - The inline <code> element
@@ -63,13 +71,15 @@ function renderInlineError(
  * @param settings - Plugin settings
  * @param numberFormat - Number formatting options
  * @param preProcessors - String replacement preprocessors
+ * @param prevResultRef - Mutable ref tracking the previous inline result (for @prev support)
  */
 function processInlineCodeElement(
 	codeEl: HTMLElement,
 	scope: NumeralsScope,
 	settings: NumeralsSettings,
 	numberFormat: mathjsFormat,
-	preProcessors: StringReplaceMap[]
+	preProcessors: StringReplaceMap[],
+	prevResultRef: PrevResultRef
 ): void {
 	const text = codeEl.innerText;
 
@@ -86,10 +96,13 @@ function processInlineCodeElement(
 			parsed.expression,
 			scope,
 			numberFormat,
-			preProcessors
+			preProcessors,
+			prevResultRef.value
 		);
-		renderInlineResult(codeEl, parsed.expression, parsed.mode, result, settings);
+		prevResultRef.value = result.raw;
+		renderInlineResult(codeEl, parsed.expression, parsed.mode, result.formatted, settings);
 	} catch {
+		prevResultRef.value = undefined;
 		renderInlineError(codeEl, parsed.expression);
 	}
 }
@@ -156,9 +169,14 @@ export function createInlineNumeralsPostProcessor(
 
 		const numberFormat = getNumberFormat();
 
-		// Process each code element
+		// Track previous result for @prev support.
+		// Resets per section (post-processor call), so @prev only chains
+		// within the same rendered section.
+		const prevResultRef: PrevResultRef = { value: undefined };
+
+		// Process each code element in DOM order (which matches source order)
 		for (const codeEl of Array.from(codeElements)) {
-			processInlineCodeElement(codeEl, scope, settings, numberFormat, preProcessors);
+			processInlineCodeElement(codeEl, scope, settings, numberFormat, preProcessors, prevResultRef);
 		}
 	};
 }

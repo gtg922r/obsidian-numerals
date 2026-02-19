@@ -62,14 +62,14 @@ function simulateInlinePipeline(
 	);
 	if (!parsed) return null;
 
-	const result = evaluateInlineExpression(
+	const { formatted } = evaluateInlineExpression(
 		parsed.expression,
 		scope,
 		undefined,
 		preProcessors
 	);
 
-	return { mode: parsed.mode, expression: parsed.expression, result };
+	return { mode: parsed.mode, expression: parsed.expression, result: formatted };
 }
 
 // ---------------------------------------------------------------------------

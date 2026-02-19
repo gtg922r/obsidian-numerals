@@ -194,6 +194,14 @@ export class InlineNumeralsWidget extends WidgetType {
  * Shared context for decoration building
  ****************************************************/
 
+/**
+ * Mutable reference to the previous inline evaluation result.
+ * Used to thread `@prev` values through sequential decoration building.
+ */
+interface PrevResultRef {
+	value: unknown;
+}
+
 /** Read-only context assembled once per decoration pass. */
 interface DecorationContext {
 	settings: NumeralsSettings;
@@ -263,6 +271,10 @@ function createDecorationContext(
  * Attempt to build a Decoration for a single inline-code syntax node.
  * Returns the decoration Range if the node matches a trigger and the
  * cursor is not inside, otherwise returns `null`.
+ *
+ * When the expression evaluates successfully, `prevResultRef.value` is
+ * updated with the raw result so the next inline expression can use `@prev`.
+ * On error, `prevResultRef.value` is set to `undefined`.
  */
 function tryBuildNodeDecoration(
 	nodeFrom: number,
@@ -271,6 +283,7 @@ function tryBuildNodeDecoration(
 	doc: { sliceString(from: number, to: number): string },
 	selection: EditorSelection,
 	ctx: DecorationContext,
+	prevResultRef: PrevResultRef,
 ): Range<Decoration> | null {
 	const text = doc.sliceString(nodeFrom, nodeTo);
 
@@ -290,15 +303,19 @@ function tryBuildNodeDecoration(
 	let resultText: string;
 	let isError = false;
 	try {
-		resultText = evaluateInlineExpression(
+		const result = evaluateInlineExpression(
 			parsed.expression,
 			ctx.getScope(),
 			ctx.numberFormat,
 			ctx.preProcessors,
+			prevResultRef.value,
 		);
+		resultText = result.formatted;
+		prevResultRef.value = result.raw;
 	} catch {
 		resultText = '';
 		isError = true;
+		prevResultRef.value = undefined;
 	}
 
 	const formattingClasses = getFormattingClasses(tokenProps);
@@ -331,6 +348,9 @@ function buildDecorations(
 	const { state } = view;
 	const selection = state.selection;
 
+	// Fresh @prev chain for each full build — walks document order
+	const prevResultRef: PrevResultRef = { value: undefined };
+
 	for (const { from, to } of view.visibleRanges) {
 		syntaxTree(state).iterate({
 			from,
@@ -347,6 +367,7 @@ function buildDecorations(
 				const deco = tryBuildNodeDecoration(
 					node.from, node.to, tokenProps,
 					state.doc, selection, ctx,
+					prevResultRef,
 				);
 				if (deco) decorations.push(deco);
 			},
@@ -381,6 +402,10 @@ function updateDecorations(
 	const selection = state.selection;
 	let updated = existing;
 
+	// Fresh @prev chain — re-evaluates all visible expressions in document order
+	// so that changes to earlier expressions propagate to @prev-dependent ones.
+	const prevResultRef: PrevResultRef = { value: undefined };
+
 	for (const { from, to } of view.visibleRanges) {
 		syntaxTree(state).iterate({
 			from,
@@ -403,6 +428,7 @@ function updateDecorations(
 				const deco = tryBuildNodeDecoration(
 					node.from, node.to, tokenProps,
 					state.doc, selection, ctx,
+					prevResultRef,
 				);
 
 				if (deco && !hasExisting) {

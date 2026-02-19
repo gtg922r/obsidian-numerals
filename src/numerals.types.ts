@@ -213,3 +213,11 @@ export interface InlineNumeralsExpression {
 	/** The raw expression text after the trigger prefix */
 	expression: string;
 }
+
+/** Result of evaluating an inline Numerals expression */
+export interface InlineEvaluationResult {
+	/** The formatted result string for display */
+	formatted: string;
+	/** The raw mathjs result value (for chaining via @prev) */
+	raw: unknown;
+}
