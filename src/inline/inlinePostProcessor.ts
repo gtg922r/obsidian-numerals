@@ -5,7 +5,7 @@ import { parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 
 /**
- * Render an inline numerals result into a container element.
+ * Render an Inline Numerals result into a container element.
  *
  * Replaces the content of the given element with the evaluated result.
  * In Equation mode, shows "input = result". In ResultOnly mode, shows just the result.

@@ -120,7 +120,7 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		}
 
 		// Not in a math block — check for inline Numerals code span
-		if (!this.plugin.settings.enableInlineNumerals) {
+		if (!this.plugin.settings.enableInlineNumerals || !this.plugin.settings.provideInlineSuggestions) {
 			return null;
 		}
 

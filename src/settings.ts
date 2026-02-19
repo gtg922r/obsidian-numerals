@@ -402,10 +402,10 @@ export class NumeralsSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setHeading()
-			.setName('Inline numerals');
+			.setName('Inline Numerals'); // eslint-disable-line obsidianmd/ui/sentence-case
 
 		new Setting(containerEl)
-			.setName('Enable inline numerals')
+			.setName('Enable Inline Numerals') // eslint-disable-line obsidianmd/ui/sentence-case
 			.setDesc(htmlToElements(
 				`Evaluate math expressions in inline code when prefixed with a trigger string.<br>`
 				+ `For example: <code>#: 3ft in inches</code> renders as the result, `
@@ -454,6 +454,16 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.inlineEquationSeparator)
 				.onChange(async (value) => {
 					this.plugin.settings.inlineEquationSeparator = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Provide auto-complete suggestions in Inline Numerals') // eslint-disable-line obsidianmd/ui/sentence-case
+			.setDesc('Show auto-complete suggestions for variables, functions, and constants when editing Inline Numerals expressions') // eslint-disable-line obsidianmd/ui/sentence-case
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.provideInlineSuggestions)
+				.onChange(async (value) => {
+					this.plugin.settings.provideInlineSuggestions = value;
 					await this.plugin.saveSettings();
 				}));
 	}
