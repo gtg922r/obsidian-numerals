@@ -220,4 +220,6 @@ export interface InlineEvaluationResult {
 	formatted: string;
 	/** The raw mathjs result value (for chaining via @prev) */
 	raw: unknown;
+	/** Note-global ($-prefixed) variables that were assigned during evaluation */
+	globals: Map<string, unknown>;
 }

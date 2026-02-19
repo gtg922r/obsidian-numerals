@@ -476,3 +476,78 @@ describe('evaluateInlineExpression — @prev directive', () => {
 		});
 	});
 });
+
+// ---------------------------------------------------------------------------
+// evaluateInlineExpression — note-global ($) variable extraction
+// ---------------------------------------------------------------------------
+describe('evaluateInlineExpression — note-global extraction', () => {
+	const emptyScope = new NumeralsScope();
+	const defaultFormat: mathjsFormat = undefined;
+	const noPreProcessors: StringReplaceMap[] = [];
+
+	describe('$-prefixed assignments are extracted', () => {
+		it('should return $x in globals when expression is "$x = 10"', () => {
+			const result = evaluateInlineExpression('$x = 10', emptyScope, defaultFormat, noPreProcessors);
+			expect(result.globals.size).toBe(1);
+			expect(result.globals.get('$x')).toBe(10);
+		});
+
+		it('should return $price with units', () => {
+			const result = evaluateInlineExpression('$price = 50 kg', emptyScope, defaultFormat, noPreProcessors);
+			expect(result.globals.size).toBe(1);
+			expect(result.globals.has('$price')).toBe(true);
+		});
+
+		it('should return $price with currency', () => {
+			const result = evaluateInlineExpression('$price = $100', emptyScope, defaultFormat, preProcessors);
+			expect(result.globals.has('$price')).toBe(true);
+		});
+
+		it('should return multiple globals from compound expression', () => {
+			// mathjs supports semicolons for multiple statements, but inline is single-expression.
+			// This test verifies only one global from a single assignment.
+			const result = evaluateInlineExpression('$y = 42', emptyScope, defaultFormat, noPreProcessors);
+			expect(result.globals.size).toBe(1);
+			expect(result.globals.get('$y')).toBe(42);
+		});
+	});
+
+	describe('non-$ assignments are NOT extracted', () => {
+		it('should return empty globals for "y = 10"', () => {
+			const result = evaluateInlineExpression('y = 10', emptyScope, defaultFormat, noPreProcessors);
+			expect(result.globals.size).toBe(0);
+		});
+
+		it('should return empty globals for simple arithmetic', () => {
+			const result = evaluateInlineExpression('3 + 2', emptyScope, defaultFormat, noPreProcessors);
+			expect(result.globals.size).toBe(0);
+		});
+	});
+
+	describe('globals with @prev', () => {
+		it('should extract $total when using @prev', () => {
+			const result = evaluateInlineExpression('$total = @prev * 2', emptyScope, defaultFormat, noPreProcessors, 50);
+			expect(result.globals.get('$total')).toBe(100);
+			expect(result.formatted).toBe('100');
+		});
+	});
+
+	describe('globals do not include unchanged scope entries', () => {
+		it('should not re-report $x if it was already in scope with same value', () => {
+			const scope = new NumeralsScope();
+			scope.set('$x', 10);
+			// Expression that reads $x but doesn't reassign it
+			const result = evaluateInlineExpression('$x + 5', scope, defaultFormat, noPreProcessors);
+			expect(result.globals.size).toBe(0);
+			expect(result.formatted).toBe('15');
+		});
+
+		it('should report $x if it was reassigned to a different value', () => {
+			const scope = new NumeralsScope();
+			scope.set('$x', 10);
+			const result = evaluateInlineExpression('$x = 20', scope, defaultFormat, noPreProcessors);
+			expect(result.globals.size).toBe(1);
+			expect(result.globals.get('$x')).toBe(20);
+		});
+	});
+});

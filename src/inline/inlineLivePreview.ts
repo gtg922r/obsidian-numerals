@@ -202,7 +202,7 @@ interface PrevResultRef {
 	value: unknown;
 }
 
-/** Read-only context assembled once per decoration pass. */
+/** Context assembled once per decoration pass. */
 interface DecorationContext {
 	settings: NumeralsSettings;
 	resultTrigger: string;
@@ -210,6 +210,8 @@ interface DecorationContext {
 	numberFormat: mathjsFormat | undefined;
 	preProcessors: StringReplaceMap[];
 	getScope: () => NumeralsScope;
+	scopeCache: Map<string, NumeralsScope>;
+	filePath: string;
 }
 
 /**
@@ -260,6 +262,8 @@ function createDecorationContext(
 		numberFormat: getNumberFormat(),
 		preProcessors,
 		getScope,
+		scopeCache,
+		filePath,
 	};
 }
 
@@ -303,15 +307,35 @@ function tryBuildNodeDecoration(
 	let resultText: string;
 	let isError = false;
 	try {
+		const scope = ctx.getScope();
 		const result = evaluateInlineExpression(
 			parsed.expression,
-			ctx.getScope(),
+			scope,
 			ctx.numberFormat,
 			ctx.preProcessors,
 			prevResultRef.value,
 		);
 		resultText = result.formatted;
 		prevResultRef.value = result.raw;
+
+		// Propagate $-prefixed globals for note-wide visibility
+		if (result.globals.size > 0) {
+			for (const [key, value] of result.globals) {
+				// Update shared scope for same-pass inline→inline visibility
+				scope.set(key, value);
+			}
+			// Write to scopeCache for cross-block visibility
+			if (ctx.filePath) {
+				let pageScope = ctx.scopeCache.get(ctx.filePath);
+				if (!pageScope) {
+					pageScope = new NumeralsScope();
+					ctx.scopeCache.set(ctx.filePath, pageScope);
+				}
+				for (const [key, value] of result.globals) {
+					pageScope.set(key, value);
+				}
+			}
+		}
 	} catch {
 		resultText = '';
 		isError = true;

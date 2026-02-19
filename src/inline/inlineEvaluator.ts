@@ -59,5 +59,14 @@ export function evaluateInlineExpression(
 		? math.format(result, numberFormat)
 		: math.format(result);
 
-	return { formatted, raw: result };
+	// Extract note-global ($-prefixed) variable assignments.
+	// Compare the local scope against the original to find new or changed $-keys.
+	const globals = new Map<string, unknown>();
+	for (const [key, value] of localScope.entries()) {
+		if (key.startsWith('$') && value !== scope.get(key)) {
+			globals.set(key, value);
+		}
+	}
+
+	return { formatted, raw: result, globals };
 }

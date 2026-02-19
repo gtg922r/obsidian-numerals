@@ -143,3 +143,89 @@ describe('inline numerals integration', () => {
 		});
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Note-global ($) variable chaining
+// ---------------------------------------------------------------------------
+describe('inline note-global ($) variable chaining', () => {
+
+	describe('globals extracted from inline evaluation', () => {
+		it('should return $x in globals when assigning $x = 10', () => {
+			const result = evaluateInlineExpression('$x = 10', new NumeralsScope(), undefined, []);
+			expect(result.globals.size).toBe(1);
+			expect(result.globals.get('$x')).toBe(10);
+		});
+
+		it('should return no globals for non-$ assignment', () => {
+			const result = evaluateInlineExpression('y = 10', new NumeralsScope(), undefined, []);
+			expect(result.globals.size).toBe(0);
+		});
+	});
+
+	describe('inline → inline chaining via shared scope', () => {
+		it('should allow second expression to use $x defined in first', () => {
+			// Simulate what the post-processor does: shared scope, sequential evaluation
+			const scope = new NumeralsScope();
+
+			// First expression defines $apples
+			const r1 = evaluateInlineExpression('$apples = 100', scope, undefined, []);
+			// Post-processor would inject globals into shared scope
+			for (const [k, v] of r1.globals) { scope.set(k, v); }
+
+			// Second expression uses $apples
+			const r2 = evaluateInlineExpression('$apples * 2', scope, undefined, []);
+			expect(r2.formatted).toBe('200');
+		});
+
+		it('should chain three globals sequentially', () => {
+			const scope = new NumeralsScope();
+
+			const r1 = evaluateInlineExpression('$a = 10', scope, undefined, []);
+			for (const [k, v] of r1.globals) { scope.set(k, v); }
+
+			const r2 = evaluateInlineExpression('$b = $a * 3', scope, undefined, []);
+			for (const [k, v] of r2.globals) { scope.set(k, v); }
+
+			const r3 = evaluateInlineExpression('$a + $b', scope, undefined, []);
+			expect(r3.formatted).toBe('40');
+		});
+	});
+
+	describe('scopeCache integration', () => {
+		it('should populate scopeCache when inline defines a global', () => {
+			const scopeCache = new Map<string, NumeralsScope>();
+			const scope = new NumeralsScope();
+
+			const result = evaluateInlineExpression('$price = 42', scope, undefined, []);
+			
+			// Simulate what the post-processor does after evaluation
+			if (result.globals.size > 0) {
+				const path = 'test.md';
+				let pageScope = scopeCache.get(path);
+				if (!pageScope) {
+					pageScope = new NumeralsScope();
+					scopeCache.set(path, pageScope);
+				}
+				for (const [k, v] of result.globals) {
+					pageScope.set(k, v);
+				}
+			}
+
+			expect(scopeCache.has('test.md')).toBe(true);
+			expect(scopeCache.get('test.md')?.get('$price')).toBe(42);
+		});
+	});
+
+	describe('$-global combined with @prev', () => {
+		it('should support $total = @prev pattern', () => {
+			const scope = new NumeralsScope();
+
+			const r1 = evaluateInlineExpression('100 * 1.2', scope, undefined, []);
+			const r2 = evaluateInlineExpression('$total = @prev * 1.08', scope, undefined, [], r1.raw);
+			
+			expect(r2.globals.has('$total')).toBe(true);
+			// 100 * 1.2 * 1.08 = 129.6
+			expect(r2.formatted).toContain('129.6');
+		});
+	});
+});

@@ -5,6 +5,26 @@ import { parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 
 /**
+ * Write `$`-prefixed globals to the shared scope cache.
+ * This makes inline-defined globals visible to subsequent code blocks
+ * and inline expressions in later sections.
+ */
+function addGlobalsToScopeCache(
+	scopeCache: Map<string, NumeralsScope>,
+	sourcePath: string,
+	globals: Map<string, unknown>
+): void {
+	let pageScope = scopeCache.get(sourcePath);
+	if (!pageScope) {
+		pageScope = new NumeralsScope();
+		scopeCache.set(sourcePath, pageScope);
+	}
+	for (const [key, value] of globals) {
+		pageScope.set(key, value);
+	}
+}
+
+/**
  * Render an Inline Numerals result into a container element.
  *
  * Replaces the content of the given element with the evaluated result.
@@ -66,12 +86,18 @@ interface PrevResultRef {
 /**
  * Process a single <code> element for inline Numerals.
  *
+ * After evaluation, any `$`-prefixed variable assignments are:
+ * 1. Written to the `scopeCache` for cross-section/cross-block visibility
+ * 2. Injected into the shared `scope` for same-section inline→inline visibility
+ *
  * @param codeEl - The inline <code> element
- * @param scope - The variable scope to evaluate against
+ * @param scope - The variable scope to evaluate against (also updated with globals)
  * @param settings - Plugin settings
  * @param numberFormat - Number formatting options
  * @param preProcessors - String replacement preprocessors
  * @param prevResultRef - Mutable ref tracking the previous inline result (for @prev support)
+ * @param scopeCache - Shared scope cache for note-global variables
+ * @param sourcePath - File path for scopeCache keying
  */
 function processInlineCodeElement(
 	codeEl: HTMLElement,
@@ -79,7 +105,9 @@ function processInlineCodeElement(
 	settings: NumeralsSettings,
 	numberFormat: mathjsFormat,
 	preProcessors: StringReplaceMap[],
-	prevResultRef: PrevResultRef
+	prevResultRef: PrevResultRef,
+	scopeCache: Map<string, NumeralsScope>,
+	sourcePath: string
 ): void {
 	const text = codeEl.innerText;
 
@@ -100,6 +128,17 @@ function processInlineCodeElement(
 			prevResultRef.value
 		);
 		prevResultRef.value = result.raw;
+
+		// Propagate $-prefixed globals for note-wide visibility
+		if (result.globals.size > 0) {
+			for (const [key, value] of result.globals) {
+				// Update shared scope for same-section inline→inline visibility
+				scope.set(key, value);
+			}
+			// Write to scopeCache for cross-section/cross-block visibility
+			addGlobalsToScopeCache(scopeCache, sourcePath, result.globals);
+		}
+
 		renderInlineResult(codeEl, parsed.expression, parsed.mode, result.formatted, settings);
 	} catch {
 		prevResultRef.value = undefined;
@@ -176,7 +215,7 @@ export function createInlineNumeralsPostProcessor(
 
 		// Process each code element in DOM order (which matches source order)
 		for (const codeEl of Array.from(codeElements)) {
-			processInlineCodeElement(codeEl, scope, settings, numberFormat, preProcessors, prevResultRef);
+			processInlineCodeElement(codeEl, scope, settings, numberFormat, preProcessors, prevResultRef, scopeCache, ctx.sourcePath);
 		}
 	};
 }
