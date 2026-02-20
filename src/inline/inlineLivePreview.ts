@@ -194,7 +194,15 @@ export class InlineNumeralsWidget extends WidgetType {
  * Shared context for decoration building
  ****************************************************/
 
-/** Read-only context assembled once per decoration pass. */
+/**
+ * Mutable reference to the previous inline evaluation result.
+ * Used to thread `@prev` values through sequential decoration building.
+ */
+interface PrevResultRef {
+	value: unknown;
+}
+
+/** Context assembled once per decoration pass. */
 interface DecorationContext {
 	settings: NumeralsSettings;
 	resultTrigger: string;
@@ -202,6 +210,8 @@ interface DecorationContext {
 	numberFormat: mathjsFormat | undefined;
 	preProcessors: StringReplaceMap[];
 	getScope: () => NumeralsScope;
+	scopeCache: Map<string, NumeralsScope>;
+	filePath: string;
 }
 
 /**
@@ -252,6 +262,8 @@ function createDecorationContext(
 		numberFormat: getNumberFormat(),
 		preProcessors,
 		getScope,
+		scopeCache,
+		filePath,
 	};
 }
 
@@ -263,6 +275,10 @@ function createDecorationContext(
  * Attempt to build a Decoration for a single inline-code syntax node.
  * Returns the decoration Range if the node matches a trigger and the
  * cursor is not inside, otherwise returns `null`.
+ *
+ * When the expression evaluates successfully, `prevResultRef.value` is
+ * updated with the raw result so the next inline expression can use `@prev`.
+ * On error, `prevResultRef.value` is set to `undefined`.
  */
 function tryBuildNodeDecoration(
 	nodeFrom: number,
@@ -271,6 +287,7 @@ function tryBuildNodeDecoration(
 	doc: { sliceString(from: number, to: number): string },
 	selection: EditorSelection,
 	ctx: DecorationContext,
+	prevResultRef: PrevResultRef,
 ): Range<Decoration> | null {
 	const text = doc.sliceString(nodeFrom, nodeTo);
 
@@ -290,15 +307,39 @@ function tryBuildNodeDecoration(
 	let resultText: string;
 	let isError = false;
 	try {
-		resultText = evaluateInlineExpression(
+		const scope = ctx.getScope();
+		const result = evaluateInlineExpression(
 			parsed.expression,
-			ctx.getScope(),
+			scope,
 			ctx.numberFormat,
 			ctx.preProcessors,
+			prevResultRef.value,
 		);
+		resultText = result.formatted;
+		prevResultRef.value = result.raw;
+
+		// Propagate $-prefixed globals for note-wide visibility
+		if (result.globals.size > 0) {
+			for (const [key, value] of result.globals) {
+				// Update shared scope for same-pass inline→inline visibility
+				scope.set(key, value);
+			}
+			// Write to scopeCache for cross-block visibility
+			if (ctx.filePath) {
+				let pageScope = ctx.scopeCache.get(ctx.filePath);
+				if (!pageScope) {
+					pageScope = new NumeralsScope();
+					ctx.scopeCache.set(ctx.filePath, pageScope);
+				}
+				for (const [key, value] of result.globals) {
+					pageScope.set(key, value);
+				}
+			}
+		}
 	} catch {
 		resultText = '';
 		isError = true;
+		prevResultRef.value = undefined;
 	}
 
 	const formattingClasses = getFormattingClasses(tokenProps);
@@ -331,6 +372,9 @@ function buildDecorations(
 	const { state } = view;
 	const selection = state.selection;
 
+	// Fresh @prev chain for each full build — walks document order
+	const prevResultRef: PrevResultRef = { value: undefined };
+
 	for (const { from, to } of view.visibleRanges) {
 		syntaxTree(state).iterate({
 			from,
@@ -347,6 +391,7 @@ function buildDecorations(
 				const deco = tryBuildNodeDecoration(
 					node.from, node.to, tokenProps,
 					state.doc, selection, ctx,
+					prevResultRef,
 				);
 				if (deco) decorations.push(deco);
 			},
@@ -381,6 +426,10 @@ function updateDecorations(
 	const selection = state.selection;
 	let updated = existing;
 
+	// Fresh @prev chain — re-evaluates all visible expressions in document order
+	// so that changes to earlier expressions propagate to @prev-dependent ones.
+	const prevResultRef: PrevResultRef = { value: undefined };
+
 	for (const { from, to } of view.visibleRanges) {
 		syntaxTree(state).iterate({
 			from,
@@ -403,6 +452,7 @@ function updateDecorations(
 				const deco = tryBuildNodeDecoration(
 					node.from, node.to, tokenProps,
 					state.doc, selection, ctx,
+					prevResultRef,
 				);
 
 				if (deco && !hasExisting) {
