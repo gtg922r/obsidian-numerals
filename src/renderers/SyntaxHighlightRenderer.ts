@@ -49,10 +49,31 @@ export class SyntaxHighlightRenderer extends BaseLineRenderer {
 	}
 
 	/**
+	 * Custom handler for mathjs toHTML() that preserves numeric literals.
+	 *
+	 * By default, mathjs toHTML() renders ConstantNode values using
+	 * math.format() which converts numbers >= 100,000 to scientific
+	 * notation (e.g. 226000 → "2.26e+5"). This handler overrides
+	 * that behavior to use fixed notation, keeping numbers human-readable.
+	 *
+	 * @see https://github.com/gtg922r/obsidian-numerals/issues/118
+	 * @private
+	 */
+	private static readonly toHtmlOptions = {
+		handler: (node: math.MathNode): string | undefined => {
+			if (node.type === 'ConstantNode' && typeof (node as math.ConstantNode).value === 'number') {
+				const formatted = math.format((node as math.ConstantNode).value, { notation: 'fixed' });
+				return `<span class="math-number">${formatted}</span>`;
+			}
+			return undefined; // default rendering for all other nodes
+		}
+	};
+
+	/**
 	 * Renders the input portion with syntax highlighting.
 	 *
 	 * Process:
-	 * 1. Parse input to HTML using mathjs
+	 * 1. Parse input to HTML using mathjs (with fixed-notation number handler)
 	 * 2. Replace sum magic variable with @sum directive
 	 * 3. Sanitize HTML to DOM
 	 * 4. Append to input element
@@ -65,8 +86,8 @@ export class SyntaxHighlightRenderer extends BaseLineRenderer {
 		inputElement: HTMLElement,
 		lineData: LineRenderData
 	): void {
-		// Convert input to highlighted HTML
-		const inputHtml = math.parse(lineData.processedInput).toHTML();
+		// Convert input to highlighted HTML, preserving numeric literals
+		const inputHtml = math.parse(lineData.processedInput).toHTML(SyntaxHighlightRenderer.toHtmlOptions);
 
 		// Replace magic sum variable with directive from raw input
 		const processedHtml = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(

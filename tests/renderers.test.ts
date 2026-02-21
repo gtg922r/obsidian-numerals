@@ -262,6 +262,50 @@ describe('Renderer Implementations', () => {
 			expect(comment).not.toBeNull();
 			expect(comment?.textContent).toBe('# calculation');
 		});
+
+		it('should render large numbers without scientific notation (issue #118)', () => {
+			const lineData: LineRenderData = {
+				index: 0,
+				rawInput: 'Budget = 226000',
+				processedInput: 'Budget = 226000',
+				result: 226000,
+				isEmpty: false,
+				isEmitter: false,
+				isHidden: false,
+				comment: null,
+			};
+
+			renderer.renderLine(container, lineData, context);
+
+			const input = container.querySelector('.numerals-input');
+			expect(input).not.toBeNull();
+
+			// The input should contain "226000", not "2.26e+5"
+			const inputHtml = input?.innerHTML || '';
+			expect(inputHtml).toContain('226000');
+			expect(inputHtml).not.toContain('e+');
+		});
+
+		it('should render numbers >= 100000 in fixed notation in input', () => {
+			const lineData: LineRenderData = {
+				index: 0,
+				rawInput: 'x = 100000 + 200000',
+				processedInput: 'x = 100000 + 200000',
+				result: 300000,
+				isEmpty: false,
+				isEmitter: false,
+				isHidden: false,
+				comment: null,
+			};
+
+			renderer.renderLine(container, lineData, context);
+
+			const input = container.querySelector('.numerals-input');
+			const inputHtml = input?.innerHTML || '';
+			expect(inputHtml).toContain('100000');
+			expect(inputHtml).toContain('200000');
+			expect(inputHtml).not.toContain('e+');
+		});
 	});
 
 	describe('TeXRenderer', () => {
