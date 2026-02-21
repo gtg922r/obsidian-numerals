@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Fixed
+- Syntax highlighting renderer no longer displays numbers ≥100,000 in scientific notation (e.g. `226000` was shown as `2.26e+5`). (Closes #118)
+
 ### Added
 - `@prev` directive support in inline Numerals expressions — reference the result of the previous inline expression (e.g. `` `#: 100 * 1.2` `` followed by `` `#: @prev * 1.08` ``). Works in both Live Preview and Reading mode. (Closes #129)
 - Note-global `$` variables in inline expressions — `$`-prefixed assignments (e.g. `` `#: $apples = 100` ``) are now shared across all math blocks and inline expressions on the same page, matching code block behavior. Auto-complete picks them up automatically.
