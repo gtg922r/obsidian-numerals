@@ -69,6 +69,8 @@ export interface NumeralsSettings {
 	inlineEquationTrigger: string;
 	inlineEquationSeparator: string;
 	provideInlineSuggestions: boolean;
+	// Cross-note reference settings
+	enableCrossNoteReferences: boolean;
 }
 
 
@@ -93,6 +95,8 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	inlineEquationTrigger:				"#=:",
 	inlineEquationSeparator:				" = ",
 	provideInlineSuggestions:			true,
+	// Cross-note reference settings
+	enableCrossNoteReferences:			true,
 }
 
 

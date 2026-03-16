@@ -401,6 +401,19 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			));
 
 		new Setting(containerEl)
+			.setName('Enable cross-note references')
+			.setDesc(htmlToElements(
+				`Reference values from other notes using <code>[[note]].property</code> syntax in math blocks and inline expressions.<br>`
+				+ `The referenced note must have the property available via frontmatter or Dataview metadata.`
+			))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enableCrossNoteReferences)
+				.onChange(async (value) => {
+					this.plugin.settings.enableCrossNoteReferences = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
 			.setHeading()
 			.setName('Inline Numerals'); // eslint-disable-line obsidianmd/ui/sentence-case
 
