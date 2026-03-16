@@ -250,3 +250,39 @@ describe('formatValueForInsertion', () => {
 		expect(result).toBe('100.5');
 	});
 });
+
+describe('CROSS_NOTE_TRIGGER_REGEX (suggestor)', () => {
+	// Import the regex from the suggestor context is not easy since it's
+	// private to the module, so we test the pattern directly here.
+	const CROSS_NOTE_TRIGGER_REGEX = /\[\[([^\]]+)\]\]\.([\w$\u00C0-\u02AF\u0370-\u03FF]*)$/;
+
+	it('matches [[note]]. at end of string (empty property)', () => {
+		const match = 'x = [[my note]].'.match(CROSS_NOTE_TRIGGER_REGEX);
+		expect(match).not.toBeNull();
+		expect(match![1]).toBe('my note');
+		expect(match![2]).toBe('');
+	});
+
+	it('matches [[note]].partial at end of string', () => {
+		const match = 'x = [[my note]].pri'.match(CROSS_NOTE_TRIGGER_REGEX);
+		expect(match).not.toBeNull();
+		expect(match![1]).toBe('my note');
+		expect(match![2]).toBe('pri');
+	});
+
+	it('does not match [[note]] without dot', () => {
+		const match = 'x = [[my note]]'.match(CROSS_NOTE_TRIGGER_REGEX);
+		expect(match).toBeNull();
+	});
+
+	it('does not match in middle of expression', () => {
+		const match = '[[note]].price + 2'.match(CROSS_NOTE_TRIGGER_REGEX);
+		expect(match).toBeNull();
+	});
+
+	it('matches with $-prefixed property', () => {
+		const match = '[[note]].$ta'.match(CROSS_NOTE_TRIGGER_REGEX);
+		expect(match).not.toBeNull();
+		expect(match![2]).toBe('$ta');
+	});
+});
