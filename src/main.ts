@@ -114,7 +114,7 @@ export default class NumeralsPlugin extends Plugin {
 
 		let metadata = getMetadataForFileAtPath(ctx.sourcePath, this.app, this.scopeCache);
 
-		const scope = processAndRenderNumeralsBlockFromSource(
+		let blockResult = processAndRenderNumeralsBlockFromSource(
 			el,
 			source,
 			ctx,
@@ -126,23 +126,32 @@ export default class NumeralsPlugin extends Plugin {
 			this.app
 		);
 
-		addGlobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
+		addGlobalsFromScopeToPageCache(ctx.sourcePath, blockResult.scope, this.scopeCache);
+
+		// Track paths of cross-note referenced files for re-render detection
+		let referencedPaths = blockResult.referencedPaths;
 
 		// TS-1 Fix: Register events on the MarkdownRenderChild, not on the Plugin.
 		// This ensures listeners are cleaned up when the render child is unloaded
 		// (e.g., when navigating away), preventing unbounded listener accumulation.
 		const numeralsBlockChild = new MarkdownRenderChild(el);
 
-		const numeralsBlockCallback = (_callbackType: unknown, _file: unknown, _oldPath?: unknown) => {
+		const numeralsBlockCallback = (_callbackType: unknown, file: unknown, _oldPath?: unknown) => {
+			// Check if the changed file is a cross-note referenced file
+			const changedPath = (file && typeof file === 'object' && 'path' in file)
+				? (file as { path: string }).path
+				: undefined;
+			const isReferencedFileChange = changedPath && referencedPaths.includes(changedPath);
+
 			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath, this.app, this.scopeCache);
-			if (equal(currentMetadata, metadata)) {
+			if (!isReferencedFileChange && equal(currentMetadata, metadata)) {
 				return;
 			}
 			metadata = currentMetadata;
 
 			el.empty();
 
-			const scope = processAndRenderNumeralsBlockFromSource(
+			blockResult = processAndRenderNumeralsBlockFromSource(
 				el,
 				source,
 				ctx,
@@ -154,7 +163,8 @@ export default class NumeralsPlugin extends Plugin {
 				this.app
 			);
 
-			addGlobalsFromScopeToPageCache(ctx.sourcePath, scope, this.scopeCache);
+			addGlobalsFromScopeToPageCache(ctx.sourcePath, blockResult.scope, this.scopeCache);
+			referencedPaths = blockResult.referencedPaths;
 		};
 
 		const dataviewAPI = getAPI(); // eslint-disable-line @typescript-eslint/no-unsafe-assignment -- dataview API untyped

@@ -69,6 +69,8 @@ export interface NumeralsSettings {
 	inlineEquationTrigger: string;
 	inlineEquationSeparator: string;
 	provideInlineSuggestions: boolean;
+	// Cross-note reference settings
+	enableCrossNoteReferences: boolean;
 }
 
 
@@ -93,6 +95,8 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	inlineEquationTrigger:				"#=:",
 	inlineEquationSeparator:				" = ",
 	provideInlineSuggestions:			true,
+	// Cross-note reference settings
+	enableCrossNoteReferences:			true,
 }
 
 
@@ -107,6 +111,17 @@ export interface CurrencyType {
 export type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
 
 export class NumeralsScope extends Map<string, unknown>{}
+
+/**
+ * Result of processing and rendering a Numerals block.
+ * Returned by processAndRenderNumeralsBlockFromSource.
+ */
+export interface NumeralsBlockResult {
+	/** The mathjs scope after evaluation (contains all defined variables) */
+	scope: NumeralsScope;
+	/** File paths referenced via [[note]].property syntax (for re-render tracking) */
+	referencedPaths: string[];
+}
 
 export type numeralsBlockInfo = {
 	emitter_lines: number[];
