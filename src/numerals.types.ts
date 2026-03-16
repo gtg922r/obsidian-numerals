@@ -112,6 +112,17 @@ export type mathjsFormat = number | math.FormatOptions | ((item: any) => string)
 
 export class NumeralsScope extends Map<string, unknown>{}
 
+/**
+ * Result of processing and rendering a Numerals block.
+ * Returned by processAndRenderNumeralsBlockFromSource.
+ */
+export interface NumeralsBlockResult {
+	/** The mathjs scope after evaluation (contains all defined variables) */
+	scope: NumeralsScope;
+	/** File paths referenced via [[note]].property syntax (for re-render tracking) */
+	referencedPaths: string[];
+}
+
 export type numeralsBlockInfo = {
 	emitter_lines: number[];
 	insertion_lines: number[];

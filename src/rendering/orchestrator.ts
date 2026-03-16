@@ -1,10 +1,11 @@
 import * as math from 'mathjs';
 import { App, Editor, MarkdownPostProcessorContext, MarkdownView, WorkspaceLeaf } from 'obsidian';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, mathjsFormat, NumeralsScope, StringReplaceMap, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, NumeralsError, NumeralsBlockResult, mathjsFormat, NumeralsScope, StringReplaceMap, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
 import { RendererFactory } from '../renderers';
 import { getScopeFromFrontmatter } from '../processing/scope';
 import { preProcessBlockForNumeralsDirectives } from '../processing/preprocessor';
 import { evaluateMathFromSourceStrings } from '../processing/evaluator';
+import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
 import { prepareLineData } from './linePreparation';
 
 /**
@@ -215,13 +216,34 @@ export function processAndRenderNumeralsBlockFromSource(
 	numberFormat: mathjsFormat,
 	preProcessors: StringReplaceMap[],
 	app: App
-): NumeralsScope {
+): NumeralsBlockResult {
 
 	// Phase 1: Determine render style
 	const blockRenderStyle: NumeralsRenderStyle = type ?? settings.defaultRenderStyle;
 
-	// Phase 2: Preprocess
-	const processedBlock = preProcessBlockForNumeralsDirectives(source, preProcessors);
+	// Phase 1.5: Resolve cross-note references (before other preprocessing)
+	const crossNoteResult = resolveCrossNoteReferences(
+		source, app, ctx.sourcePath, settings, preProcessors
+	);
+
+	if (crossNoteResult.error) {
+		// Apply block styles even for error display
+		applyBlockStyles({ el, settings, blockRenderStyle });
+
+		const errorResult: EvaluationResult = {
+			results: [],
+			inputs: [],
+			errorMsg: new NumeralsError('Note Reference Error', crossNoteResult.error),
+			errorInput: source.split('\n').find(line =>
+				line.includes('[[') && line.includes(']].')) ?? source.split('\n')[0] ?? '',
+		};
+		renderError(el, errorResult);
+
+		return { scope: new NumeralsScope(), referencedPaths: crossNoteResult.referencedPaths };
+	}
+
+	// Phase 2: Preprocess (using cross-note resolved source)
+	const processedBlock = preProcessBlockForNumeralsDirectives(crossNoteResult.resolvedSource, preProcessors);
 
 	// Phase 3: Apply block styles
 	applyBlockStyles({
@@ -265,13 +287,14 @@ export function processAndRenderNumeralsBlockFromSource(
 
 	renderNumeralsBlock(el, evaluationResult, processedBlock, renderContext);
 
-	// Phase 8: Render warnings (frontmatter errors, etc.)
-	for (const warning of warnings) {
+	// Phase 8: Render warnings (frontmatter errors, cross-note resolution warnings, etc.)
+	const allWarnings = [...crossNoteResult.warnings, ...warnings];
+	for (const warning of allWarnings) {
 		const warningEl = el.createEl('div', { cls: 'numerals-warning' });
 		warningEl.createEl('span', { cls: 'numerals-warning-message', text: warning });
 	}
 
-	return scope;
+	return { scope, referencedPaths: crossNoteResult.referencedPaths };
 
 }
 
