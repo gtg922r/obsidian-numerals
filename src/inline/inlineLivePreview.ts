@@ -212,6 +212,7 @@ interface DecorationContext {
 	getScope: () => NumeralsScope;
 	scopeCache: Map<string, NumeralsScope>;
 	filePath: string;
+	app: App;
 }
 
 /**
@@ -264,6 +265,7 @@ function createDecorationContext(
 		getScope,
 		scopeCache,
 		filePath,
+		app,
 	};
 }
 
@@ -314,6 +316,9 @@ function tryBuildNodeDecoration(
 			ctx.numberFormat,
 			ctx.preProcessors,
 			prevResultRef.value,
+			ctx.app,
+			ctx.filePath,
+			ctx.settings,
 		);
 		resultText = result.formatted;
 		prevResultRef.value = result.raw;

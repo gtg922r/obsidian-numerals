@@ -107,7 +107,8 @@ function processInlineCodeElement(
 	preProcessors: StringReplaceMap[],
 	prevResultRef: PrevResultRef,
 	scopeCache: Map<string, NumeralsScope>,
-	sourcePath: string
+	sourcePath: string,
+	app: App
 ): void {
 	const text = codeEl.innerText;
 
@@ -125,7 +126,10 @@ function processInlineCodeElement(
 			scope,
 			numberFormat,
 			preProcessors,
-			prevResultRef.value
+			prevResultRef.value,
+			app,
+			sourcePath,
+			settings,
 		);
 		prevResultRef.value = result.raw;
 
@@ -215,7 +219,7 @@ export function createInlineNumeralsPostProcessor(
 
 		// Process each code element in DOM order (which matches source order)
 		for (const codeEl of Array.from(codeElements)) {
-			processInlineCodeElement(codeEl, scope, settings, numberFormat, preProcessors, prevResultRef, scopeCache, ctx.sourcePath);
+			processInlineCodeElement(codeEl, scope, settings, numberFormat, preProcessors, prevResultRef, scopeCache, ctx.sourcePath, app);
 		}
 	};
 }
