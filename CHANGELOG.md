@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Changed
+- License changed from "All Rights Reserved" to MIT.
+
 ### Fixed
 - Syntax highlighting renderer no longer displays numbers ≥100,000 in scientific notation (e.g. `226000` was shown as `2.26e+5`). (Closes #118)
 
