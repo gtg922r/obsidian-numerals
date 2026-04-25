@@ -34,8 +34,9 @@ import {
 } from '@codemirror/view';
 import { EditorSelection, Range } from '@codemirror/state';
 import { syntaxTree, tokenClassNodeProp } from '@codemirror/language';
-import { App } from 'obsidian';
+import { App, EventRef } from 'obsidian';
 import { editorInfoField, editorLivePreviewField } from 'obsidian';
+import { getAPI } from 'obsidian-dataview';
 import {
 	NumeralsSettings,
 	NumeralsScope,
@@ -213,6 +214,7 @@ interface DecorationContext {
 	scopeCache: Map<string, NumeralsScope>;
 	filePath: string;
 	app: App;
+	referencedPaths: Set<string>;
 }
 
 /**
@@ -266,6 +268,7 @@ function createDecorationContext(
 		scopeCache,
 		filePath,
 		app,
+		referencedPaths: new Set<string>(),
 	};
 }
 
@@ -322,6 +325,9 @@ function tryBuildNodeDecoration(
 		);
 		resultText = result.formatted;
 		prevResultRef.value = result.raw;
+		for (const path of result.referencedPaths) {
+			ctx.referencedPaths.add(path);
+		}
 
 		// Propagate $-prefixed globals for note-wide visibility
 		if (result.globals.size > 0) {
@@ -512,6 +518,8 @@ export function createInlineLivePreviewExtension(
 	return ViewPlugin.fromClass(
 		class InlineNumeralsViewPlugin {
 			decorations: DecorationSet;
+			private referencedPaths = new Set<string>();
+			private metadataEventRef: EventRef | null = null;
 
 			constructor(view: EditorView) {
 				try {
@@ -524,6 +532,7 @@ export function createInlineLivePreviewExtension(
 					return;
 				}
 				this.decorations = this.build(view) ?? Decoration.none;
+				this.registerMetadataListener(view);
 			}
 
 			update(update: ViewUpdate): void {
@@ -548,6 +557,7 @@ export function createInlineLivePreviewExtension(
 						this.decorations = updateDecorations(
 							this.decorations, update.view, ctx,
 						);
+						this.referencedPaths = ctx.referencedPaths;
 					}
 				} else if (update.selectionSet) {
 					// Cursor moved — only need to update cursor guard
@@ -557,6 +567,7 @@ export function createInlineLivePreviewExtension(
 						this.decorations = updateDecorations(
 							this.decorations, update.view, ctx,
 						);
+						this.referencedPaths = ctx.referencedPaths;
 					}
 				} else if (update.viewportChanged) {
 					// Viewport changed (scroll) — full rebuild of visible ranges
@@ -568,7 +579,41 @@ export function createInlineLivePreviewExtension(
 			private build(view: EditorView): DecorationSet | null {
 				const ctx = this.createContext(view);
 				if (!ctx) return null;
-				return buildDecorations(view, ctx);
+				const decorations = buildDecorations(view, ctx);
+				this.referencedPaths = ctx.referencedPaths;
+				return decorations;
+			}
+
+			/** Rebuild inline decorations when a referenced note's metadata changes. */
+			private registerMetadataListener(view: EditorView): void {
+				const rerenderIfReferencedFileChanged = (_callbackType: unknown, file: unknown) => {
+					const changedPath = (file && typeof file === 'object' && 'path' in file)
+						? (file as { path: string }).path
+						: undefined;
+
+					if (!changedPath || !this.referencedPaths.has(changedPath)) {
+						return;
+					}
+
+					this.decorations = this.build(view) ?? Decoration.none;
+					view.dispatch({ effects: [] });
+				};
+
+				const dataviewAPI = getAPI(); // eslint-disable-line @typescript-eslint/no-unsafe-assignment -- dataview API untyped
+				this.metadataEventRef = dataviewAPI
+					? app.metadataCache.on(
+						// @ts-expect-error: dataview custom event not in Obsidian types
+						"dataview:metadata-change",
+						rerenderIfReferencedFileChanged
+					)
+					: app.metadataCache.on("changed", rerenderIfReferencedFileChanged);
+			}
+
+			destroy(): void {
+				if (this.metadataEventRef) {
+					app.metadataCache.offref(this.metadataEventRef);
+					this.metadataEventRef = null;
+				}
 			}
 
 			/** Create a decoration context from current plugin state. */

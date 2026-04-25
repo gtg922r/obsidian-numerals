@@ -3,7 +3,7 @@ import { getAPI } from 'obsidian-dataview';
 import * as math from 'mathjs';
 import { NumeralsSettings, StringReplaceMap } from '../numerals.types';
 import { replaceStringsInTextFromMap } from './preprocessor';
-import { removeCanonicalizedDuplicates } from './scope';
+import { getScopeFromFrontmatter, removeCanonicalizedDuplicates } from './scope';
 
 /**
  * Result of resolving cross-note references in a source string.
@@ -281,6 +281,18 @@ export function resolveSingleReference(
 	// For simple (non-nested) access, evaluate the top-level value directly
 	if (pathParts.length === 1) {
 		const rawValue = available[topLevelKey];
+		const { scope } = getScopeFromFrontmatter(
+			available,
+			undefined,
+			true,
+			preProcessors,
+		);
+
+		if (scope.has(topLevelKey)) {
+			const formatted = formatValueForInsertion(scope.get(topLevelKey));
+			return { value: formatted, referencedPath: file.path };
+		}
+
 		const { result, error } = evaluateMetadataValue(rawValue, preProcessors);
 
 		if (result === undefined || error) {

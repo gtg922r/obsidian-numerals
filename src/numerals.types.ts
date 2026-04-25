@@ -237,4 +237,6 @@ export interface InlineEvaluationResult {
 	raw: unknown;
 	/** Note-global ($-prefixed) variables that were assigned during evaluation */
 	globals: Map<string, unknown>;
+	/** File paths referenced via [[note]].property syntax */
+	referencedPaths: string[];
 }

@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file. The format 
 - Setting to enable/disable cross-note references (enabled by default).
 
 ### Fixed
+- Inline cross-note references now rerender when referenced note metadata changes.
+- Cross-note references now evaluate dependent metadata values using the referenced note's Numerals scope.
 - Syntax highlighting renderer no longer displays numbers ≥100,000 in scientific notation (e.g. `226000` was shown as `2.26e+5`). (Closes #118)
 
 ### Added

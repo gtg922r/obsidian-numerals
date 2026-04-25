@@ -36,6 +36,7 @@ export function evaluateInlineExpression(
 ): InlineEvaluationResult {
 	// Resolve cross-note references before preprocessing
 	let processed = expression;
+	let referencedPaths: string[] = [];
 	if (app && sourcePath && settings) {
 		const crossNoteResult = resolveCrossNoteReferences(
 			processed, app, sourcePath, settings, preProcessors
@@ -44,6 +45,7 @@ export function evaluateInlineExpression(
 			throw new Error(crossNoteResult.error);
 		}
 		processed = crossNoteResult.resolvedSource;
+		referencedPaths = crossNoteResult.referencedPaths;
 	}
 
 	// Apply preprocessors (currency symbols, thousands separators)
@@ -87,5 +89,5 @@ export function evaluateInlineExpression(
 		}
 	}
 
-	return { formatted, raw: result, globals };
+	return { formatted, raw: result, globals, referencedPaths };
 }

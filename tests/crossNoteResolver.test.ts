@@ -4,8 +4,10 @@ import {
 	filterAvailableProperties,
 	evaluateMetadataValue,
 	formatValueForInsertion,
+	resolveSingleReference,
 	CROSS_NOTE_REF_REGEX,
 } from '../src/processing/crossNoteResolver';
+import { NumeralsSettings } from '../src/numerals.types';
 
 describe('CROSS_NOTE_REF_REGEX', () => {
 	beforeEach(() => {
@@ -231,6 +233,43 @@ describe('evaluateMetadataValue', () => {
 		];
 		const { result } = evaluateMetadataValue('1,000', preProcessors);
 		expect(result).toBe(1000);
+	});
+});
+
+describe('resolveSingleReference', () => {
+	const settings = {
+		enableCrossNoteReferences: true,
+		forceProcessAllFrontmatter: false,
+	} as NumeralsSettings;
+
+	it('evaluates referenced metadata values using the referenced note scope', () => {
+		const file = { path: 'materials.md' };
+		const app = {
+			metadataCache: {
+				getFirstLinkpathDest: jest.fn(() => file),
+				getFileCache: jest.fn(() => ({
+					frontmatter: {
+						numerals: 'all',
+						price: 10,
+						total: 'price * 2',
+					},
+				})),
+			},
+		};
+
+		const result = resolveSingleReference(
+			{
+				fullMatch: '[[materials]].total',
+				noteName: 'materials',
+				propertyPath: 'total',
+			},
+			app as any,
+			'source.md',
+			settings,
+			[],
+		);
+
+		expect(result).toEqual({ value: '20', referencedPath: 'materials.md' });
 	});
 });
 

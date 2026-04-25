@@ -342,7 +342,7 @@ export default class NumeralsPlugin extends Plugin {
 			}
 		}
 
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadData) as NumeralsSettings;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadData);
 	}
 
 	async saveSettings() {
