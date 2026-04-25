@@ -21,3 +21,6 @@ data.json
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
 package-lock.json
+
+# Codex local project skills and agent state
+.codex/
