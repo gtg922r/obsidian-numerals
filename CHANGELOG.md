@@ -6,12 +6,15 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Changed
 - License changed from "All Rights Reserved" to MIT.
+- Updated mathjs from `^14.5.3` to `^15.2.0` to include the April 2026 security fixes.
+- Mathjs auto-complete suggestions now include newly supported functions and constants from the upgraded mathjs version.
 
 ### Fixed
 - Tiny non-zero numbers in system and locale-formatted results no longer render as `0` or `-0`; values with more than five leading decimal zeroes now use scientific notation to avoid overly wide output. (Closes #121)
 - Syntax highlighting renderer no longer displays numbers ≥100,000 in scientific notation (e.g. `226000` was shown as `2.26e+5`). (Closes #118)
 
 ### Added
+- `npm run symbols:check` and `npm run symbols:update` for keeping mathjs auto-complete suggestions in sync with the installed mathjs documentation metadata.
 - `@prev` directive support in inline Numerals expressions — reference the result of the previous inline expression (e.g. `` `#: 100 * 1.2` `` followed by `` `#: @prev * 1.08` ``). Works in both Live Preview and Reading mode. (Closes #129)
 - Note-global `$` variables in inline expressions — `$`-prefixed assignments (e.g. `` `#: $apples = 100` ``) are now shared across all math blocks and inline expressions on the same page, matching code block behavior. Auto-complete picks them up automatically.
 - Auto-complete suggestions now work inside inline Numerals code spans (e.g. `` `#: `` and `` `#=: ``), providing variable names, functions, constants, and Greek letter completions — the same suggestions available in math code blocks.
@@ -36,6 +39,7 @@ All notable changes to this project will be documented in this file. The format 
 - Moved `ARCHITECTURE.md` to `doc/ARCHITECTURE.md` and cleaned up: removed line counts and other volatile details.
 
 ### Removed
+- Deleted the one-off `utilities/mathjs_symbol_parse.ipynb` notebook in favor of the maintained TypeScript symbol update workflow.
 - Deleted `REFACTOR_REVIEW.md` and `RENDER_REFACTOR.md` (one-time planning documents, no longer needed).
 
 ## [1.9.0] - 2026-02-18
