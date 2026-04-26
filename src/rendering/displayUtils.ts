@@ -1,5 +1,8 @@
 import { finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
+import * as math from 'mathjs';
 import { CurrencyType } from '../numerals.types';
+
+const MAX_FIXED_FORMAT_LEADING_DECIMAL_ZEROES = 5;
 
 /**
  * Regular expression for matching variables with subscript notation 
@@ -137,11 +140,30 @@ export function getLocaleFormatter(
 	locale: Intl.LocalesArgument | undefined = undefined,
 	options: Intl.NumberFormatOptions | undefined = undefined
 ): (value: number) => string {
-	if (locale === undefined) {
-		return (value: number): string => value.toLocaleString();
-	} else if (options === undefined) {
-		return (value: number): string => value.toLocaleString(locale);
-	} else {
-		return (value: number): string => value.toLocaleString(locale, options);
+	const defaultFormatter = new Intl.NumberFormat(locale, options);
+	const preciseFormatter = new Intl.NumberFormat(locale, {
+		...options,
+		maximumSignificantDigits: Math.max(options?.maximumSignificantDigits ?? 0, 15),
+	});
+	const zero = defaultFormatter.format(0);
+	const negativeZero = defaultFormatter.format(-0);
+
+	return (value: number): string => {
+		const formattedValue = defaultFormatter.format(value);
+		if (Number.isFinite(value) && value !== 0 && (formattedValue === zero || formattedValue === negativeZero)) {
+			if (countLeadingDecimalZeroes(value) > MAX_FIXED_FORMAT_LEADING_DECIMAL_ZEROES) {
+				return math.format(value, { notation: 'exponential' });
+			}
+			return preciseFormatter.format(value);
+		}
+		return formattedValue;
+	};
+}
+
+function countLeadingDecimalZeroes(value: number): number {
+	const absValue = Math.abs(value);
+	if (absValue >= 1 || absValue === 0) {
+		return 0;
 	}
+	return Math.max(0, -Math.floor(Math.log10(absValue)) - 1);
 }

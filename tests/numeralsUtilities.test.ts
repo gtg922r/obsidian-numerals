@@ -153,6 +153,45 @@ describe("numeralsUtilities: applyBlockStyles()", () => {
 	});
 });
 
+describe("numeralsUtilities: getLocaleFormatter()", () => {
+	it("uses scientific notation when preserving very tiny non-zero numbers", () => {
+		const format = getLocaleFormatter("en-US");
+
+		expect(format(1e-10)).toBe("1e-10");
+		expect(format(-3.593e-9)).toBe("-3.593e-9");
+	});
+
+	it("uses locale fixed-decimal formatting when preserving readable tiny non-zero numbers", () => {
+		const format = getLocaleFormatter("de-DE");
+
+		expect(format(0.00001)).toBe("0,00001");
+		expect(format(0.000001)).toBe("0,000001");
+	});
+
+	it("switches from fixed decimal to scientific notation after five leading decimal zeroes", () => {
+		const format = getLocaleFormatter("en-US");
+
+		expect(format(0.000001)).toBe("0.000001");
+		expect(format(0.0000001)).toBe("1e-7");
+	});
+
+	it("preserves normal locale rounding when formatted output is already non-zero", () => {
+		const format = getLocaleFormatter("en-US");
+
+		expect(format(0.0009)).toBe("0.001");
+		expect(format(1234.5678)).toBe("1,234.568");
+	});
+
+	it("does not apply tiny-number fallback to zero or non-finite values", () => {
+		const format = getLocaleFormatter("en-US");
+
+		expect(format(0)).toBe("0");
+		expect(format(-0)).toBe("-0");
+		expect(format(Number.POSITIVE_INFINITY)).toBe("∞");
+		expect(format(Number.NaN)).toBe("NaN");
+	});
+});
+
 describe("numeralsUtilities: preProcessBlockForNumeralsDirectives", () => {
 	it("Correctly processes block with emitters and insertion directives", () => {
 		const sampleBlock = `# comment 1

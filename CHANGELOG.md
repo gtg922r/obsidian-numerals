@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. The format 
 - License changed from "All Rights Reserved" to MIT.
 
 ### Fixed
+- Tiny non-zero numbers in system and locale-formatted results no longer render as `0` or `-0`; values with more than five leading decimal zeroes now use scientific notation to avoid overly wide output. (Closes #121)
 - Syntax highlighting renderer no longer displays numbers ≥100,000 in scientific notation (e.g. `226000` was shown as `2.26e+5`). (Closes #118)
 
 ### Added
