@@ -8,6 +8,8 @@
 		"test": "jest",
 		"lint": "eslint src/",
 		"build": "tsc -noEmit -skipLibCheck && node scripts/esbuild.config.mjs production",
+		"symbols:check": "node scripts/run-ts-script.mjs scripts/mathjs-symbols.ts check",
+		"symbols:update": "node scripts/run-ts-script.mjs scripts/mathjs-symbols.ts update",
 		"release": "node scripts/release-production.mjs",
 		"release:beta": "node scripts/release-beta.mjs",
 		"release:production": "node scripts/release-production.mjs",
@@ -41,6 +43,6 @@
 	},
 	"dependencies": {
 		"fast-deep-equal": "^3.1.3",
-		"mathjs": "^14.5.3"
+		"mathjs": "^15.2.0"
 	}
 }
