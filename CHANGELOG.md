@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 - `npm run symbols:check` and `npm run symbols:update` for keeping mathjs auto-complete suggestions in sync with the installed mathjs documentation metadata.
+- Documented the mathjs symbol maintenance scripts in the README development workflow.
 - `@prev` directive support in inline Numerals expressions — reference the result of the previous inline expression (e.g. `` `#: 100 * 1.2` `` followed by `` `#: @prev * 1.08` ``). Works in both Live Preview and Reading mode. (Closes #129)
 - Note-global `$` variables in inline expressions — `$`-prefixed assignments (e.g. `` `#: $apples = 100` ``) are now shared across all math blocks and inline expressions on the same page, matching code block behavior. Auto-complete picks them up automatically.
 - Auto-complete suggestions now work inside inline Numerals code spans (e.g. `` `#: `` and `` `#=: ``), providing variable names, functions, constants, and Greek letter completions — the same suggestions available in math code blocks.

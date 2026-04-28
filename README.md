@@ -169,6 +169,12 @@ npm run dev              # Build for development with watch mode
 
 The `build` command compiles TypeScript and creates the `main.js` file that Obsidian loads.
 
+### Mathjs Symbol Suggestions
+
+Auto-complete suggestions for mathjs functions and constants are kept as a static list in `src/mathjsUtilities.ts`. When upgrading `mathjs`, run `npm run symbols:check` to compare that list against the installed mathjs documentation metadata.
+
+If the check finds intentional changes, run `npm run symbols:update`, review the generated diff, and adjust the explicit exclusions in `scripts/mathjs-symbols.ts` for any documented symbols that should not appear in Numerals suggestions.
+
 ### 3. Release
 
 Create tagged releases that trigger automated GitHub Actions:
@@ -213,4 +219,3 @@ There are also a number of "calculator as notes" apps that acted as the inspirat
 - [Numi. Beautiful calculator app for Mac.](https://numi.app/)
 - [Numbr](https://numbr.dev/)
 - [Soulver 3 - Notepad Calculator App for Mac](https://soulver.app/)
-
