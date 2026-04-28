@@ -100,8 +100,9 @@ function checkMathJsSymbols(): void {
 
 function updateMathJsSymbols(): void {
 	const source = readFileSync(MATHJS_UTILITIES_PATH, 'utf8');
+	const currentSymbolArray = readCurrentSymbolArray();
 	const nextSymbolArray = formatMathJsSymbolArray(getExpectedMathJsSymbols());
-	writeFileSync(MATHJS_UTILITIES_PATH, source.replace(SYMBOL_ARRAY_PATTERN, nextSymbolArray));
+	writeFileSync(MATHJS_UTILITIES_PATH, source.replace(currentSymbolArray, nextSymbolArray));
 }
 
 function runCli(): void {

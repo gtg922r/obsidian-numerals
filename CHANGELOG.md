@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. The format 
 ### Fixed
 - Tiny non-zero numbers in system and locale-formatted results no longer render as `0` or `-0`; values with more than five leading decimal zeroes now use scientific notation to avoid overly wide output. (Closes #121)
 - Syntax highlighting renderer no longer displays numbers ≥100,000 in scientific notation (e.g. `226000` was shown as `2.26e+5`). (Closes #118)
+- `npm run symbols:update` now fails loudly if the static mathjs symbol array cannot be found.
 
 ### Added
 - `npm run symbols:check` and `npm run symbols:update` for keeping mathjs auto-complete suggestions in sync with the installed mathjs documentation metadata.
