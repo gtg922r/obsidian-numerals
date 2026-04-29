@@ -14,8 +14,11 @@ All notable changes to this project will be documented in this file. The format 
 - Mathjs auto-complete suggestions now include newly supported functions and constants from the upgraded mathjs version.
 - README features list now documents cross-note references.
 - Replaced the bundled Dataview package import with a runtime Dataview API lookup, reducing the production bundle size and removing bundled Dataview transitive dependencies.
+- Release flow now generates tag-matched `manifest.json` release assets for modern BRAT prereleases and promotion to Obsidian stable releases.
+- Release workflow now creates signed GitHub Artifact Attestations for release assets.
 
 ### Fixed
+- Release workflow no longer uses deprecated `set-output` commands or archived release upload actions. (Closes #124)
 - Inline cross-note references now rerender when referenced note metadata changes.
 - Cross-note references now evaluate dependent metadata values using the referenced note's Numerals scope.
 - Tiny non-zero numbers in system and locale-formatted results no longer render as `0` or `-0`; values with more than five leading decimal zeroes now use scientific notation to avoid overly wide output. (Closes #121)
@@ -49,6 +52,7 @@ All notable changes to this project will be documented in this file. The format 
 - Moved `ARCHITECTURE.md` to `doc/ARCHITECTURE.md` and cleaned up: removed line counts and other volatile details.
 
 ### Removed
+- Removed legacy `manifest-beta.json`; modern BRAT installs beta builds from GitHub release assets.
 - Deleted the one-off `utilities/mathjs_symbol_parse.ipynb` notebook in favor of the maintained TypeScript symbol update workflow.
 - Deleted `REFACTOR_REVIEW.md` and `RENDER_REFACTOR.md` (one-time planning documents, no longer needed).
 
