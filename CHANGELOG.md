@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. The format 
 - License changed from "All Rights Reserved" to MIT.
 - Updated mathjs from `^14.5.3` to `^15.2.0` to include the April 2026 security fixes.
 - Mathjs auto-complete suggestions now include newly supported functions and constants from the upgraded mathjs version.
+- README features list now documents cross-note references.
 
 ### Fixed
 - Inline cross-note references now rerender when referenced note metadata changes.
