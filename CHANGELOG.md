@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file. The format 
 - Replaced the bundled Dataview package import with a runtime Dataview API lookup, reducing the production bundle size and removing bundled Dataview transitive dependencies.
 
 ### Fixed
+- Release workflow no longer uses deprecated `set-output` commands or archived release upload actions. (Closes #124)
 - Inline cross-note references now rerender when referenced note metadata changes.
 - Cross-note references now evaluate dependent metadata values using the referenced note's Numerals scope.
 - Tiny non-zero numbers in system and locale-formatted results no longer render as `0` or `-0`; values with more than five leading decimal zeroes now use scientific notation to avoid overly wide output. (Closes #121)
