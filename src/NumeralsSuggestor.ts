@@ -1,5 +1,6 @@
 import NumeralsPlugin from "./main";
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from "./processing/scope";
+import { getMetadataForReferencedNote, filterAvailableProperties } from "./processing/crossNoteResolver";
 import {
     EditorSuggest,
     EditorPosition,
@@ -59,6 +60,12 @@ const numeralsDirectives = [
 /** Whether the suggestor was triggered from a math code block or an inline code span. */
 type SuggestorTriggerContext = 'block' | 'inline';
 
+/**
+ * Regex to detect [[note]]. followed by a partial property name at end of string.
+ * Captures: [1] = note name, [2] = partial property (may be empty)
+ */
+const CROSS_NOTE_TRIGGER_REGEX = /\[\[([^\]]+)\]\]\.([\w$\u00C0-\u02AF\u0370-\u03FF]*)$/;
+
 export class NumeralsSuggestor extends EditorSuggest<string> {
 	plugin: NumeralsPlugin;
 
@@ -67,6 +74,12 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	 * an inline Numerals code span. Set in `onTrigger`, read in `getSuggestions`.
 	 */
 	private triggerContext: SuggestorTriggerContext = 'block';
+
+	/**
+	 * When non-null, the user is typing a property name after `[[noteName]].`
+	 * and we should suggest properties from the referenced note.
+	 */
+	private crossNoteContext: { noteName: string } | null = null;
 	
 	/**
 	 * Time of last suggestion list update
@@ -107,6 +120,24 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			this.triggerContext = 'block';
 
 			const currentLineToCursor = editor.getLine(cursor.line).slice(0, cursor.ch);
+
+			// Check for cross-note reference pattern: [[note]].
+			if (this.plugin.settings.enableCrossNoteReferences) {
+				const crossNoteMatch = currentLineToCursor.match(CROSS_NOTE_TRIGGER_REGEX);
+				if (crossNoteMatch) {
+					this.crossNoteContext = { noteName: crossNoteMatch[1] };
+					const partialProp = crossNoteMatch[2];
+					const propStart = cursor.ch - partialProp.length;
+					return {
+						start: { line: cursor.line, ch: propStart },
+						end: cursor,
+						query: partialProp,
+					};
+				}
+			}
+
+			this.crossNoteContext = null;
+
 			const currentLineLastWordStart = currentLineToCursor.search(/[:]?[$@\w\u0370-\u03FF]+$/);
 			if (currentLineLastWordStart === -1) {
 				return null;
@@ -138,8 +169,26 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 
 		this.triggerContext = 'inline';
 
-		// Find the last word in the expression up to cursor (same regex as block mode)
 		const exprToCursor = inlineCtx.expressionUpToCursor;
+
+		// Check for cross-note reference pattern in inline context
+		if (this.plugin.settings.enableCrossNoteReferences) {
+			const crossNoteMatch = exprToCursor.match(CROSS_NOTE_TRIGGER_REGEX);
+			if (crossNoteMatch) {
+				this.crossNoteContext = { noteName: crossNoteMatch[1] };
+				const partialProp = crossNoteMatch[2];
+				const propStart = cursor.ch - partialProp.length;
+				return {
+					start: { line: cursor.line, ch: propStart },
+					end: cursor,
+					query: partialProp,
+				};
+			}
+		}
+
+		this.crossNoteContext = null;
+
+		// Find the last word in the expression up to cursor (same regex as block mode)
 		const lastWordStart = exprToCursor.search(/[:]?[$@\w\u0370-\u03FF]+$/);
 		if (lastWordStart === -1) {
 			return null;
@@ -156,6 +205,11 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): string[] | Promise<string[]> {
+		// Cross-note reference suggestions: suggest properties from the referenced note
+		if (this.crossNoteContext) {
+			return this.getCrossNoteSuggestions(context, this.crossNoteContext.noteName);
+		}
+
 		let localSymbols: string [] = [];	
 
 		// check if the last suggestion list update was less than 200ms ago
@@ -231,6 +285,44 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		return suggestions;
 	}
 
+	/**
+	 * Get property suggestions for a cross-note reference.
+	 * Resolves the note, gets its available properties, and returns them as suggestions.
+	 */
+	private getCrossNoteSuggestions(
+		context: EditorSuggestContext,
+		noteName: string
+	): string[] {
+		const file = this.app.metadataCache.getFirstLinkpathDest(
+			noteName,
+			context.file.path
+		);
+		if (!file) return [];
+
+		const metadata = getMetadataForReferencedNote(file, this.app);
+		if (!metadata) return [];
+
+		const available = filterAvailableProperties(
+			metadata,
+			this.plugin.settings.forceProcessAllFrontmatter
+		);
+
+		const query_lower = context.query.toLowerCase();
+
+		// Build suggestions from available properties
+		const suggestions: string[] = [];
+		for (const key of Object.keys(available)) {
+			if (key === 'position') continue; // internal Obsidian field
+			if (key.toLowerCase().startsWith(query_lower) && key !== context.query) {
+				// Use 'n|' prefix for note-reference properties
+				suggestions.push('n|' + key);
+			}
+		}
+
+		suggestions.sort((a, b) => a.slice(2).localeCompare(b.slice(2)));
+		return suggestions;
+	}
+
 	renderSuggestion(value: string, el: HTMLElement): void {
 		
 		el.addClasses(['mod-complex', 'numerals-suggestion']);
@@ -253,7 +345,9 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		} else if (iconType === 'm') {
 			setIcon(suggestionFlair, 'sparkles');			
 		} else if (iconType === 'g') {
-			setIcon(suggestionFlair, 'case-lower'); // Assuming 'symbol' is a valid icon name
+			setIcon(suggestionFlair, 'case-lower');
+		} else if (iconType === 'n') {
+			setIcon(suggestionFlair, 'file-symlink');
 		}
 		suggestionTitle.setText(suggestionText);
 		if (noteText) {

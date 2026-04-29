@@ -8,7 +8,7 @@ jest.mock(
 	"obsidian-dataview",
 	() => {
 		return {
-			getAPI: () => () => {},
+			getAPI: () => undefined,
 		};
 	},
 	{ virtual: true }
@@ -200,6 +200,10 @@ describe('evaluateInlineExpression', () => {
 	const emptyScope = new NumeralsScope();
 	const defaultFormat: mathjsFormat = undefined;
 	const noPreProcessors: StringReplaceMap[] = [];
+	const crossNoteSettings = {
+		enableCrossNoteReferences: true,
+		forceProcessAllFrontmatter: false,
+	} as any;
 
 	// --- Basic arithmetic ---------------------------------------------------
 	describe('basic arithmetic', () => {
@@ -227,6 +231,37 @@ describe('evaluateInlineExpression', () => {
 		it('should evaluate exponentiation', () => {
 			const result = evaluateInlineExpression('2^10', emptyScope, defaultFormat, noPreProcessors);
 			expect(result.formatted).toBe('1024');
+		});
+	});
+
+	describe('cross-note references', () => {
+		it('returns referenced paths for inline cross-note expressions', () => {
+			const file = { path: 'materials.md' };
+			const app = {
+				metadataCache: {
+					getFirstLinkpathDest: jest.fn(() => file),
+					getFileCache: jest.fn(() => ({
+						frontmatter: {
+							numerals: 'all',
+							price: 10,
+						},
+					})),
+				},
+			};
+
+			const result = evaluateInlineExpression(
+				'[[materials]].price * 2',
+				emptyScope,
+				defaultFormat,
+				noPreProcessors,
+				undefined,
+				app as any,
+				'source.md',
+				crossNoteSettings,
+			);
+
+			expect(result.formatted).toBe('20');
+			expect(result.referencedPaths).toEqual(['materials.md']);
 		});
 	});
 

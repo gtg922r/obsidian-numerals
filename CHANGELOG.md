@@ -4,12 +4,19 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Added
+- Cross-note references: Use `[[note name]].property` syntax to reference frontmatter and Dataview metadata values from other notes in math blocks and inline expressions. Supports nested properties via dot notation (e.g. `[[config]].rates.hourly`). Auto-complete suggests available properties after typing `[[note]].`. (Closes #134)
+- Setting to enable/disable cross-note references (enabled by default).
+
 ### Changed
 - License changed from "All Rights Reserved" to MIT.
 - Updated mathjs from `^14.5.3` to `^15.2.0` to include the April 2026 security fixes.
 - Mathjs auto-complete suggestions now include newly supported functions and constants from the upgraded mathjs version.
+- README features list now documents cross-note references.
 
 ### Fixed
+- Inline cross-note references now rerender when referenced note metadata changes.
+- Cross-note references now evaluate dependent metadata values using the referenced note's Numerals scope.
 - Tiny non-zero numbers in system and locale-formatted results no longer render as `0` or `-0`; values with more than five leading decimal zeroes now use scientific notation to avoid overly wide output. (Closes #121)
 - Syntax highlighting renderer no longer displays numbers ≥100,000 in scientific notation (e.g. `226000` was shown as `2.26e+5`). (Closes #118)
 - `npm run symbols:update` now fails loudly if the static mathjs symbol array cannot be found.

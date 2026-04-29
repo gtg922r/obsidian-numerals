@@ -58,6 +58,9 @@ To get started, simply install and enable the plugin. Add a `math` code block wi
 	- Multiple properties can be specified as a list, e.g. `numerals: [apples, pears]` will makes both the `apples` and `pears` property available to Numerals
 	- Any property in the YAML frontmatter beginning with `$` automatically becomes a note-global variable (or function) accessible in every math block on the page
 	- Functions can be defined in YAML by name along with their arguments, e.g. `$f(x): x+2`
+- Cross-note references
+	- Reference frontmatter and Dataview metadata from other notes using `[[note name]].property`, including nested values like `[[config]].rates.hourly`
+	- Works in math blocks and inline calculations, and updates when referenced note metadata changes
 
 *Numerals* utilizes the [mathjs](https://mathjs.org/) library for all calculations. *Numerals* implements a preprocessor to allow more human-friendly syntax, such as currency symbols and thousands separators. For all available functions and capabilities (which includes matrices, vectors, symbolic algebra and calculus, etc), see the [mathjs documentation](https://mathjs.org/docs/index.html)
 

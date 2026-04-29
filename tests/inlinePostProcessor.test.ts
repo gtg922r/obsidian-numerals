@@ -5,7 +5,12 @@
  */
 
 jest.mock("obsidian", () => ({
-	MarkdownRenderChild: class {},
+	TFile: class {
+		path!: string;
+	},
+	MarkdownRenderChild: class {
+		registerEvent = jest.fn((ref) => mockRegisteredEvents.push(ref));
+	},
 }), { virtual: true });
 jest.mock(
 	"obsidian-dataview",
@@ -23,6 +28,40 @@ import {
 } from '../src/numerals.types';
 import { parseInlineExpression } from '../src/inline/inlineParser';
 import { evaluateInlineExpression } from '../src/inline/inlineEvaluator';
+import { createInlineNumeralsPostProcessor } from '../src/inline/inlinePostProcessor';
+
+const mockRegisteredEvents: unknown[] = [];
+
+beforeAll(() => {
+	Object.defineProperty(HTMLElement.prototype, 'empty', {
+		configurable: true,
+		value: jest.fn(function(this: HTMLElement) {
+			this.textContent = '';
+		}),
+	});
+
+	Object.defineProperty(HTMLElement.prototype, 'addClass', {
+		configurable: true,
+		value: jest.fn(function(this: HTMLElement, ...classes: string[]) {
+			this.classList.add(...classes);
+		}),
+	});
+
+	Object.defineProperty(HTMLElement.prototype, 'createEl', {
+		configurable: true,
+		value: jest.fn(function(this: HTMLElement, tag: string, options?: { cls?: string; text?: string }) {
+			const element = document.createElement(tag);
+			if (options?.cls) element.className = options.cls;
+			if (options?.text) element.textContent = options.text;
+			this.appendChild(element);
+			return element;
+		}),
+	});
+});
+
+beforeEach(() => {
+	mockRegisteredEvents.length = 0;
+});
 
 // ---------------------------------------------------------------------------
 // Setup currency (same as other test files)
@@ -141,6 +180,62 @@ describe('inline numerals integration', () => {
 				evaluateInlineExpression(parsed!.expression, new NumeralsScope(), undefined, []);
 			}).toThrow();
 		});
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Reading mode cross-note invalidation
+// ---------------------------------------------------------------------------
+describe('inline post-processor cross-note references', () => {
+	it('rerenders inline cross-note expressions when referenced note metadata changes', () => {
+		let referencedPrice = 10;
+		let metadataChangeHandler: ((_callbackType: unknown, file: unknown) => void) | undefined;
+		const sourceFile = { path: 'source.md' };
+		const referencedFile = { path: 'materials.md' };
+		const app = {
+			vault: {
+				getAbstractFileByPath: jest.fn(() => sourceFile),
+			},
+			metadataCache: {
+				getFirstLinkpathDest: jest.fn(() => referencedFile),
+				getFileCache: jest.fn((file: { path: string }) => ({
+					frontmatter: file.path === 'materials.md'
+						? { numerals: 'all', price: referencedPrice }
+						: {},
+				})),
+				on: jest.fn((_eventName: string, handler: typeof metadataChangeHandler) => {
+					metadataChangeHandler = handler;
+					return { eventName: 'changed' };
+				}),
+			},
+		};
+		const ctx = {
+			sourcePath: 'source.md',
+			addChild: jest.fn(),
+		};
+		const container = document.createElement('p');
+		const code = document.createElement('code');
+		code.innerText = '#: [[materials]].price * 2';
+		container.appendChild(code);
+
+		const postProcessor = createInlineNumeralsPostProcessor(
+			app as any,
+			() => DEFAULT_SETTINGS,
+			() => undefined,
+			() => [],
+			new Map(),
+		);
+
+		postProcessor(container, ctx as any);
+		expect(code.querySelector('.numerals-inline-value')?.textContent).toBe('20');
+		expect(app.metadataCache.on).toHaveBeenCalledWith('changed', expect.any(Function));
+		expect(ctx.addChild).toHaveBeenCalledTimes(1);
+		expect(mockRegisteredEvents).toHaveLength(1);
+
+		referencedPrice = 15;
+		metadataChangeHandler?.('changed', referencedFile);
+
+		expect(code.querySelector('.numerals-inline-value')?.textContent).toBe('30');
 	});
 });
 

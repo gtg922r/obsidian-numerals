@@ -1,4 +1,5 @@
-import { App, MarkdownPostProcessorContext } from 'obsidian';
+import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
+import { getAPI } from 'obsidian-dataview';
 import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap, InlineNumeralsMode } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
 import { parseInlineExpression } from './inlineParser';
@@ -83,6 +84,10 @@ interface PrevResultRef {
 	value: unknown;
 }
 
+interface InlineProcessingResult {
+	referencedPaths: string[];
+}
+
 /**
  * Process a single <code> element for inline Numerals.
  *
@@ -107,9 +112,10 @@ function processInlineCodeElement(
 	preProcessors: StringReplaceMap[],
 	prevResultRef: PrevResultRef,
 	scopeCache: Map<string, NumeralsScope>,
-	sourcePath: string
-): void {
-	const text = codeEl.innerText;
+	sourcePath: string,
+	app: App
+): InlineProcessingResult {
+	const text = codeEl.dataset.numeralsInlineSource ?? codeEl.innerText;
 
 	const parsed = parseInlineExpression(
 		text,
@@ -117,7 +123,9 @@ function processInlineCodeElement(
 		settings.inlineEquationTrigger
 	);
 
-	if (!parsed) return;
+	if (!parsed) return { referencedPaths: [] };
+
+	codeEl.dataset.numeralsInlineSource = text;
 
 	try {
 		const result = evaluateInlineExpression(
@@ -125,7 +133,10 @@ function processInlineCodeElement(
 			scope,
 			numberFormat,
 			preProcessors,
-			prevResultRef.value
+			prevResultRef.value,
+			app,
+			sourcePath,
+			settings,
 		);
 		prevResultRef.value = result.raw;
 
@@ -140,9 +151,11 @@ function processInlineCodeElement(
 		}
 
 		renderInlineResult(codeEl, parsed.expression, parsed.mode, result.formatted, settings);
+		return { referencedPaths: result.referencedPaths };
 	} catch {
 		prevResultRef.value = undefined;
 		renderInlineError(codeEl, parsed.expression);
+		return { referencedPaths: [] };
 	}
 }
 
@@ -193,29 +206,80 @@ export function createInlineNumeralsPostProcessor(
 		);
 		if (!hasMatch) return;
 
-		// Build scope from frontmatter + note-global cache.
-		// getMetadataForFileAtPath already merges scopeCache entries
-		// into the metadata, so no separate merge step is needed.
-		const preProcessors = getPreProcessors();
+		const inlineCodeElements = Array.from(codeElements);
 
-		const metadata = getMetadataForFileAtPath(ctx.sourcePath, app, scopeCache);
-		const { scope } = getScopeFromFrontmatter(
-			metadata,
-			undefined,
-			settings.forceProcessAllFrontmatter,
-			preProcessors
-		);
+		const renderInlineElements = (): string[] => {
+			// Build scope from frontmatter + note-global cache.
+			// getMetadataForFileAtPath already merges scopeCache entries
+			// into the metadata, so no separate merge step is needed.
+			const currentSettings = getSettings();
+			const preProcessors = getPreProcessors();
+			const metadata = getMetadataForFileAtPath(ctx.sourcePath, app, scopeCache);
+			const { scope } = getScopeFromFrontmatter(
+				metadata,
+				undefined,
+				currentSettings.forceProcessAllFrontmatter,
+				preProcessors
+			);
 
-		const numberFormat = getNumberFormat();
+			const numberFormat = getNumberFormat();
 
-		// Track previous result for @prev support.
-		// Resets per section (post-processor call), so @prev only chains
-		// within the same rendered section.
-		const prevResultRef: PrevResultRef = { value: undefined };
+			// Track previous result for @prev support.
+			// Resets per section (post-processor call), so @prev only chains
+			// within the same rendered section.
+			const prevResultRef: PrevResultRef = { value: undefined };
+			const referencedPaths = new Set<string>();
 
-		// Process each code element in DOM order (which matches source order)
-		for (const codeEl of Array.from(codeElements)) {
-			processInlineCodeElement(codeEl, scope, settings, numberFormat, preProcessors, prevResultRef, scopeCache, ctx.sourcePath);
+			// Process each code element in DOM order (which matches source order)
+			for (const codeEl of inlineCodeElements) {
+				const result = processInlineCodeElement(
+					codeEl,
+					scope,
+					currentSettings,
+					numberFormat,
+					preProcessors,
+					prevResultRef,
+					scopeCache,
+					ctx.sourcePath,
+					app
+				);
+				for (const path of result.referencedPaths) {
+					referencedPaths.add(path);
+				}
+			}
+
+			return Array.from(referencedPaths);
+		};
+
+		let referencedPaths = renderInlineElements();
+		if (referencedPaths.length === 0) return;
+
+		const inlineChild = new MarkdownRenderChild(el);
+		const rerenderIfReferencedFileChanged = (_callbackType: unknown, file: unknown) => {
+			const changedPath = (file && typeof file === 'object' && 'path' in file)
+				? (file as { path: string }).path
+				: undefined;
+
+			if (!changedPath || !referencedPaths.includes(changedPath)) {
+				return;
+			}
+
+			referencedPaths = renderInlineElements();
+		};
+
+		const dataviewAPI = getAPI(); // eslint-disable-line @typescript-eslint/no-unsafe-assignment -- dataview API untyped
+		if (dataviewAPI) {
+			const ref = app.metadataCache.on(
+				// @ts-expect-error: dataview custom event not in Obsidian types
+				"dataview:metadata-change",
+				rerenderIfReferencedFileChanged
+			);
+			inlineChild.registerEvent(ref);
+		} else {
+			const ref = app.metadataCache.on("changed", rerenderIfReferencedFileChanged);
+			inlineChild.registerEvent(ref);
 		}
+
+		ctx.addChild(inlineChild);
 	};
 }

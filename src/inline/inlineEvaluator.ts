@@ -1,6 +1,8 @@
 import * as math from 'mathjs';
-import { NumeralsScope, mathjsFormat, StringReplaceMap, InlineEvaluationResult } from '../numerals.types';
+import { App } from 'obsidian';
+import { NumeralsScope, NumeralsSettings, mathjsFormat, StringReplaceMap, InlineEvaluationResult } from '../numerals.types';
 import { replaceStringsInTextFromMap } from '../processing/preprocessor';
+import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
 
 /**
  * Evaluate a single inline expression against a scope.
@@ -16,6 +18,9 @@ import { replaceStringsInTextFromMap } from '../processing/preprocessor';
  * @param preProcessors - String replacement rules (currency, thousands, etc.)
  * @param prevResult - The raw result of the previous inline expression (for @prev support).
  *                     Pass `undefined` when there is no previous result.
+ * @param app - The Obsidian App instance (optional; required for cross-note references)
+ * @param sourcePath - Path of the current file (optional; required for cross-note references)
+ * @param settings - Numerals settings (optional; required for cross-note references)
  * @returns Object with `formatted` (display string) and `raw` (mathjs value for chaining)
  * @throws If mathjs cannot evaluate the expression, or @prev is used without a previous result
  */
@@ -25,9 +30,25 @@ export function evaluateInlineExpression(
 	numberFormat: mathjsFormat,
 	preProcessors: StringReplaceMap[],
 	prevResult?: unknown,
+	app?: App,
+	sourcePath?: string,
+	settings?: NumeralsSettings,
 ): InlineEvaluationResult {
-	// Apply preprocessors (currency symbols, thousands separators)
+	// Resolve cross-note references before preprocessing
 	let processed = expression;
+	let referencedPaths: string[] = [];
+	if (app && sourcePath && settings) {
+		const crossNoteResult = resolveCrossNoteReferences(
+			processed, app, sourcePath, settings, preProcessors
+		);
+		if (crossNoteResult.error) {
+			throw new Error(crossNoteResult.error);
+		}
+		processed = crossNoteResult.resolvedSource;
+		referencedPaths = crossNoteResult.referencedPaths;
+	}
+
+	// Apply preprocessors (currency symbols, thousands separators)
 	if (preProcessors.length > 0) {
 		processed = replaceStringsInTextFromMap(processed, preProcessors);
 	}
@@ -68,5 +89,5 @@ export function evaluateInlineExpression(
 		}
 	}
 
-	return { formatted, raw: result, globals };
+	return { formatted, raw: result, globals, referencedPaths };
 }
