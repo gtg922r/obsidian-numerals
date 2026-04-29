@@ -1,9 +1,9 @@
 import { App, TFile } from 'obsidian';
-import { getAPI } from 'obsidian-dataview';
 import * as math from 'mathjs';
 import { NumeralsSettings, StringReplaceMap } from '../numerals.types';
 import { replaceStringsInTextFromMap } from './preprocessor';
 import { getScopeFromFrontmatter, removeCanonicalizedDuplicates } from './scope';
+import { getDataviewApi } from '../dataview';
 
 /**
  * Result of resolving cross-note references in a source string.
@@ -105,11 +105,10 @@ export function getMetadataForReferencedNote(
 	const cache = app.metadataCache.getFileCache(file);
 	const frontmatter: Record<string, unknown> = { ...(cache?.frontmatter), position: undefined };
 
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- dataview API returns untyped data
-	const dataviewAPI = getAPI();
+	const dataviewAPI = getDataviewApi(app);
 	let dataviewMetadata: Record<string, unknown> | undefined;
 	if (dataviewAPI) {
-		const dataviewPage: Record<string, unknown> = (dataviewAPI as { page: (path: string) => Record<string, unknown> }).page(file.path);
+		const dataviewPage = dataviewAPI.page(file.path);
 		if (dataviewPage) {
 			dataviewMetadata = { ...dataviewPage, file: undefined, position: undefined };
 		}

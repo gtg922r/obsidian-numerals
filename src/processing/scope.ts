@@ -1,8 +1,8 @@
 import * as math from 'mathjs';
-import { getAPI } from 'obsidian-dataview';
 import { App, TFile } from 'obsidian';
 import { NumeralsScope, StringReplaceMap } from '../numerals.types';
 import { replaceStringsInTextFromMap } from './preprocessor';
+import { getDataviewApi } from '../dataview';
 
 /**
  * Process frontmatter and return updated scope object
@@ -230,11 +230,10 @@ export function getMetadataForFileAtPath(
 	const f_cache = f_handle ? app.metadataCache.getFileCache(f_handle) : undefined;
 	const frontmatter:{[key: string]: unknown} | undefined = {...(f_cache?.frontmatter), position: undefined};
 
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- dataview API returns untyped data
-	const dataviewAPI = getAPI();
+	const dataviewAPI = getDataviewApi(app);
 	let dataviewMetadata:{[key: string]: unknown} | undefined;
 	if (dataviewAPI) {
-		const dataviewPage: Record<string, unknown> = (dataviewAPI as { page: (path: string) => Record<string, unknown> }).page(f_path);
+		const dataviewPage = dataviewAPI.page(f_path);
 		dataviewMetadata = {...dataviewPage, file: undefined, position: undefined}
 	}
  

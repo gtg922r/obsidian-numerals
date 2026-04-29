@@ -1,9 +1,9 @@
 import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
-import { getAPI } from 'obsidian-dataview';
 import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap, InlineNumeralsMode } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
 import { parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
+import { getDataviewApi } from '../dataview';
 
 /**
  * Write `$`-prefixed globals to the shared scope cache.
@@ -267,7 +267,7 @@ export function createInlineNumeralsPostProcessor(
 			referencedPaths = renderInlineElements();
 		};
 
-		const dataviewAPI = getAPI(); // eslint-disable-line @typescript-eslint/no-unsafe-assignment -- dataview API untyped
+		const dataviewAPI = getDataviewApi(app);
 		if (dataviewAPI) {
 			const ref = app.metadataCache.on(
 				// @ts-expect-error: dataview custom event not in Obsidian types

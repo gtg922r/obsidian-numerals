@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file. The format 
 - Updated mathjs from `^14.5.3` to `^15.2.0` to include the April 2026 security fixes.
 - Mathjs auto-complete suggestions now include newly supported functions and constants from the upgraded mathjs version.
 - README features list now documents cross-note references.
+- Replaced the bundled Dataview package import with a runtime Dataview API lookup, reducing the production bundle size and removing bundled Dataview transitive dependencies.
 
 ### Fixed
 - Inline cross-note references now rerender when referenced note metadata changes.
