@@ -36,7 +36,6 @@ import { EditorSelection, Range } from '@codemirror/state';
 import { syntaxTree, tokenClassNodeProp } from '@codemirror/language';
 import { App, EventRef } from 'obsidian';
 import { editorInfoField, editorLivePreviewField } from 'obsidian';
-import { getAPI } from 'obsidian-dataview';
 import {
 	NumeralsSettings,
 	NumeralsScope,
@@ -47,6 +46,7 @@ import {
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
 import { parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
+import { getDataviewApi } from '../dataview';
 
 /****************************************************
  * Formatting context helpers
@@ -599,7 +599,7 @@ export function createInlineLivePreviewExtension(
 					view.dispatch({ effects: [] });
 				};
 
-				const dataviewAPI = getAPI(); // eslint-disable-line @typescript-eslint/no-unsafe-assignment -- dataview API untyped
+				const dataviewAPI = getDataviewApi(app);
 				this.metadataEventRef = dataviewAPI
 					? app.metadataCache.on(
 						// @ts-expect-error: dataview custom event not in Obsidian types

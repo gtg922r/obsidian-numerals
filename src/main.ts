@@ -27,8 +27,7 @@ import {
 	MarkdownPostProcessorContext,
 	MarkdownRenderChild,
 } from "obsidian";
-
-import { getAPI } from 'obsidian-dataview';
+import { getDataviewApi } from './dataview';
 
 import * as math from 'mathjs';
 
@@ -167,7 +166,7 @@ export default class NumeralsPlugin extends Plugin {
 			referencedPaths = blockResult.referencedPaths;
 		};
 
-		const dataviewAPI = getAPI(); // eslint-disable-line @typescript-eslint/no-unsafe-assignment -- dataview API untyped
+		const dataviewAPI = getDataviewApi(this.app);
 		if (dataviewAPI) {
 			// Register on the child component so it auto-cleans on unload
 			const ref = this.app.metadataCache.on(
