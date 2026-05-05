@@ -6,6 +6,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 >
   <div
     class="numerals-line"
+    data-line-index="0"
   >
     <span
       class="numerals-input numerals-empty"
@@ -20,6 +21,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="1"
   >
     <span
       class="numerals-input"
@@ -34,6 +36,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="2"
   >
     <span
       class="numerals-input"
@@ -48,6 +51,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="3"
   >
     <span
       class="numerals-input"
@@ -62,6 +66,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="4"
   >
     <span
       class="numerals-input"
@@ -84,6 +89,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="5"
   >
     <span
       class="numerals-input numerals-empty"
@@ -98,6 +104,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="6"
   >
     <span
       class="numerals-input"
@@ -112,6 +119,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="7"
   >
     <span
       class="numerals-input"
@@ -126,6 +134,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="8"
   >
     <span
       class="numerals-input"
@@ -140,6 +149,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="9"
   >
     <span
       class="numerals-input"
@@ -162,6 +172,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="10"
   >
     <span
       class="numerals-input numerals-empty"
@@ -176,6 +187,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="11"
   >
     <span
       class="numerals-input numerals-empty"
@@ -190,6 +202,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="12"
   >
     <span
       class="numerals-input"
@@ -204,6 +217,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="13"
   >
     <span
       class="numerals-input"
@@ -218,6 +232,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="14"
   >
     <span
       class="numerals-input"
@@ -232,6 +247,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="15"
   >
     <span
       class="numerals-input"
@@ -254,6 +270,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="16"
   >
     <span
       class="numerals-input numerals-empty"
@@ -268,6 +285,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="17"
   >
     <span
       class="numerals-input numerals-empty"
@@ -282,6 +300,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="18"
   >
     <span
       class="numerals-input"
@@ -296,6 +315,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="19"
   >
     <span
       class="numerals-input"
@@ -310,6 +330,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="20"
   >
     <span
       class="numerals-input"
@@ -324,6 +345,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="21"
   >
     <span
       class="numerals-input"
@@ -343,6 +365,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="22"
   >
     <span
       class="numerals-input numerals-empty"
@@ -357,6 +380,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="23"
   >
     <span
       class="numerals-input"
@@ -376,6 +400,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="24"
   >
     <span
       class="numerals-input numerals-empty"
@@ -390,6 +415,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="25"
   >
     <span
       class="numerals-input"
@@ -404,6 +430,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="26"
   >
     <span
       class="numerals-input"
@@ -418,6 +445,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="27"
   >
     <span
       class="numerals-input"
@@ -432,6 +460,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="28"
   >
     <span
       class="numerals-input numerals-empty"
@@ -446,6 +475,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="29"
   >
     <span
       class="numerals-input"
@@ -460,6 +490,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="30"
   >
     <span
       class="numerals-input"
@@ -474,6 +505,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="31"
   >
     <span
       class="numerals-input"
@@ -488,6 +520,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="32"
   >
     <span
       class="numerals-input numerals-empty"
@@ -502,6 +535,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="33"
   >
     <span
       class="numerals-input"
@@ -516,6 +550,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="34"
   >
     <span
       class="numerals-input"
@@ -530,6 +565,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="35"
   >
     <span
       class="numerals-input numerals-empty"
@@ -544,6 +580,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="36"
   >
     <span
       class="numerals-input numerals-empty"
@@ -558,6 +595,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="37"
   >
     <span
       class="numerals-input numerals-empty"
@@ -572,6 +610,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="38"
   >
     <span
       class="numerals-input"
@@ -586,6 +625,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="39"
   >
     <span
       class="numerals-input"
@@ -600,6 +640,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="40"
   >
     <span
       class="numerals-input numerals-empty"
@@ -614,6 +655,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="41"
   >
     <span
       class="numerals-input"
@@ -628,6 +670,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="42"
   >
     <span
       class="numerals-input"
@@ -642,6 +685,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="43"
   >
     <span
       class="numerals-input numerals-empty"
@@ -656,6 +700,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="44"
   >
     <span
       class="numerals-input"
@@ -670,6 +715,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="45"
   >
     <span
       class="numerals-input"
@@ -684,6 +730,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="46"
   >
     <span
       class="numerals-input numerals-empty"
@@ -698,6 +745,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="47"
   >
     <span
       class="numerals-input"
@@ -712,6 +760,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="48"
   >
     <span
       class="numerals-input"
@@ -726,6 +775,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="49"
   >
     <span
       class="numerals-input numerals-empty"
@@ -740,6 +790,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="50"
   >
     <span
       class="numerals-input numerals-empty"
@@ -754,6 +805,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="51"
   >
     <span
       class="numerals-input"
@@ -768,6 +820,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="52"
   >
     <span
       class="numerals-input"
@@ -782,6 +835,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="53"
   >
     <span
       class="numerals-input"
@@ -796,6 +850,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="54"
   >
     <span
       class="numerals-input"
@@ -810,6 +865,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="55"
   >
     <span
       class="numerals-input"
@@ -824,6 +880,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="56"
   >
     <span
       class="numerals-input"
@@ -838,6 +895,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="57"
   >
     <span
       class="numerals-input"
@@ -852,6 +910,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="58"
   >
     <span
       class="numerals-input"
@@ -866,6 +925,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="59"
   >
     <span
       class="numerals-input numerals-empty"
@@ -887,6 +947,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 >
   <div
     class="numerals-line"
+    data-line-index="0"
   >
     <span
       class="numerals-input numerals-empty"
@@ -901,6 +962,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="1"
   >
     <span
       class="numerals-input"
@@ -915,6 +977,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="2"
   >
     <span
       class="numerals-input"
@@ -929,6 +992,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="3"
   >
     <span
       class="numerals-input"
@@ -943,6 +1007,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="4"
   >
     <span
       class="numerals-input"
@@ -965,6 +1030,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="5"
   >
     <span
       class="numerals-input numerals-empty"
@@ -979,6 +1045,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="6"
   >
     <span
       class="numerals-input"
@@ -993,6 +1060,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="7"
   >
     <span
       class="numerals-input"
@@ -1007,6 +1075,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="8"
   >
     <span
       class="numerals-input"
@@ -1021,6 +1090,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="9"
   >
     <span
       class="numerals-input"
@@ -1043,6 +1113,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="10"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1057,6 +1128,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="11"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1071,6 +1143,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="12"
   >
     <span
       class="numerals-input"
@@ -1085,6 +1158,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="13"
   >
     <span
       class="numerals-input"
@@ -1099,6 +1173,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="14"
   >
     <span
       class="numerals-input"
@@ -1113,6 +1188,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="15"
   >
     <span
       class="numerals-input"
@@ -1135,6 +1211,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="16"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1149,6 +1226,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="17"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1163,6 +1241,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="18"
   >
     <span
       class="numerals-input"
@@ -1177,6 +1256,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="19"
   >
     <span
       class="numerals-input"
@@ -1191,6 +1271,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="20"
   >
     <span
       class="numerals-input"
@@ -1205,6 +1286,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="21"
   >
     <span
       class="numerals-input"
@@ -1224,6 +1306,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="22"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1238,6 +1321,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="23"
   >
     <span
       class="numerals-input"
@@ -1257,6 +1341,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="24"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1271,6 +1356,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="25"
   >
     <span
       class="numerals-input"
@@ -1285,6 +1371,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="26"
   >
     <span
       class="numerals-input"
@@ -1299,6 +1386,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="27"
   >
     <span
       class="numerals-input"
@@ -1313,6 +1401,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="28"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1327,6 +1416,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="29"
   >
     <span
       class="numerals-input"
@@ -1341,6 +1431,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="30"
   >
     <span
       class="numerals-input"
@@ -1355,6 +1446,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="31"
   >
     <span
       class="numerals-input"
@@ -1369,6 +1461,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="32"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1383,6 +1476,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="33"
   >
     <span
       class="numerals-input"
@@ -1397,6 +1491,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="34"
   >
     <span
       class="numerals-input"
@@ -1411,6 +1506,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="35"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1425,6 +1521,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="36"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1439,6 +1536,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="37"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1453,6 +1551,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="38"
   >
     <span
       class="numerals-input"
@@ -1467,6 +1566,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="39"
   >
     <span
       class="numerals-input"
@@ -1481,6 +1581,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="40"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1495,6 +1596,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="41"
   >
     <span
       class="numerals-input"
@@ -1509,6 +1611,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="42"
   >
     <span
       class="numerals-input"
@@ -1523,6 +1626,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="43"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1537,6 +1641,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="44"
   >
     <span
       class="numerals-input"
@@ -1551,6 +1656,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="45"
   >
     <span
       class="numerals-input"
@@ -1565,6 +1671,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="46"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1579,6 +1686,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="47"
   >
     <span
       class="numerals-input"
@@ -1593,6 +1701,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="48"
   >
     <span
       class="numerals-input"
@@ -1607,6 +1716,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="49"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1621,6 +1731,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="50"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1635,6 +1746,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="51"
   >
     <span
       class="numerals-input"
@@ -1649,6 +1761,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="52"
   >
     <span
       class="numerals-input"
@@ -1663,6 +1776,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="53"
   >
     <span
       class="numerals-input"
@@ -1677,6 +1791,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="54"
   >
     <span
       class="numerals-input"
@@ -1691,6 +1806,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="55"
   >
     <span
       class="numerals-input"
@@ -1705,6 +1821,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="56"
   >
     <span
       class="numerals-input"
@@ -1719,6 +1836,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="57"
   >
     <span
       class="numerals-input"
@@ -1733,6 +1851,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="58"
   >
     <span
       class="numerals-input"
@@ -1747,6 +1866,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="59"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1768,6 +1888,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 >
   <div
     class="numerals-line"
+    data-line-index="0"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1782,6 +1903,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="1"
   >
     <span
       class="numerals-input"
@@ -1796,6 +1918,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="2"
   >
     <span
       class="numerals-input"
@@ -1810,6 +1933,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="3"
   >
     <span
       class="numerals-input"
@@ -1824,6 +1948,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="4"
   >
     <span
       class="numerals-input"
@@ -1846,6 +1971,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="5"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1860,6 +1986,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="6"
   >
     <span
       class="numerals-input"
@@ -1874,6 +2001,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="7"
   >
     <span
       class="numerals-input"
@@ -1888,6 +2016,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="8"
   >
     <span
       class="numerals-input"
@@ -1902,6 +2031,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="9"
   >
     <span
       class="numerals-input"
@@ -1924,6 +2054,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="10"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1938,6 +2069,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="11"
   >
     <span
       class="numerals-input numerals-empty"
@@ -1952,6 +2084,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="12"
   >
     <span
       class="numerals-input"
@@ -1966,6 +2099,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="13"
   >
     <span
       class="numerals-input"
@@ -1980,6 +2114,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="14"
   >
     <span
       class="numerals-input"
@@ -1994,6 +2129,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="15"
   >
     <span
       class="numerals-input"
@@ -2016,6 +2152,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="16"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2030,6 +2167,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="17"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2044,6 +2182,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="18"
   >
     <span
       class="numerals-input"
@@ -2058,6 +2197,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="19"
   >
     <span
       class="numerals-input"
@@ -2072,6 +2212,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="20"
   >
     <span
       class="numerals-input"
@@ -2086,6 +2227,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="21"
   >
     <span
       class="numerals-input"
@@ -2105,6 +2247,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="22"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2119,6 +2262,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="23"
   >
     <span
       class="numerals-input"
@@ -2138,6 +2282,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="24"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2152,6 +2297,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="25"
   >
     <span
       class="numerals-input"
@@ -2166,6 +2312,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="26"
   >
     <span
       class="numerals-input"
@@ -2180,6 +2327,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="27"
   >
     <span
       class="numerals-input"
@@ -2194,6 +2342,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="28"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2208,6 +2357,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="29"
   >
     <span
       class="numerals-input"
@@ -2222,6 +2372,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="30"
   >
     <span
       class="numerals-input"
@@ -2236,6 +2387,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="31"
   >
     <span
       class="numerals-input"
@@ -2250,6 +2402,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="32"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2264,6 +2417,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="33"
   >
     <span
       class="numerals-input"
@@ -2278,6 +2432,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="34"
   >
     <span
       class="numerals-input"
@@ -2292,6 +2447,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="35"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2306,6 +2462,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="36"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2320,6 +2477,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="37"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2334,6 +2492,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="38"
   >
     <span
       class="numerals-input"
@@ -2348,6 +2507,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="39"
   >
     <span
       class="numerals-input"
@@ -2362,6 +2522,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="40"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2376,6 +2537,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="41"
   >
     <span
       class="numerals-input"
@@ -2390,6 +2552,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="42"
   >
     <span
       class="numerals-input"
@@ -2404,6 +2567,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="43"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2418,6 +2582,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="44"
   >
     <span
       class="numerals-input"
@@ -2432,6 +2597,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="45"
   >
     <span
       class="numerals-input"
@@ -2446,6 +2612,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="46"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2460,6 +2627,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="47"
   >
     <span
       class="numerals-input"
@@ -2474,6 +2642,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="48"
   >
     <span
       class="numerals-input"
@@ -2488,6 +2657,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="49"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2502,6 +2672,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="50"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2516,6 +2687,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="51"
   >
     <span
       class="numerals-input"
@@ -2530,6 +2702,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="52"
   >
     <span
       class="numerals-input"
@@ -2544,6 +2717,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="53"
   >
     <span
       class="numerals-input"
@@ -2558,6 +2732,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="54"
   >
     <span
       class="numerals-input"
@@ -2572,6 +2747,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="55"
   >
     <span
       class="numerals-input"
@@ -2586,6 +2762,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="56"
   >
     <span
       class="numerals-input"
@@ -2600,6 +2777,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="57"
   >
     <span
       class="numerals-input"
@@ -2614,6 +2792,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="58"
   >
     <span
       class="numerals-input"
@@ -2628,6 +2807,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="59"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2649,6 +2829,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 >
   <div
     class="numerals-line"
+    data-line-index="0"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2663,6 +2844,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="1"
   >
     <span
       class="numerals-input"
@@ -2677,6 +2859,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="2"
   >
     <span
       class="numerals-input"
@@ -2691,6 +2874,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="3"
   >
     <span
       class="numerals-input"
@@ -2705,6 +2889,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="4"
   >
     <span
       class="numerals-input"
@@ -2727,6 +2912,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="5"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2741,6 +2927,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="6"
   >
     <span
       class="numerals-input"
@@ -2755,6 +2942,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="7"
   >
     <span
       class="numerals-input"
@@ -2769,6 +2957,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="8"
   >
     <span
       class="numerals-input"
@@ -2783,6 +2972,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="9"
   >
     <span
       class="numerals-input"
@@ -2805,6 +2995,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="10"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2819,6 +3010,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="11"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2833,6 +3025,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="12"
   >
     <span
       class="numerals-input"
@@ -2847,6 +3040,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="13"
   >
     <span
       class="numerals-input"
@@ -2861,6 +3055,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="14"
   >
     <span
       class="numerals-input"
@@ -2875,6 +3070,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="15"
   >
     <span
       class="numerals-input"
@@ -2897,6 +3093,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="16"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2911,6 +3108,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="17"
   >
     <span
       class="numerals-input numerals-empty"
@@ -2925,6 +3123,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="18"
   >
     <span
       class="numerals-input"
@@ -2939,6 +3138,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="19"
   >
     <span
       class="numerals-input"
@@ -2953,6 +3153,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="20"
   >
     <span
       class="numerals-input"
@@ -2967,6 +3168,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="21"
   >
     <span
       class="numerals-input"
@@ -2986,6 +3188,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="22"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3000,6 +3203,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="23"
   >
     <span
       class="numerals-input"
@@ -3019,6 +3223,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="24"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3033,6 +3238,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="25"
   >
     <span
       class="numerals-input"
@@ -3047,6 +3253,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="26"
   >
     <span
       class="numerals-input"
@@ -3061,6 +3268,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="27"
   >
     <span
       class="numerals-input"
@@ -3075,6 +3283,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="28"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3089,6 +3298,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="29"
   >
     <span
       class="numerals-input"
@@ -3103,6 +3313,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="30"
   >
     <span
       class="numerals-input"
@@ -3117,6 +3328,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="31"
   >
     <span
       class="numerals-input"
@@ -3131,6 +3343,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="32"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3145,6 +3358,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="33"
   >
     <span
       class="numerals-input"
@@ -3159,6 +3373,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="34"
   >
     <span
       class="numerals-input"
@@ -3173,6 +3388,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="35"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3187,6 +3403,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="36"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3201,6 +3418,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="37"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3215,6 +3433,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="38"
   >
     <span
       class="numerals-input"
@@ -3229,6 +3448,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="39"
   >
     <span
       class="numerals-input"
@@ -3243,6 +3463,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="40"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3257,6 +3478,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="41"
   >
     <span
       class="numerals-input"
@@ -3271,6 +3493,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="42"
   >
     <span
       class="numerals-input"
@@ -3285,6 +3508,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="43"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3299,6 +3523,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="44"
   >
     <span
       class="numerals-input"
@@ -3313,6 +3538,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="45"
   >
     <span
       class="numerals-input"
@@ -3327,6 +3553,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="46"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3341,6 +3568,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="47"
   >
     <span
       class="numerals-input"
@@ -3355,6 +3583,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="48"
   >
     <span
       class="numerals-input"
@@ -3369,6 +3598,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="49"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3383,6 +3613,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="50"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3397,6 +3628,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="51"
   >
     <span
       class="numerals-input"
@@ -3411,6 +3643,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="52"
   >
     <span
       class="numerals-input"
@@ -3425,6 +3658,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="53"
   >
     <span
       class="numerals-input"
@@ -3439,6 +3673,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="54"
   >
     <span
       class="numerals-input"
@@ -3453,6 +3688,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="55"
   >
     <span
       class="numerals-input"
@@ -3467,6 +3703,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="56"
   >
     <span
       class="numerals-input"
@@ -3481,6 +3718,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="57"
   >
     <span
       class="numerals-input"
@@ -3495,6 +3733,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="58"
   >
     <span
       class="numerals-input"
@@ -3509,6 +3748,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="59"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3530,6 +3770,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 >
   <div
     class="numerals-line"
+    data-line-index="0"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3544,6 +3785,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="1"
   >
     <span
       class="numerals-input"
@@ -3558,6 +3800,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="2"
   >
     <span
       class="numerals-input"
@@ -3572,6 +3815,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="3"
   >
     <span
       class="numerals-input"
@@ -3586,6 +3830,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="4"
   >
     <span
       class="numerals-input"
@@ -3608,6 +3853,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="5"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3622,6 +3868,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="6"
   >
     <span
       class="numerals-input"
@@ -3636,6 +3883,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="7"
   >
     <span
       class="numerals-input"
@@ -3650,6 +3898,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="8"
   >
     <span
       class="numerals-input"
@@ -3664,6 +3913,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="9"
   >
     <span
       class="numerals-input"
@@ -3686,6 +3936,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="10"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3700,6 +3951,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="11"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3714,6 +3966,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="12"
   >
     <span
       class="numerals-input"
@@ -3728,6 +3981,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="13"
   >
     <span
       class="numerals-input"
@@ -3742,6 +3996,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="14"
   >
     <span
       class="numerals-input"
@@ -3756,6 +4011,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="15"
   >
     <span
       class="numerals-input"
@@ -3778,6 +4034,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="16"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3792,6 +4049,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="17"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3806,6 +4064,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="18"
   >
     <span
       class="numerals-input"
@@ -3820,6 +4079,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="19"
   >
     <span
       class="numerals-input"
@@ -3834,6 +4094,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="20"
   >
     <span
       class="numerals-input"
@@ -3848,6 +4109,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="21"
   >
     <span
       class="numerals-input"
@@ -3867,6 +4129,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="22"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3881,6 +4144,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="23"
   >
     <span
       class="numerals-input"
@@ -3900,6 +4164,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="24"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3914,6 +4179,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="25"
   >
     <span
       class="numerals-input"
@@ -3928,6 +4194,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="26"
   >
     <span
       class="numerals-input"
@@ -3942,6 +4209,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="27"
   >
     <span
       class="numerals-input"
@@ -3956,6 +4224,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="28"
   >
     <span
       class="numerals-input numerals-empty"
@@ -3970,6 +4239,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="29"
   >
     <span
       class="numerals-input"
@@ -3984,6 +4254,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="30"
   >
     <span
       class="numerals-input"
@@ -3998,6 +4269,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="31"
   >
     <span
       class="numerals-input"
@@ -4012,6 +4284,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="32"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4026,6 +4299,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="33"
   >
     <span
       class="numerals-input"
@@ -4040,6 +4314,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="34"
   >
     <span
       class="numerals-input"
@@ -4054,6 +4329,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="35"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4068,6 +4344,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="36"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4082,6 +4359,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="37"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4096,6 +4374,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="38"
   >
     <span
       class="numerals-input"
@@ -4110,6 +4389,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="39"
   >
     <span
       class="numerals-input"
@@ -4124,6 +4404,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="40"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4138,6 +4419,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="41"
   >
     <span
       class="numerals-input"
@@ -4152,6 +4434,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="42"
   >
     <span
       class="numerals-input"
@@ -4166,6 +4449,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="43"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4180,6 +4464,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="44"
   >
     <span
       class="numerals-input"
@@ -4194,6 +4479,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="45"
   >
     <span
       class="numerals-input"
@@ -4208,6 +4494,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="46"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4222,6 +4509,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="47"
   >
     <span
       class="numerals-input"
@@ -4236,6 +4524,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="48"
   >
     <span
       class="numerals-input"
@@ -4250,6 +4539,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="49"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4264,6 +4554,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="50"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4278,6 +4569,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="51"
   >
     <span
       class="numerals-input"
@@ -4292,6 +4584,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="52"
   >
     <span
       class="numerals-input"
@@ -4306,6 +4599,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="53"
   >
     <span
       class="numerals-input"
@@ -4320,6 +4614,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="54"
   >
     <span
       class="numerals-input"
@@ -4334,6 +4629,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="55"
   >
     <span
       class="numerals-input"
@@ -4348,6 +4644,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="56"
   >
     <span
       class="numerals-input"
@@ -4362,6 +4659,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="57"
   >
     <span
       class="numerals-input"
@@ -4376,6 +4674,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="58"
   >
     <span
       class="numerals-input"
@@ -4390,6 +4689,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="59"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4411,6 +4711,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 >
   <div
     class="numerals-line"
+    data-line-index="0"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4425,6 +4726,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="1"
   >
     <span
       class="numerals-input"
@@ -4439,6 +4741,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="2"
   >
     <span
       class="numerals-input"
@@ -4453,6 +4756,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="3"
   >
     <span
       class="numerals-input"
@@ -4467,6 +4771,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="4"
   >
     <span
       class="numerals-input"
@@ -4488,6 +4793,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 >
   <div
     class="numerals-line"
+    data-line-index="0"
   >
     <span
       class="numerals-input numerals-empty"
@@ -4502,6 +4808,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="1"
   >
     <span
       class="numerals-input"
@@ -4516,6 +4823,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="2"
   >
     <span
       class="numerals-input"
@@ -4530,6 +4838,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="3"
   >
     <span
       class="numerals-input"
@@ -4544,6 +4853,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="4"
   >
     <span
       class="numerals-input"
@@ -4558,6 +4868,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line"
+    data-line-index="5"
   >
     <span
       class="numerals-input"
@@ -4579,6 +4890,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 >
   <div
     class="numerals-line"
+    data-line-index="0"
   >
     <span
       class="numerals-input"
@@ -4593,6 +4905,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
   </div>
   <div
     class="numerals-line numerals-emitter"
+    data-line-index="1"
   >
     <span
       class="numerals-input"

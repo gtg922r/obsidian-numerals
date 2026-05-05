@@ -12,7 +12,7 @@ import { prepareLineData } from './linePreparation';
  * Find the editor for a specific file path by searching all workspace leaves.
  * More reliable than getActiveViewOfType which can return the wrong editor in split panes.
  */
-function findEditorForPath(app: App, sourcePath: string): Editor | undefined {
+export function findEditorForPath(app: App, sourcePath: string): Editor | undefined {
 	let found: Editor | undefined;
 	app.workspace.iterateAllLeaves((leaf: WorkspaceLeaf) => {
 		if (found) return;
@@ -83,6 +83,7 @@ export function renderNumeralsBlock(
 		}
 
 		const lineContainer = container.createEl("div", {cls: "numerals-line"});
+		lineContainer.dataset.lineIndex = String(i);
 		if (lineData.isEmitter) {
 			lineContainer.toggleClass("numerals-emitter", true);
 		}

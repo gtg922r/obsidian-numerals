@@ -26,6 +26,7 @@ import {
 	loadMathJax,
 	MarkdownPostProcessorContext,
 	MarkdownRenderChild,
+	MarkdownView,
 } from "obsidian";
 import { getDataviewApi } from './dataview';
 
@@ -179,6 +180,24 @@ export default class NumeralsPlugin extends Plugin {
 			const ref = this.app.metadataCache.on("changed", numeralsBlockCallback);
 			numeralsBlockChild.registerEvent(ref);
 		}
+
+		numeralsBlockChild.registerDomEvent(el, 'click', async (evt) => {
+			const line = (evt.target as HTMLElement).closest<HTMLElement>('.numerals-line');
+			const lineIndex = line?.dataset.lineIndex;
+			const sectionInfo = ctx.getSectionInfo(el);
+
+			if (!line || lineIndex === undefined || !sectionInfo) return;
+
+			const targetLeaf = this.app.workspace.getLeavesOfType('markdown')
+				.find(leaf => (leaf.view as MarkdownView).file?.path === ctx.sourcePath);
+			if (!targetLeaf) return;
+
+			await targetLeaf.setViewState({ type: 'markdown', state: { mode: 'source', source: false } });
+
+			const editor = (targetLeaf.view as MarkdownView).editor;
+			editor.setCursor({ line: sectionInfo.lineStart + 1 + parseInt(lineIndex, 10), ch: 0 });
+			editor.focus();
+		});
 
 		ctx.addChild(numeralsBlockChild);
 	}
