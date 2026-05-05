@@ -183,23 +183,24 @@ export default class NumeralsPlugin extends Plugin {
 
 		numeralsBlockChild.registerDomEvent(el, 'click', (event) => {
 			const line = (event.target as HTMLElement).closest<HTMLElement>('.numerals-line');
-			const lineIndex = line?.dataset.lineIndex;
+			if (!line) return;
+
+			const lineIndex = line.dataset.lineIndex;
+			if (!lineIndex) return;
+
 			const sectionInfo = ctx.getSectionInfo(el);
+			if (!sectionInfo) return;
 
-			if (!line || lineIndex === undefined || !sectionInfo) return;
-
-			const targetLeaf = this.app.workspace.getLeavesOfType('markdown')
+			const markdownLeaves = this.app.workspace.getLeavesOfType('markdown')
+			const targetLeaf = markdownLeaves
 				.find(leaf => (leaf.view as MarkdownView).file?.path === ctx.sourcePath);
 			if (!targetLeaf) return;
 
-			const { mode, source } = targetLeaf.getViewState().state ?? {};
-			if (mode !== 'source' || source) return;
-
-			const editorLine = sectionInfo.lineStart + 1 + parseInt(lineIndex, 10);
 			const editor = (targetLeaf.view as MarkdownView).editor;
-
+			const editorLine = sectionInfo.lineStart + 1 + parseInt(lineIndex, 10);
 			const input = line.querySelector<HTMLElement>('.numerals-input');
 			const caretPosition = document.caretPositionFromPoint(event.clientX, event.clientY);
+
 			let characterIndex = editor.getLine(editorLine).length;
 			if (input && caretPosition && input.contains(caretPosition.offsetNode)) {
 				const measure = document.createRange();
