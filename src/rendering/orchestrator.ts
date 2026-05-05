@@ -24,6 +24,44 @@ function findEditorForPath(app: App, sourcePath: string): Editor | undefined {
 }
 
 /**
+ * Navigates the editor cursor to the line and character position corresponding
+ * to the clicked numerals-line element in the rendered block.
+ */
+export function handleNumeralsLineClick(
+	event: PointerEvent,
+	ctx: MarkdownPostProcessorContext,
+	el: HTMLElement,
+	app: App
+): void {
+	const line = (event.target as HTMLElement).closest<HTMLElement>('.numerals-line');
+	if (!line) return;
+
+	const lineIndex = line.dataset.lineIndex;
+	if (!lineIndex) return;
+
+	const sectionInfo = ctx.getSectionInfo(el);
+	if (!sectionInfo) return;
+
+	const editor = findEditorForPath(app, ctx.sourcePath);
+	if (!editor) return;
+
+	const editorLine = sectionInfo.lineStart + 1 + parseInt(lineIndex, 10);
+	const input = line.querySelector<HTMLElement>('.numerals-input');
+	const caretPosition = document.caretPositionFromPoint(event.clientX, event.clientY);
+
+	let characterIndex = editor.getLine(editorLine).length;
+	if (input && caretPosition && input.contains(caretPosition.offsetNode)) {
+		const measure = document.createRange();
+		measure.setStart(input, 0);
+		measure.setEnd(caretPosition.offsetNode, caretPosition.offset);
+		characterIndex = measure.toString().length;
+	}
+
+	editor.setCursor({ line: editorLine, ch: characterIndex });
+	editor.focus();
+}
+
+/**
  * Renders error information into the container element.
  *
  * Creates a formatted error display showing the input that caused the error

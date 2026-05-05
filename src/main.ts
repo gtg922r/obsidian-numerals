@@ -1,6 +1,6 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
 import { defaultCurrencyMap, getLocaleFormatter } from "./rendering/displayUtils";
-import { processAndRenderNumeralsBlockFromSource } from "./rendering/orchestrator";
+import { processAndRenderNumeralsBlockFromSource, handleNumeralsLineClick } from "./rendering/orchestrator";
 import { getMetadataForFileAtPath, addGlobalsFromScopeToPageCache } from "./processing/scope";
 import { createInlineNumeralsPostProcessor, createInlineLivePreviewExtension } from "./inline";
 import {
@@ -26,7 +26,6 @@ import {
 	loadMathJax,
 	MarkdownPostProcessorContext,
 	MarkdownRenderChild,
-	MarkdownView,
 } from "obsidian";
 import { getDataviewApi } from './dataview';
 
@@ -181,37 +180,9 @@ export default class NumeralsPlugin extends Plugin {
 			numeralsBlockChild.registerEvent(ref);
 		}
 
-		numeralsBlockChild.registerDomEvent(el, 'click', (event) => {
-			const line = (event.target as HTMLElement).closest<HTMLElement>('.numerals-line');
-			if (!line) return;
-
-			const lineIndex = line.dataset.lineIndex;
-			if (!lineIndex) return;
-
-			const sectionInfo = ctx.getSectionInfo(el);
-			if (!sectionInfo) return;
-
-			const markdownLeaves = this.app.workspace.getLeavesOfType('markdown')
-			const targetLeaf = markdownLeaves
-				.find(leaf => (leaf.view as MarkdownView).file?.path === ctx.sourcePath);
-			if (!targetLeaf) return;
-
-			const editor = (targetLeaf.view as MarkdownView).editor;
-			const editorLine = sectionInfo.lineStart + 1 + parseInt(lineIndex, 10);
-			const input = line.querySelector<HTMLElement>('.numerals-input');
-			const caretPosition = document.caretPositionFromPoint(event.clientX, event.clientY);
-
-			let characterIndex = editor.getLine(editorLine).length;
-			if (input && caretPosition && input.contains(caretPosition.offsetNode)) {
-				const measure = document.createRange();
-				measure.setStart(input, 0);
-				measure.setEnd(caretPosition.offsetNode, caretPosition.offset);
-				characterIndex = measure.toString().length;
-			}
-
-			editor.setCursor({ line: editorLine, ch: characterIndex });
-			editor.focus();
-		});
+		numeralsBlockChild.registerDomEvent(el, 'click', (event) =>
+			handleNumeralsLineClick(event, ctx, el, this.app)
+		);
 
 		ctx.addChild(numeralsBlockChild);
 	}
