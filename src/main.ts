@@ -181,8 +181,8 @@ export default class NumeralsPlugin extends Plugin {
 			numeralsBlockChild.registerEvent(ref);
 		}
 
-		numeralsBlockChild.registerDomEvent(el, 'click', async (evt) => {
-			const line = (evt.target as HTMLElement).closest<HTMLElement>('.numerals-line');
+		numeralsBlockChild.registerDomEvent(el, 'click', (event) => {
+			const line = (event.target as HTMLElement).closest<HTMLElement>('.numerals-line');
 			const lineIndex = line?.dataset.lineIndex;
 			const sectionInfo = ctx.getSectionInfo(el);
 
@@ -192,10 +192,23 @@ export default class NumeralsPlugin extends Plugin {
 				.find(leaf => (leaf.view as MarkdownView).file?.path === ctx.sourcePath);
 			if (!targetLeaf) return;
 
-			await targetLeaf.setViewState({ type: 'markdown', state: { mode: 'source', source: false } });
+			const { mode, source } = targetLeaf.getViewState().state ?? {};
+			if (mode !== 'source' || source) return;
 
+			const editorLine = sectionInfo.lineStart + 1 + parseInt(lineIndex, 10);
 			const editor = (targetLeaf.view as MarkdownView).editor;
-			editor.setCursor({ line: sectionInfo.lineStart + 1 + parseInt(lineIndex, 10), ch: 0 });
+
+			const input = line.querySelector<HTMLElement>('.numerals-input');
+			const caretPosition = document.caretPositionFromPoint(event.clientX, event.clientY);
+			let characterIndex = editor.getLine(editorLine).length;
+			if (input && caretPosition && input.contains(caretPosition.offsetNode)) {
+				const measure = document.createRange();
+				measure.setStart(input, 0);
+				measure.setEnd(caretPosition.offsetNode, caretPosition.offset);
+				characterIndex = measure.toString().length;
+			}
+
+			editor.setCursor({ line: editorLine, ch: characterIndex });
 			editor.focus();
 		});
 
