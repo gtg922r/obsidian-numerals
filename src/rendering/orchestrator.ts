@@ -29,8 +29,8 @@ function findEditorForPath(app: App, sourcePath: string): Editor | undefined {
  */
 export function handleNumeralsLineClick(
 	event: PointerEvent,
-	ctx: MarkdownPostProcessorContext,
-	el: HTMLElement,
+	context: MarkdownPostProcessorContext,
+	element: HTMLElement,
 	app: App
 ): void {
 	const line = (event.target as HTMLElement).closest<HTMLElement>('.numerals-line');
@@ -39,10 +39,10 @@ export function handleNumeralsLineClick(
 	const lineIndex = line.dataset.lineIndex;
 	if (!lineIndex) return;
 
-	const sectionInfo = ctx.getSectionInfo(el);
+	const sectionInfo = context.getSectionInfo(element);
 	if (!sectionInfo) return;
 
-	const editor = findEditorForPath(app, ctx.sourcePath);
+	const editor = findEditorForPath(app, context.sourcePath);
 	if (!editor) return;
 
 	const editorLine = sectionInfo.lineStart + 1 + parseInt(lineIndex, 10);
