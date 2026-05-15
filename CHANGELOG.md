@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Changed
+- Pinned runtime dependencies, replaced the git-based CodeMirror language package with a registry package, and committed the npm lockfile for reproducible community review builds.
+- Updated the release workflow to publish only Obsidian-supported release assets while preserving optional local zip packaging.
+
+### Fixed
+- Updated plugin manifest metadata to satisfy Obsidian Community Plugin review guidance.
+- Replaced global DOM/timer access and newer settings button APIs with popout-compatible equivalents.
+- Replaced direct `hasOwnProperty` calls with a safe helper for metadata objects.
+- Cleaned stylesheet rules flagged by the Obsidian Community Plugin CSS review.
+
+### Removed
+- Removed the `builtin-modules` dev dependency in favor of Node's built-in module metadata.
+
 ## [1.10.0] - 2026-05-15
 
 ### Added

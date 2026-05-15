@@ -3,6 +3,7 @@ import { App, TFile } from 'obsidian';
 import { NumeralsScope, StringReplaceMap } from '../numerals.types';
 import { replaceStringsInTextFromMap } from './preprocessor';
 import { getDataviewApi } from '../dataview';
+import { hasOwnProperty } from '../utils/hasOwnProperty';
 
 /**
  * Process frontmatter and return updated scope object
@@ -40,10 +41,10 @@ export function getScopeFromFrontmatter(
 		let frontmatter_process:{ [key: string]: unknown } = {}
 
 		// Determine which metadata keys to process
-		if (frontmatter.hasOwnProperty("numerals")) {
+		if (hasOwnProperty(frontmatter, "numerals")) {
 			if (frontmatter["numerals"] === "none") {
 				frontmatter_process = {};
-			} else if (frontmatter.hasOwnProperty("numerals") && frontmatter["numerals"] === "all") {
+			} else if (frontmatter["numerals"] === "all") {
 				// Build frontmatter_process from all keys in frontmatter
 				for (const [key, value] of Object.entries(frontmatter)) {
 					if (key !== "numerals") {
@@ -51,13 +52,13 @@ export function getScopeFromFrontmatter(
 					}
 				}
 			} else if (typeof frontmatter["numerals"] === "string") {
-				if (frontmatter.hasOwnProperty(frontmatter["numerals"])) {
+				if (hasOwnProperty(frontmatter, frontmatter["numerals"])) {
 					frontmatter_process[frontmatter["numerals"]] = frontmatter[frontmatter["numerals"]];
 				}
 			} else if (Array.isArray(frontmatter["numerals"])) {
 				for (const entry of frontmatter["numerals"] as unknown[]) {
 					const key = String(entry);
-					if (frontmatter.hasOwnProperty(key)) {
+					if (hasOwnProperty(frontmatter, key)) {
 						frontmatter_process[key] = frontmatter[key];
 					}
 				}

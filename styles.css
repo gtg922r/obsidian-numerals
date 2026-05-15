@@ -79,9 +79,10 @@ body {
     overflow-wrap: break-word;
 }
 .numerals-block .numerals-input .math-parenthesis,
- .numerals-block .numerals-input .math-paranthesis {
-    padding-left: 0px;
-    padding-right: 0px;
+.numerals-block .numerals-input .math-paranthesis {
+    color: var(--code-punctuation);
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .numerals-block .numerals-input .math-number {
@@ -112,12 +113,6 @@ body {
 .numerals-block .numerals-input .math-operator {
     color: var(--code-operator);
 }
-.numerals-block .numerals-input .math-parenthesis,
- .numerals-block .numerals-input .math-paranthesis {
-    color: var(--code-punctuation);
-    padding-left: 0px;
-    padding-right: 0px;
-}
 .numerals-block .numerals-input .math-separator {
     color: var(--code-punctuation);
 }
@@ -134,10 +129,11 @@ body {
     cursor: text;
 }
 
-.numerals-block .MathJax {
-    text-align: left !important;
-    margin-top: .5em !important;
-    margin-bottom: .5em !important;
+.markdown-rendered .numerals-block .MathJax,
+.markdown-source-view .numerals-block .MathJax {
+    text-align: left;
+    margin-top: .5em;
+    margin-bottom: .5em;
 } 
 
 .numerals-input.numerals-empty {
@@ -204,12 +200,8 @@ body {
 /* this leads to filling all the way to the bottom of the container. probably bigger than desired */
 .numerals-panes .numerals-line {
     line-height: var(--line-height-tight);
- 
-}
-
-.numerals-panes .numerals-line {
     display: flex;
- }
+}
  
 .numerals-panes .numerals-input {
     width:75%;
@@ -277,7 +269,7 @@ body {
 /* ** Inline Style ** */
 /* TODO Switch to a diffent display layout so that result can be centered */
 
-.numerals-answer-right .numerals-line {
+.numerals-answer-inline .numerals-line {
     line-height: var(--line-height-tight);
     /* clear: both; */
     /* overflow: auto;     */
@@ -329,10 +321,7 @@ body {
 /* Error state: show the raw expression in error color */
 .numerals-inline-error {
     color: var(--text-error);
-    text-decoration: underline;
-    text-decoration-style: wavy;
-    text-decoration-color: var(--text-error);
-    text-underline-offset: 3px;
+    border-bottom: 1px dotted var(--text-error);
 }
 
 /* Settings: currency mapping input fields */

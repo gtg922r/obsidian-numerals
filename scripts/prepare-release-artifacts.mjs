@@ -4,6 +4,7 @@ import { join } from "path";
 
 const version = process.argv[2];
 const pluginName = process.env.PLUGIN_NAME ?? "numerals";
+const includeReleaseZip = process.env.INCLUDE_RELEASE_ZIP === "true";
 const releaseRoot = "release";
 const pluginDir = join(releaseRoot, pluginName);
 
@@ -38,10 +39,12 @@ writeFileSync(join(pluginDir, "manifest.json"), `${JSON.stringify(manifest, null
 copyFileSync("main.js", join(pluginDir, "main.js"));
 copyFileSync("styles.css", join(pluginDir, "styles.css"));
 
-execFileSync("zip", ["-r", `${pluginName}-${version}.zip`, pluginName], {
-	cwd: releaseRoot,
-	stdio: "inherit",
-});
+if (includeReleaseZip) {
+	execFileSync("zip", ["-r", `${pluginName}-${version}.zip`, pluginName], {
+		cwd: releaseRoot,
+		stdio: "inherit",
+	});
+}
 
 const releaseManifest = JSON.parse(readFileSync(join(pluginDir, "manifest.json"), "utf8"));
 if (releaseManifest.version !== version) {
@@ -50,3 +53,6 @@ if (releaseManifest.version !== version) {
 }
 
 console.log(`Prepared release artifacts for ${pluginName} ${version}.`);
+if (includeReleaseZip) {
+	console.log(`Prepared optional zip artifact: ${pluginName}-${version}.zip.`);
+}

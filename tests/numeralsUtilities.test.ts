@@ -500,10 +500,32 @@ describe("numeralsUtilities: getScopeFromFrontmatter", () => {
         expect(result.has("ignoredKey")).toBe(false);
     });
 
+    it("should process specific keys when frontmatter has no hasOwnProperty method", () => {
+        frontmatter = Object.create(null) as { [key: string]: unknown };
+        frontmatter.numerals = ["selectedKey"];
+        frontmatter.selectedKey = 10;
+        frontmatter.ignoredKey = "ignored";
+
+        const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+
+        expect(result.get("selectedKey")).toBe(10);
+        expect(result.has("ignoredKey")).toBe(false);
+    });
+
     it("should process string values as mathjs expressions", () => {
         frontmatter = {
 			numerals: "expression",
             expression: "2 + 2"
+        };
+        const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
+        expect(result.get("expression")).toEqual(math.evaluate("2 + 2"));
+    });
+
+    it("should process string values when frontmatter shadows hasOwnProperty", () => {
+        frontmatter = {
+			numerals: "expression",
+            expression: "2 + 2",
+            hasOwnProperty: "frontmatter value"
         };
         const { scope: result } = getScopeFromFrontmatter(frontmatter, scope, forceAll, stringReplaceMap, keysOnly);
         expect(result.get("expression")).toEqual(math.evaluate("2 + 2"));

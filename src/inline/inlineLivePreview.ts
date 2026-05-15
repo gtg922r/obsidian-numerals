@@ -33,7 +33,7 @@ import {
 	WidgetType,
 } from '@codemirror/view';
 import { EditorSelection, Range } from '@codemirror/state';
-import { syntaxTree, tokenClassNodeProp } from '@codemirror/language';
+import { syntaxTree } from '@codemirror/language';
 import { App, EventRef } from 'obsidian';
 import { editorInfoField, editorLivePreviewField } from 'obsidian';
 import {
@@ -61,7 +61,7 @@ const FORMATTING_CLASS_MAP: Record<string, string> = {
 };
 
 /**
- * Extract inherited CSS classes from a Lezer node's `tokenClassNodeProp`.
+ * Extract inherited CSS classes from Obsidian/CodeMirror token class metadata.
  *
  * When inline code appears inside `**bold**` or `*italic*`, the Lezer
  * token carries those formatting flags. We propagate them to the widget
@@ -76,6 +76,19 @@ export function getFormattingClasses(tokenProps: string | undefined): string[] {
 		if (cls) classes.push(cls);
 	}
 	return classes;
+}
+
+function isInlineCodeContentRange(
+	from: number,
+	to: number,
+	doc: { sliceString(from: number, to: number): string },
+): boolean {
+	return (
+		from > 0 &&
+		to > from &&
+		doc.sliceString(from - 1, from) === '`' &&
+		doc.sliceString(to, to + 1) === '`'
+	);
 }
 
 /****************************************************
@@ -143,8 +156,9 @@ export class InlineNumeralsWidget extends WidgetType {
 		);
 	}
 
-	toDOM(): HTMLElement {
-		const span = document.createElement('span');
+	toDOM(view?: EditorView): HTMLElement {
+		const ownerDocument = view?.dom.ownerDocument ?? activeDocument;
+		const span = ownerDocument.createElement('span');
 		span.classList.add('cm-inline-code', 'numerals-inline');
 
 		// Apply inherited formatting (bold, italic, etc.)
@@ -161,15 +175,15 @@ export class InlineNumeralsWidget extends WidgetType {
 		if (this.mode === InlineNumeralsMode.Equation) {
 			span.classList.add('numerals-inline-equation');
 
-			const inputEl = document.createElement('span');
+			const inputEl = ownerDocument.createElement('span');
 			inputEl.className = 'numerals-inline-input';
 			inputEl.textContent = this.rawExpression;
 
-			const sepEl = document.createElement('span');
+			const sepEl = ownerDocument.createElement('span');
 			sepEl.className = 'numerals-inline-separator';
 			sepEl.textContent = this.separator;
 
-			const valueEl = document.createElement('span');
+			const valueEl = ownerDocument.createElement('span');
 			valueEl.className = 'numerals-inline-value';
 			valueEl.textContent = this.resultText;
 
@@ -180,7 +194,7 @@ export class InlineNumeralsWidget extends WidgetType {
 			// ResultOnly
 			span.classList.add('numerals-inline-result');
 
-			const valueEl = document.createElement('span');
+			const valueEl = ownerDocument.createElement('span');
 			valueEl.className = 'numerals-inline-value';
 			valueEl.textContent = this.resultText;
 
@@ -391,16 +405,13 @@ function buildDecorations(
 			from,
 			to,
 			enter(node) {
-				const tokenProps = node.type.prop(tokenClassNodeProp);
-				const props = tokenProps?.split(' ');
-
 				// Match inline-code content, skip formatting delimiters (backticks)
-				if (!props?.includes('inline-code') || props.includes('formatting')) {
+				if (!isInlineCodeContentRange(node.from, node.to, state.doc)) {
 					return;
 				}
 
 				const deco = tryBuildNodeDecoration(
-					node.from, node.to, tokenProps,
+					node.from, node.to, undefined,
 					state.doc, selection, ctx,
 					prevResultRef,
 				);
@@ -446,10 +457,7 @@ function updateDecorations(
 			from,
 			to,
 			enter(node) {
-				const tokenProps = node.type.prop(tokenClassNodeProp);
-				const props = tokenProps?.split(' ');
-
-				if (!props?.includes('inline-code') || props.includes('formatting')) {
+				if (!isInlineCodeContentRange(node.from, node.to, state.doc)) {
 					return;
 				}
 
@@ -461,7 +469,7 @@ function updateDecorations(
 				updated.between(spanFrom, spanTo, () => { hasExisting = true; });
 
 				const deco = tryBuildNodeDecoration(
-					node.from, node.to, tokenProps,
+					node.from, node.to, undefined,
 					state.doc, selection, ctx,
 					prevResultRef,
 				);
