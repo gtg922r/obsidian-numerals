@@ -12,6 +12,7 @@
  *   - rendering/orchestrator: processAndRenderNumeralsBlockFromSource, renderNumeralsBlock, renderError, handleResultInsertions, applyBlockStyles
  *   - rendering/linePreparation: prepareLineData, extractComment, cleanRawInput, renderComment
  *   - rendering/displayUtils: texCurrencyReplacement, unescapeSubscripts, mathjaxLoop, htmlToElements, getLocaleFormatter, defaultCurrencyMap
+ *   - rendering/editorNavigation: findEditorForPath, handleNumeralsBlockClick
  */
 
 // Processing
@@ -30,6 +31,12 @@ export {
 	numeralsLayoutClasses,
 	numeralsRenderStyleClasses,
 } from './rendering/orchestrator';
+export {
+	findEditorForPath,
+	getTextOffsetFromPoint,
+	handleNumeralsBlockClick,
+	sourceChForRenderedOffset,
+} from './rendering/editorNavigation';
 export { prepareLineData, extractComment, cleanRawInput, renderComment } from './rendering/linePreparation';
 export {
 	texCurrencyReplacement,
