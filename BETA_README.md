@@ -203,11 +203,11 @@ Create tagged releases that trigger automated GitHub Actions:
 ```bash
 npm run release:beta
 ```
-- Creates a timestamped beta version (e.g., `1.5.1-beta.2024-01-15T10-30-00`)
-- Updates `manifest-beta.json` with the beta version
+- Uses the current production-shaped version from `package.json` (e.g., `1.6.0`)
 - Builds the project
 - Creates a git tag and pushes it to trigger GitHub Actions
-- Automatically creates a beta release on GitHub
+- Automatically creates a published GitHub prerelease for BRAT users
+- Leaves repo-root `manifest.json` on the latest stable version so Obsidian's stable channel is not updated yet
 
 #### Production Releases
 ```bash
@@ -217,18 +217,24 @@ npm run release              # Shortcut for production
 - Uses the current version from `package.json`
 - Updates `manifest.json` and `versions.json`
 - Builds the project
-- Creates a git tag and pushes it to trigger GitHub Actions
-- Automatically creates a production release on GitHub
+- Commits and pushes the stable release metadata
+- Promotes the existing tested prerelease for Obsidian's stable channel
+
+After running the production release script, flip the matching GitHub release from prerelease to full release. The tag, release title, and uploaded release `manifest.json` version should all match the production-shaped version.
 
 ### Complete Development Workflow
 
 1. **Make changes** to the codebase
 2. **Test locally** with `npm run dev`
 3. **Increment version**: `npm run version:patch` (or minor/major)
-4. **Test with beta release**: `npm run release:beta` 
-5. **Create production release**: `npm run release`
+4. **Commit the version bump and changes**
+5. **Test with BRAT beta release**: `npm run release:beta`
+6. **Promote production metadata**: `npm run release`
+7. **Flip the GitHub release from prerelease to full release**
 
-The release scripts handle all manifest syncing, building, tagging, and triggering GitHub Actions for automated release publishing.
+GitHub Actions generates the release assets from the tag, including a `manifest.json` asset whose version matches the tag. `manifest-beta.json` is not used; modern BRAT installs from GitHub release assets.
+
+The release workflow also creates GitHub Artifact Attestations for the uploaded artifacts. These signed provenance records can be verified with `gh attestation verify` to confirm the release files were built by this repository's GitHub Actions workflow.
 
 ## Related
 There are a number of other plugins that address math and calculation use cases in Obsidian. 
@@ -239,4 +245,3 @@ There are also a number of "calculator as notes" apps that acted as the inspirat
 - [Numi. Beautiful calculator app for Mac.](https://numi.app/)
 - [Numbr](https://numbr.dev/)
 - [Soulver 3 - Notepad Calculator App for Mac](https://soulver.app/)
-
