@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-05-15
+
 ### Added
 - Cross-note references: Use `[[note name]].property` syntax to reference frontmatter and Dataview metadata values from other notes in math blocks and inline expressions. Supports nested properties via dot notation (e.g. `[[config]].rates.hourly`). Auto-complete suggests available properties after typing `[[note]].`. (Closes #134)
 - Setting to enable/disable cross-note references (enabled by default).
