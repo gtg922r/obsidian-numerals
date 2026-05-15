@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-05-15
+
 ### Changed
 - Pinned runtime dependencies, replaced the git-based CodeMirror language package with a registry package, and committed the npm lockfile for reproducible community review builds.
 - Updated the release workflow to publish only Obsidian-supported release assets while preserving optional local zip packaging.
