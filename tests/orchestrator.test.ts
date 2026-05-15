@@ -128,6 +128,22 @@ describe('renderNumeralsBlock', () => {
 		expect(lines.length).toBe(3);
 	});
 
+	it('should attach source line indices to rendered lines', () => {
+		const evaluationResult: EvaluationResult = {
+			results: [2, 4, 6],
+			inputs: ['1 + 1', '2 + 2', '3 + 3'],
+			errorMsg: null,
+			errorInput: ''
+		};
+
+		renderNumeralsBlock(container, evaluationResult, processedBlock, context);
+
+		const lines = container.querySelectorAll<HTMLElement>('.numerals-line');
+		expect(lines[0].dataset.sourceLine).toBe('0');
+		expect(lines[1].dataset.sourceLine).toBe('1');
+		expect(lines[2].dataset.sourceLine).toBe('2');
+	});
+
 	it('should skip hidden lines', () => {
 		processedBlock.blockInfo.hidden_lines = [1];
 		const evaluationResult: EvaluationResult = {
@@ -141,6 +157,23 @@ describe('renderNumeralsBlock', () => {
 
 		const lines = container.querySelectorAll('.numerals-line');
 		expect(lines.length).toBe(2);
+	});
+
+	it('should keep source line indices when hidden lines are skipped', () => {
+		processedBlock.blockInfo.hidden_lines = [1];
+		const evaluationResult: EvaluationResult = {
+			results: [2, 4, 6],
+			inputs: ['1 + 1', '2 + 2', '3 + 3'],
+			errorMsg: null,
+			errorInput: ''
+		};
+
+		renderNumeralsBlock(container, evaluationResult, processedBlock, context);
+
+		const lines = container.querySelectorAll<HTMLElement>('.numerals-line');
+		expect(lines.length).toBe(2);
+		expect(lines[0].dataset.sourceLine).toBe('0');
+		expect(lines[1].dataset.sourceLine).toBe('2');
 	});
 
 	it('should add emitter class to emitter lines', () => {

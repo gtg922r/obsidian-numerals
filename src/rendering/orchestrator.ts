@@ -83,6 +83,7 @@ export function renderNumeralsBlock(
 		}
 
 		const lineContainer = container.createEl("div", {cls: "numerals-line"});
+		lineContainer.dataset.sourceLine = String(lineData.index);
 		if (lineData.isEmitter) {
 			lineContainer.toggleClass("numerals-emitter", true);
 		}
