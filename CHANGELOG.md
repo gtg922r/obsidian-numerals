@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file. The format 
 - Setting to enable/disable cross-note references (enabled by default).
 
 ### Changed
+- Merged beta-specific README content into the main README and labeled beta-only features in place.
 - License changed from "All Rights Reserved" to MIT.
 - Updated mathjs from `^14.5.3` to `^15.2.0` to include the April 2026 security fixes.
 - Mathjs auto-complete suggestions now include newly supported functions and constants from the upgraded mathjs version.
@@ -52,6 +53,8 @@ All notable changes to this project will be documented in this file. The format 
 - Moved `ARCHITECTURE.md` to `doc/ARCHITECTURE.md` and cleaned up: removed line counts and other volatile details.
 
 ### Removed
+- Removed the duplicate `BETA_README.md` in favor of a single README with beta labels.
+- Removed the stale `scripts/build-release.mjs` release helper.
 - Removed legacy `manifest-beta.json`; modern BRAT installs beta builds from GitHub release assets.
 - Deleted the one-off `utilities/mathjs_symbol_parse.ipynb` notebook in favor of the maintained TypeScript symbol update workflow.
 - Deleted `REFACTOR_REVIEW.md` and `RENDER_REFACTOR.md` (one-time planning documents, no longer needed).
