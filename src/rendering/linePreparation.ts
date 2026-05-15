@@ -42,7 +42,7 @@ export function extractComment(rawInput: string): {
  *
  * @example
  * ```typescript
- * const container = document.createElement('div');
+ * const container = activeDocument.createElement('div');
  * renderComment(container, "# this is a comment");
  * // Appends: <span class="numerals-inline-comment"># this is a comment</span>
  * ```
@@ -154,4 +154,3 @@ export function prepareLineData(
 		comment,
 	};
 }
-

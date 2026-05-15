@@ -162,7 +162,8 @@ export function handleResultInsertions(
 		// Only update if the line actually changed
 		if (modifiedSource !== sourceLine) {
 			const targetEditor = editor;
-			setTimeout(() => {
+			const ownerWindow = el.ownerDocument.defaultView ?? window;
+			ownerWindow.setTimeout(() => {
 				targetEditor.setLine(curLine, modifiedSource);
 			}, 0);
 		}

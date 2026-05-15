@@ -23,6 +23,10 @@ import {
 import { InlineNumeralsMode } from '../src/numerals.types';
 import { EditorSelection } from '@codemirror/state';
 
+beforeAll(() => {
+	(globalThis as { activeDocument?: Document }).activeDocument = document;
+});
+
 // ---------------------------------------------------------------------------
 // getFormattingClasses
 // ---------------------------------------------------------------------------
@@ -137,6 +141,21 @@ describe('InlineNumeralsWidget', () => {
 			expect(el.querySelector('.numerals-inline-input')?.textContent).toBe('3ft + 2ft');
 			expect(el.querySelector('.numerals-inline-separator')?.textContent).toBe(' = ');
 			expect(el.querySelector('.numerals-inline-value')?.textContent).toBe('5 ft');
+		});
+
+		it('should create widget nodes from the editor ownerDocument', () => {
+			const editorDocument = document.implementation.createHTMLDocument('editor');
+			const editorDom = editorDocument.createElement('div');
+			const widget = new InlineNumeralsWidget(
+				'5 ft', InlineNumeralsMode.Equation, '3ft + 2ft', ' = ', false
+			);
+
+			const el = widget.toDOM({ dom: editorDom } as unknown as Parameters<InlineNumeralsWidget['toDOM']>[0]);
+
+			expect(el.ownerDocument).toBe(editorDocument);
+			expect(el.querySelector('.numerals-inline-input')?.ownerDocument).toBe(editorDocument);
+			expect(el.querySelector('.numerals-inline-separator')?.ownerDocument).toBe(editorDocument);
+			expect(el.querySelector('.numerals-inline-value')?.ownerDocument).toBe(editorDocument);
 		});
 
 		it('should render error mode with raw expression', () => {

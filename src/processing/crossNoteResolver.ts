@@ -4,6 +4,7 @@ import { NumeralsSettings, StringReplaceMap } from '../numerals.types';
 import { replaceStringsInTextFromMap } from './preprocessor';
 import { getScopeFromFrontmatter, removeCanonicalizedDuplicates } from './scope';
 import { getDataviewApi } from '../dataview';
+import { hasOwnProperty } from '../utils/hasOwnProperty';
 
 /**
  * Result of resolving cross-note references in a source string.
@@ -153,13 +154,13 @@ export function filterAvailableProperties(
 			}
 		}
 	} else if (typeof numeralsSetting === 'string') {
-		if (metadata.hasOwnProperty(numeralsSetting)) {
+		if (hasOwnProperty(metadata, numeralsSetting)) {
 			result[numeralsSetting] = metadata[numeralsSetting];
 		}
 	} else if (Array.isArray(numeralsSetting)) {
 		for (const entry of numeralsSetting as unknown[]) {
 			const key = String(entry);
-			if (metadata.hasOwnProperty(key)) {
+			if (hasOwnProperty(metadata, key)) {
 				result[key] = metadata[key];
 			}
 		}

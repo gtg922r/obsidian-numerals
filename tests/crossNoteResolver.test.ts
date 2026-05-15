@@ -160,8 +160,28 @@ describe('filterAvailableProperties', () => {
 		expect(result).toEqual({ price: 10 });
 	});
 
+	it('returns specific key when metadata shadows hasOwnProperty', () => {
+		const metadata = {
+			numerals: 'price',
+			price: 10,
+			hasOwnProperty: 'metadata value',
+		};
+		const result = filterAvailableProperties(metadata, false);
+		expect(result).toEqual({ price: 10 });
+	});
+
 	it('returns listed keys when numerals is an array', () => {
 		const metadata = { numerals: ['price', 'quantity'], price: 10, quantity: 5, name: 'test' };
+		const result = filterAvailableProperties(metadata, false);
+		expect(result).toEqual({ price: 10, quantity: 5 });
+	});
+
+	it('returns listed keys when metadata has no hasOwnProperty method', () => {
+		const metadata = Object.create(null) as Record<string, unknown>;
+		metadata.numerals = ['price', 'quantity'];
+		metadata.price = 10;
+		metadata.quantity = 5;
+
 		const result = filterAvailableProperties(metadata, false);
 		expect(result).toEqual({ price: 10, quantity: 5 });
 	});

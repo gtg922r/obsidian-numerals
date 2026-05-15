@@ -1,10 +1,17 @@
 import esbuild from "esbuild";
 import process from "process";
-import builtins from 'builtin-modules'
+import { builtinModules } from 'node:module';
 import path from 'path';
 
 // Get the project root directory (parent of scripts folder)
 const projectRoot = path.resolve(process.cwd());
+const nodeBuiltins = [
+	...new Set(builtinModules.flatMap((moduleName) => (
+		moduleName.startsWith('node:')
+			? [moduleName]
+			: [moduleName, `node:${moduleName}`]
+	))),
+];
 
 const banner =
 `/*
@@ -35,7 +42,7 @@ const buildOptions = {
 		'@lezer/common',
 		'@lezer/highlight',
 		'@lezer/lr',
-		...builtins],
+		...nodeBuiltins],
 	format: 'cjs',
 	target: 'es2018',
 	logLevel: "info",
