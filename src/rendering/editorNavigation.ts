@@ -1,4 +1,9 @@
-import { App, Editor, MarkdownView, WorkspaceLeaf } from 'obsidian';
+import { App, Editor, MarkdownPostProcessorContext, MarkdownView, WorkspaceLeaf } from 'obsidian';
+
+type CaretPositionDocument = Document & {
+	caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+	caretRangeFromPoint?: (x: number, y: number) => Range | null;
+};
 
 /**
  * Find the editor for a specific file path by searching all workspace leaves.
@@ -13,4 +18,91 @@ export function findEditorForPath(app: App, sourcePath: string): Editor | undefi
 		}
 	});
 	return found;
+}
+
+function getCaretRangeFromPoint(doc: Document, clientX: number, clientY: number): Range | null {
+	const caretDoc = doc as CaretPositionDocument;
+	const position = caretDoc.caretPositionFromPoint?.(clientX, clientY);
+	if (position) {
+		const range = doc.createRange();
+		range.setStart(position.offsetNode, position.offset);
+		range.collapse(true);
+		return range;
+	}
+	return caretDoc.caretRangeFromPoint?.(clientX, clientY) ?? null;
+}
+
+export function getTextOffsetFromPoint(element: HTMLElement, clientX: number, clientY: number): number | null {
+	const range = getCaretRangeFromPoint(element.ownerDocument, clientX, clientY);
+	if (!range || !element.contains(range.startContainer)) {
+		return null;
+	}
+
+	const measure = element.ownerDocument.createRange();
+	measure.selectNodeContents(element);
+	measure.setEnd(range.startContainer, range.startOffset);
+	const offset = measure.toString().length;
+	measure.detach();
+	return offset;
+}
+
+export function sourceChForRenderedOffset(
+	sourceLine: string,
+	renderedInputText: string,
+	renderedOffset: number
+): number {
+	const nonNegativeRenderedOffset = Math.max(0, renderedOffset);
+	const exactStart = renderedInputText.length > 0 ? sourceLine.indexOf(renderedInputText) : -1;
+	if (exactStart >= 0) {
+		const clampedRenderedOffset = Math.min(nonNegativeRenderedOffset, renderedInputText.length);
+		return Math.min(exactStart + clampedRenderedOffset, sourceLine.length);
+	}
+	return Math.min(nonNegativeRenderedOffset, sourceLine.length);
+}
+
+export function handleNumeralsBlockClick(
+	event: MouseEvent,
+	ctx: MarkdownPostProcessorContext,
+	el: HTMLElement,
+	app: App
+): void {
+	const target = event.target;
+	if (!(target instanceof HTMLElement)) {
+		return;
+	}
+
+	const lineElement = target.closest<HTMLElement>('.numerals-line');
+	if (!lineElement || !el.contains(lineElement)) {
+		return;
+	}
+
+	const sourceLineIndex = Number.parseInt(lineElement.dataset.sourceLine ?? '', 10);
+	if (!Number.isInteger(sourceLineIndex)) {
+		return;
+	}
+
+	const sectionInfo = ctx.getSectionInfo(el);
+	if (sectionInfo?.lineStart === undefined) {
+		return;
+	}
+
+	const editor = findEditorForPath(app, ctx.sourcePath);
+	if (!editor) {
+		return;
+	}
+
+	const editorLine = sectionInfo.lineStart + 1 + sourceLineIndex;
+	const sourceLine = editor.getLine(editorLine);
+	let ch = sourceLine.length;
+
+	const inputElement = target.closest<HTMLElement>('.numerals-input');
+	if (inputElement && lineElement.contains(inputElement)) {
+		const renderedOffset = getTextOffsetFromPoint(inputElement, event.clientX, event.clientY);
+		if (renderedOffset !== null) {
+			ch = sourceChForRenderedOffset(sourceLine, inputElement.textContent ?? '', renderedOffset);
+		}
+	}
+
+	editor.setCursor({ line: editorLine, ch });
+	editor.focus();
 }
