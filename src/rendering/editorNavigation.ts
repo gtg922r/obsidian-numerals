@@ -2,8 +2,9 @@ import { App, Editor, MarkdownPostProcessorContext, MarkdownView, WorkspaceLeaf 
 
 type CaretPositionDocument = Document & {
 	caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
-	caretRangeFromPoint?: (x: number, y: number) => Range | null;
 };
+
+type CaretRangeFromPoint = (x: number, y: number) => Range | null;
 
 /**
  * Find the editor for a specific file path by searching all workspace leaves.
@@ -29,7 +30,12 @@ function getCaretRangeFromPoint(doc: Document, clientX: number, clientY: number)
 		range.collapse(true);
 		return range;
 	}
-	return caretDoc.caretRangeFromPoint?.(clientX, clientY) ?? null;
+
+	const legacyRangeFromPoint = (doc as unknown as Record<string, unknown>)['caretRangeFromPoint'];
+	if (typeof legacyRangeFromPoint === 'function') {
+		return (legacyRangeFromPoint as CaretRangeFromPoint).call(doc, clientX, clientY);
+	}
+	return null;
 }
 
 export function getTextOffsetFromPoint(element: HTMLElement, clientX: number, clientY: number): number | null {
