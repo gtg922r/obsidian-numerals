@@ -63,7 +63,54 @@ export function sourceChForRenderedOffset(
 		const clampedRenderedOffset = Math.min(nonNegativeRenderedOffset, renderedInputText.length);
 		return Math.min(exactStart + clampedRenderedOffset, sourceLine.length);
 	}
+
+	const alignedSourceCh = sourceChFromRenderedSubsequence(
+		sourceLine,
+		renderedInputText,
+		nonNegativeRenderedOffset
+	);
+	if (alignedSourceCh !== null) {
+		return alignedSourceCh;
+	}
+
 	return Math.min(nonNegativeRenderedOffset, sourceLine.length);
+}
+
+function sourceChFromRenderedSubsequence(
+	sourceLine: string,
+	renderedInputText: string,
+	renderedOffset: number
+): number | null {
+	if (renderedInputText.length === 0) {
+		return null;
+	}
+
+	const renderedChToSourceCh: Array<number | undefined> = [];
+	let renderedIndex = 0;
+
+	for (let sourceIndex = 0; sourceIndex < sourceLine.length; sourceIndex++) {
+		if (sourceLine[sourceIndex] !== renderedInputText[renderedIndex]) {
+			continue;
+		}
+
+		renderedChToSourceCh[renderedIndex] ??= sourceIndex;
+		renderedIndex++;
+		renderedChToSourceCh[renderedIndex] = sourceIndex + 1;
+
+		if (renderedIndex === renderedInputText.length) {
+			break;
+		}
+	}
+
+	if (renderedIndex !== renderedInputText.length) {
+		return null;
+	}
+
+	if (renderedOffset > renderedInputText.length) {
+		return sourceLine.length;
+	}
+
+	return renderedChToSourceCh[renderedOffset] ?? null;
 }
 
 export function handleNumeralsBlockClick(

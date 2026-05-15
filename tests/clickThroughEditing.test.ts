@@ -89,6 +89,15 @@ describe('click-through editor navigation', () => {
 		expect(sourceChForRenderedOffset('@[profit::100] = sales - costs', 'profit = sales - costs', 100)).toBe(30);
 	});
 
+	it('should map cleaned insertion directive text back to editable source positions', () => {
+		const sourceLine = '@[profit::100] = sales - costs';
+		const renderedInputText = 'profit = sales - costs';
+
+		expect(sourceChForRenderedOffset(sourceLine, renderedInputText, 0)).toBe(2);
+		expect(sourceChForRenderedOffset(sourceLine, renderedInputText, 6)).toBe(8);
+		expect(sourceChForRenderedOffset(sourceLine, renderedInputText, 9)).toBe(17);
+	});
+
 	it('should read a text offset from a DOM caret position', () => {
 		const input = document.createElement('span');
 		input.textContent = 'apples + oranges';
