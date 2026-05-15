@@ -1,5 +1,5 @@
 import * as math from 'mathjs';
-import { App, Editor, MarkdownPostProcessorContext, MarkdownView, WorkspaceLeaf } from 'obsidian';
+import { App, MarkdownPostProcessorContext } from 'obsidian';
 import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, NumeralsError, NumeralsBlockResult, mathjsFormat, NumeralsScope, StringReplaceMap, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
 import { RendererFactory } from '../renderers';
 import { getScopeFromFrontmatter } from '../processing/scope';
@@ -7,21 +7,7 @@ import { preProcessBlockForNumeralsDirectives } from '../processing/preprocessor
 import { evaluateMathFromSourceStrings } from '../processing/evaluator';
 import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
 import { prepareLineData } from './linePreparation';
-
-/**
- * Find the editor for a specific file path by searching all workspace leaves.
- * More reliable than getActiveViewOfType which can return the wrong editor in split panes.
- */
-function findEditorForPath(app: App, sourcePath: string): Editor | undefined {
-	let found: Editor | undefined;
-	app.workspace.iterateAllLeaves((leaf: WorkspaceLeaf) => {
-		if (found) return;
-		if (leaf.view instanceof MarkdownView && leaf.view.file?.path === sourcePath) {
-			found = leaf.view.editor;
-		}
-	});
-	return found;
-}
+import { findEditorForPath } from './editorNavigation';
 
 /**
  * Renders error information into the container element.

@@ -30,6 +30,7 @@ export {
 	numeralsLayoutClasses,
 	numeralsRenderStyleClasses,
 } from './rendering/orchestrator';
+export { findEditorForPath } from './rendering/editorNavigation';
 export { prepareLineData, extractComment, cleanRawInput, renderComment } from './rendering/linePreparation';
 export {
 	texCurrencyReplacement,
