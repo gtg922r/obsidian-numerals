@@ -95,9 +95,10 @@ npm run lint
 ## Versioning & releases
 
 - Use `npm run version:patch|minor|major` to bump version in `package.json`
-- Use `npm run release:beta` for beta releases
-- Use `npm run release` for production releases
-- Release scripts handle manifest syncing, building, tagging, and GitHub Actions
+- Beta releases use production-shaped version tags like `1.10.0` (no `-beta` suffix). `npm run release:beta` tags the current `package.json` version and GitHub Actions publishes a GitHub prerelease for BRAT users.
+- Production releases promote the tested prerelease: `npm run release` updates stable `manifest.json` and `versions.json`, then the matching GitHub release should be flipped from prerelease to full release.
+- Do not reintroduce `manifest-beta.json`; modern BRAT installs beta builds from GitHub release assets.
+- GitHub Actions generates release assets from the tag, including a tag-matched `manifest.json`, and creates GitHub Artifact Attestations for the uploaded files.
 
 ## Security, privacy, and compliance
 
