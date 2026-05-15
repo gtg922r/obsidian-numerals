@@ -130,6 +130,10 @@ body {
     padding: var(--size-4-4);    
 } 
 
+.numerals-block .numerals-line {
+    cursor: text;
+}
+
 .numerals-block .MathJax {
     text-align: left !important;
     margin-top: .5em !important;

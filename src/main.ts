@@ -1,6 +1,7 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
 import { defaultCurrencyMap, getLocaleFormatter } from "./rendering/displayUtils";
 import { processAndRenderNumeralsBlockFromSource } from "./rendering/orchestrator";
+import { handleNumeralsBlockClick } from "./rendering/editorNavigation";
 import { getMetadataForFileAtPath, addGlobalsFromScopeToPageCache } from "./processing/scope";
 import { createInlineNumeralsPostProcessor, createInlineLivePreviewExtension } from "./inline";
 import {
@@ -179,6 +180,10 @@ export default class NumeralsPlugin extends Plugin {
 			const ref = this.app.metadataCache.on("changed", numeralsBlockCallback);
 			numeralsBlockChild.registerEvent(ref);
 		}
+
+		numeralsBlockChild.registerDomEvent(el, "click", (event: MouseEvent) => {
+			handleNumeralsBlockClick(event, ctx, el, this.app);
+		});
 
 		ctx.addChild(numeralsBlockChild);
 	}
