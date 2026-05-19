@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Changed
+- Rewrote the README to present stable inline calculations, cross-note references, and recent Numerals features without beta labeling.
+
 ## [1.10.1] - 2026-05-15
 
 ### Changed
