@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Changed
+- Moved the legacy source colocated Numerals test into the Jest-covered `tests/` directory.
+
+### Removed
+- Removed one-off agent planning and architecture documents, unused config stubs, and unreferenced PR screenshots from the repository.
+
 ## [1.10.1] - 2026-05-15
 
 ### Changed
