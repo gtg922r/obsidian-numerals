@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Changed
 - Rewrote the README to present stable inline calculations, cross-note references, and recent Numerals features without beta labeling.
+- Moved the legacy source colocated Numerals test into the Jest-covered `tests/` directory.
+
+### Removed
+- Removed one-off agent planning and architecture documents, unused config stubs, and unreferenced PR screenshots from the repository.
 
 ## [1.10.1] - 2026-05-15
 

@@ -1,4 +1,4 @@
-import { unescapeSubscripts, getScopeFromFrontmatter } from "./numeralsUtilities";
+import { unescapeSubscripts, getScopeFromFrontmatter } from "../src/numeralsUtilities";
 
 describe("unescapeSubscripts function", () => {
 	test("Basic Case", () => {
@@ -111,27 +111,27 @@ describe("processFrontmatter", () => {
 			["x", 7],
 			["y", 7],
 		]);
-		expect(getScopeFromFrontmatter(frontmatter, scope)).toEqual(expectedScope);
+		expect(getScopeFromFrontmatter(frontmatter, scope).scope).toEqual(expectedScope);
 	});
 
 	test('should not process any keys when numerals is set to "none"', () => {
 		const frontmatter = { numerals: "none", x: "5+2", y: 7 };
 		const scope = new Map();
-		expect(getScopeFromFrontmatter(frontmatter, scope)).toEqual(new Map());
+		expect(getScopeFromFrontmatter(frontmatter, scope).scope).toEqual(new Map());
 	});
 
 	test("should process only specific key when numerals is a string", () => {
 		const frontmatter = { numerals: "x", x: "5+2", y: 7 };
 		const scope = new Map();
 		const expectedScope = new Map([["x", 7]]);
-		expect(getScopeFromFrontmatter(frontmatter, scope)).toEqual(expectedScope);
+		expect(getScopeFromFrontmatter(frontmatter, scope).scope).toEqual(expectedScope);
 	});
 
 	test("should process specific keys when numerals is an array", () => {
 		const frontmatter = { numerals: ["x"], x: "5+2", y: 7 };
 		const scope = new Map();
 		const expectedScope = new Map([["x", 7]]);
-		expect(getScopeFromFrontmatter(frontmatter, scope)).toEqual(expectedScope);
+		expect(getScopeFromFrontmatter(frontmatter, scope).scope).toEqual(expectedScope);
 	});
 
 	test("should process all keys when forceAll is set to true", () => {
@@ -141,7 +141,7 @@ describe("processFrontmatter", () => {
 			["x", 7],
 			["y", (7)],
 		]);
-		expect(getScopeFromFrontmatter(frontmatter, scope, true)).toEqual(
+		expect(getScopeFromFrontmatter(frontmatter, scope, true).scope).toEqual(
 			expectedScope
 		);
 	});
@@ -154,12 +154,16 @@ describe("processFrontmatter", () => {
 			["x", 7],
 			["y", 7],
 		]);
-		expect(getScopeFromFrontmatter(frontmatter, scope)).toEqual(expectedScope);
+		expect(getScopeFromFrontmatter(frontmatter, scope).scope).toEqual(expectedScope);
 	});
 
-	test("should handle invalid expressions", () => {
+	test("should report invalid expressions as warnings", () => {
 		const frontmatter = { numerals: "all", x: "invalid_expression", y: 7 };
 		const scope = new Map();
-		expect(() => getScopeFromFrontmatter(frontmatter, scope)).toThrow();
+		const result = getScopeFromFrontmatter(frontmatter, scope);
+
+		expect(result.scope).toEqual(new Map([["y", 7]]));
+		expect(result.warnings).toHaveLength(1);
+		expect(result.warnings[0]).toContain('Frontmatter: error evaluating "x"');
 	});
 });
