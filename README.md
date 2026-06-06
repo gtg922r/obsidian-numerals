@@ -250,6 +250,19 @@ Configure how rendered numbers are displayed:
 - **Engineering**: exponent is a multiple of 3.
 - **Formatted**: choose a specific thousands/decimal style.
 
+Use `@decimalPlaces N` or `@decimalPlace N` inside a math block to show every result in that block with exactly `N` decimal places:
+
+````markdown
+```math
+@decimalPlaces 2
+subtotal = $19.995
+tax = subtotal * 8.25%
+total = subtotal + tax =>
+```
+````
+
+The directive is hidden from rendered output and also applies to result insertion values such as `@[total]`. Inline Numerals are unaffected.
+
 ## Installation
 
 Install **Numerals** from Obsidian's Community Plugins browser.

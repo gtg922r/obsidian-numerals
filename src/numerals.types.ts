@@ -128,6 +128,7 @@ export type numeralsBlockInfo = {
 	insertion_lines: number[];
 	hidden_lines: number[];
 	shouldHideNonEmitterLines: boolean;
+	decimalPlaces?: number;
 }
 
 /****************************************************

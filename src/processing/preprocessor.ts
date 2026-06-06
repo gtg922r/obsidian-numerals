@@ -39,6 +39,7 @@ export function preProcessBlockForNumeralsDirectives(
 	const insertion_lines: number[] = [];
 	const hidden_lines: number[] = [];
 	let shouldHideNonEmitterLines = false;
+	let decimalPlaces: number | undefined = undefined;
 
 	// Find emitter and result insertion lines before modifying source
 	for (let i = 0; i < rawRows.length; i++) {
@@ -64,6 +65,13 @@ export function preProcessBlockForNumeralsDirectives(
 		if (rawRows[i].match(/^\s*@createUnit\s*$/)) {
 			hidden_lines.push(i);
 		}
+
+		// Find decimal-place directives (starts with @decimalPlace or @decimalPlaces, ignoring whitespace)
+		const decimalPlacesMatch = rawRows[i].match(/^\s*@decimalPlaces?\s+(\d+)\s*$/i);
+		if (decimalPlacesMatch) {
+			hidden_lines.push(i);
+			decimalPlaces = Number(decimalPlacesMatch[1]);
+		}
 	} 
 
 	// remove `=>` at the end of lines, but preserve comments.
@@ -81,6 +89,9 @@ export function preProcessBlockForNumeralsDirectives(
 	// Remove @hideRows directive
 	processedSource = processedSource.replace(/^\s*@hideRows/gim, "");
 
+	// Remove valid decimal-place directives
+	processedSource = processedSource.replace(/^\s*@decimalPlaces?\s+\d+\s*$/gim, "");
+
 	// Apply any pre-processors (e.g. currency replacement, thousands separator replacement, etc.)
 	if (preProcessors && preProcessors.length > 0) {
 		processedSource = replaceStringsInTextFromMap(processedSource, preProcessors);
@@ -93,7 +104,8 @@ export function preProcessBlockForNumeralsDirectives(
 			emitter_lines,
 			insertion_lines,
 			hidden_lines,
-			shouldHideNonEmitterLines
+			shouldHideNonEmitterLines,
+			decimalPlaces
 		}
 	}
 }

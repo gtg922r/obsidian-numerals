@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Added
+- Added block-level `@decimalPlaces N` / `@decimalPlace N` directives for fixed decimal-place result formatting and result insertion.
+
 ## [1.10.2] - 2026-05-19
 
 ### Changed

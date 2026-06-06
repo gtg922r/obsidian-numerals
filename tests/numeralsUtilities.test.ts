@@ -16,7 +16,8 @@ const mockApp = {
 				getLine: jest.fn(),
 				setLine: jest.fn()
 			}
-		}))
+		})),
+		iterateAllLeaves: jest.fn(),
 	}
 } as any;
 
@@ -46,7 +47,7 @@ import {
 
 import * as math from 'mathjs';
 import { defaultCurrencyMap } from "../src/numeralsUtilities";
-import { MarkdownPostProcessorContext } from "obsidian";
+import { MarkdownPostProcessorContext, MarkdownView } from "obsidian";
 const currencyPreProcessors = defaultCurrencyMap.map(m => {
 	return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
 })
@@ -256,6 +257,30 @@ b = 3
 		expect(result.processedSource).toEqual("# Simple math\n1 + 1\n2 * 2");
 		expect(result.blockInfo.emitter_lines).toEqual([]);
 		expect(result.blockInfo.insertion_lines).toEqual([]);
+	});
+
+	it("removes a valid decimal-place directive and records its precision", () => {
+		const sampleBlock = `@decimalPlaces 2
+1 / 3
+@decimalPlace 4
+2 / 3`;
+
+		const result = preProcessBlockForNumeralsDirectives(sampleBlock, undefined);
+
+		expect(result.processedSource).toEqual("\n1 / 3\n\n2 / 3");
+		expect(result.blockInfo.hidden_lines).toEqual([0, 2]);
+		expect((result.blockInfo as { decimalPlaces?: number }).decimalPlaces).toBe(4);
+	});
+
+	it("leaves invalid decimal-place directives as visible mathjs input", () => {
+		const sampleBlock = `@decimalPlaces two
+1 / 3`;
+
+		const result = preProcessBlockForNumeralsDirectives(sampleBlock, undefined);
+
+		expect(result.processedSource).toEqual("@decimalPlaces two\n1 / 3");
+		expect(result.blockInfo.hidden_lines).toEqual([]);
+		expect((result.blockInfo as { decimalPlaces?: number }).decimalPlaces).toBeUndefined();
 	});
 
 	it("Correctly processes block with @prev directive", () => {
@@ -890,6 +915,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     beforeEach(() => {
         el = document.createElement("div");
+		mockApp.workspace.iterateAllLeaves.mockReset();
 		Object.defineProperty(HTMLElement.prototype, 'toggleClass', {
 			value: function(className: string, value: boolean) {
 				if (value) this.classList.add(className);
@@ -941,6 +967,10 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
         numberFormat = getLocaleFormatter();
     });
 
+	afterEach(() => {
+		jest.useRealTimers();
+	});
+
 	const resultSeparator = DEFAULT_SETTINGS.resultSeparator;
 
     it("renders a simple math block correctly", () => {
@@ -952,6 +982,68 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
         expect(lines[0].textContent).toContain(`1 + 1${resultSeparator}2`);
         expect(lines[1].textContent).toContain(`2 * 2${resultSeparator}4`);
     });
+
+	it("hides @decimalPlaces and formats normal results with exactly two decimals", () => {
+		source = "@decimalPlaces 2\n1 / 3\n2";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
+
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines.length).toBe(2);
+		expect(el.textContent).not.toContain("@decimalPlaces");
+		expect(lines[0].textContent).toContain(`1 / 3${resultSeparator}0.33`);
+		expect(lines[1].textContent).toContain(`2${resultSeparator}2.00`);
+	});
+
+	it("formats currency values with the requested decimal count inside the block", () => {
+		source = "@decimalPlaces 3\n$5.5 / 2";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
+
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines.length).toBe(1);
+		expect(lines[0].textContent).toContain(`$5.5 / 2${resultSeparator}2.750 USD`);
+	});
+
+	it("uses block-level decimal formatting when inserting results", () => {
+		jest.useFakeTimers();
+		const mockEditor = {
+			getLine: jest.fn().mockReturnValue("@[answer] = 1 / 3"),
+			setLine: jest.fn(),
+		};
+		mockApp.workspace.iterateAllLeaves.mockImplementation((callback: (leaf: unknown) => void) => {
+			callback({
+				view: Object.assign(Object.create(MarkdownView.prototype), {
+					file: { path: "test.md" },
+					editor: mockEditor,
+				}),
+			});
+		});
+		(ctx as unknown as { getSectionInfo: jest.Mock; sourcePath: string }).sourcePath = "test.md";
+		(ctx.getSectionInfo as jest.Mock).mockReturnValue({ lineStart: 10 });
+
+		source = "@decimalPlaces 2\n@[answer] = 1 / 3";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
+		jest.runAllTimers();
+
+		expect(mockEditor.setLine).toHaveBeenCalledWith(12, "@[answer::0.33] = 1 / 3");
+	});
+
+	it("surfaces invalid decimal-place directives as mathjs errors", () => {
+		source = "@decimalPlaces two\n1 / 3";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
+
+		expect(el.querySelector(".numerals-error-line")).not.toBeNull();
+		expect(el.textContent).toContain("@decimalPlaces two");
+	});
+
+	it("keeps existing formatting for blocks without the directive", () => {
+		source = "2";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
+
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines.length).toBe(1);
+		expect(lines[0].textContent).toContain(`2${resultSeparator}2`);
+		expect(lines[0].textContent).not.toContain("2.00");
+	});
 
     it("renders a block with emitter lines correctly", () => {
         source = "1 + 1 =>\n2 * 2 =>";
