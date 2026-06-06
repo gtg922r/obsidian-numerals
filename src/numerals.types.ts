@@ -196,6 +196,8 @@ export interface RenderContext {
 	settings: NumeralsSettings;
 	/** Number formatting configuration for displaying results */
 	numberFormat: mathjsFormat;
+	/** Active mathjs currency unit names created by Numerals */
+	currencyUnitNames: ReadonlySet<string>;
 	/** String replacements to apply (e.g., currency symbols) */
 	preProcessors: StringReplaceMap[];
 }

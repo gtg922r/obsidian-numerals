@@ -291,6 +291,24 @@ describe('evaluateInlineExpression', () => {
 			expect(result.formatted).toContain('USD');
 		});
 
+		it('should format pure currency results with exactly two decimals', () => {
+			const evaluate = evaluateInlineExpression as (...args: unknown[]) => ReturnType<typeof evaluateInlineExpression>;
+
+			const result = evaluate(
+				'$120.1',
+				emptyScope,
+				defaultFormat,
+				preProcessors,
+				undefined,
+				undefined,
+				undefined,
+				undefined,
+				new Set(['USD'])
+			);
+
+			expect(result.formatted).toBe('120.10 USD');
+		});
+
 		it('should evaluate "€50 + €25" with EUR currency', () => {
 			const result = evaluateInlineExpression('€50 + €25', emptyScope, defaultFormat, preProcessors);
 			expect(result.formatted).toContain('75');

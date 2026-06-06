@@ -47,6 +47,9 @@ import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing
 import { parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 import { getDataviewApi } from '../dataview';
+import { defaultCurrencyMap } from '../rendering/displayUtils';
+
+const defaultCurrencyUnitNames = new Set(defaultCurrencyMap.map(m => m.currency).filter(Boolean));
 
 /****************************************************
  * Formatting context helpers
@@ -224,6 +227,7 @@ interface DecorationContext {
 	equationTrigger: string;
 	numberFormat: mathjsFormat | undefined;
 	preProcessors: StringReplaceMap[];
+	currencyUnitNames: ReadonlySet<string>;
 	getScope: () => NumeralsScope;
 	scopeCache: Map<string, NumeralsScope>;
 	filePath: string;
@@ -239,6 +243,7 @@ function createDecorationContext(
 	getSettings: () => NumeralsSettings,
 	getNumberFormat: () => mathjsFormat | undefined,
 	preProcessors: StringReplaceMap[],
+	currencyUnitNames: ReadonlySet<string>,
 	scopeCache: Map<string, NumeralsScope>,
 	app: App,
 	filePath: string,
@@ -278,6 +283,7 @@ function createDecorationContext(
 		equationTrigger,
 		numberFormat: getNumberFormat(),
 		preProcessors,
+		currencyUnitNames,
 		getScope,
 		scopeCache,
 		filePath,
@@ -336,6 +342,7 @@ function tryBuildNodeDecoration(
 			ctx.app,
 			ctx.filePath,
 			ctx.settings,
+			ctx.currencyUnitNames,
 		);
 		resultText = result.formatted;
 		prevResultRef.value = result.raw;
@@ -522,6 +529,7 @@ export function createInlineLivePreviewExtension(
 	getPreProcessors: () => StringReplaceMap[],
 	scopeCache: Map<string, NumeralsScope>,
 	app: App,
+	getCurrencyUnitNames: () => ReadonlySet<string> = () => defaultCurrencyUnitNames,
 ) {
 	return ViewPlugin.fromClass(
 		class InlineNumeralsViewPlugin {
@@ -635,6 +643,7 @@ export function createInlineLivePreviewExtension(
 					getSettings,
 					getNumberFormat,
 					getPreProcessors(),
+					getCurrencyUnitNames(),
 					scopeCache,
 					app,
 					filePath,

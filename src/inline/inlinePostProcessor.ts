@@ -4,6 +4,9 @@ import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing
 import { parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 import { getDataviewApi } from '../dataview';
+import { defaultCurrencyMap } from '../rendering/displayUtils';
+
+const defaultCurrencyUnitNames = new Set(defaultCurrencyMap.map(m => m.currency).filter(Boolean));
 
 /**
  * Write `$`-prefixed globals to the shared scope cache.
@@ -113,7 +116,8 @@ function processInlineCodeElement(
 	prevResultRef: PrevResultRef,
 	scopeCache: Map<string, NumeralsScope>,
 	sourcePath: string,
-	app: App
+	app: App,
+	currencyUnitNames: ReadonlySet<string>
 ): InlineProcessingResult {
 	const text = codeEl.dataset.numeralsInlineSource ?? codeEl.innerText;
 
@@ -137,6 +141,7 @@ function processInlineCodeElement(
 			app,
 			sourcePath,
 			settings,
+			currencyUnitNames,
 		);
 		prevResultRef.value = result.raw;
 
@@ -183,7 +188,8 @@ export function createInlineNumeralsPostProcessor(
 	getSettings: () => NumeralsSettings,
 	getNumberFormat: () => mathjsFormat,
 	getPreProcessors: () => StringReplaceMap[],
-	scopeCache: Map<string, NumeralsScope>
+	scopeCache: Map<string, NumeralsScope>,
+	getCurrencyUnitNames: () => ReadonlySet<string> = () => defaultCurrencyUnitNames
 ): (el: HTMLElement, ctx: MarkdownPostProcessorContext) => void {
 	return (el: HTMLElement, ctx: MarkdownPostProcessorContext): void => {
 		const settings = getSettings();
@@ -223,6 +229,7 @@ export function createInlineNumeralsPostProcessor(
 			);
 
 			const numberFormat = getNumberFormat();
+			const currencyUnitNames = getCurrencyUnitNames();
 
 			// Track previous result for @prev support.
 			// Resets per section (post-processor call), so @prev only chains
@@ -241,7 +248,8 @@ export function createInlineNumeralsPostProcessor(
 					prevResultRef,
 					scopeCache,
 					ctx.sourcePath,
-					app
+					app,
+					currencyUnitNames
 				);
 				for (const path of result.referencedPaths) {
 					referencedPaths.add(path);

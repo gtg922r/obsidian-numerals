@@ -110,6 +110,7 @@ describe('renderNumeralsBlock', () => {
 			renderStyle: NumeralsRenderStyle.Plain,
 			settings,
 			numberFormat: math.format,
+			currencyUnitNames: new Set(['USD']),
 			preProcessors: []
 		};
 	});

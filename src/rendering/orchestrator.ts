@@ -1,4 +1,3 @@
-import * as math from 'mathjs';
 import { App, MarkdownPostProcessorContext } from 'obsidian';
 import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, NumeralsError, NumeralsBlockResult, mathjsFormat, NumeralsScope, StringReplaceMap, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
 import { RendererFactory } from '../renderers';
@@ -8,6 +7,9 @@ import { evaluateMathFromSourceStrings } from '../processing/evaluator';
 import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
 import { prepareLineData } from './linePreparation';
 import { findEditorForPath } from './editorNavigation';
+import { defaultCurrencyMap, formatNumeralsResult } from './displayUtils';
+
+const defaultCurrencyUnitNames = new Set(defaultCurrencyMap.map(m => m.currency).filter(Boolean));
 
 /**
  * Renders error information into the container element.
@@ -127,7 +129,8 @@ export function handleResultInsertions(
 	numberFormat: mathjsFormat,
 	ctx: MarkdownPostProcessorContext,
 	app: App,
-	el: HTMLElement
+	el: HTMLElement,
+	currencyUnitNames: ReadonlySet<string> = defaultCurrencyUnitNames
 ): void {
 	for (const i of insertionLines) {
 		const sectionInfo = ctx.getSectionInfo(el);
@@ -151,7 +154,11 @@ export function handleResultInsertions(
 
 		const curLine = lineStart + i + 1;
 		const sourceLine = editor.getLine(curLine);
-		const insertionValue = math.format(results[i], numberFormat);
+		const insertionValue = formatNumeralsResult(
+			results[i],
+			numberFormat,
+			currencyUnitNames
+		);
 
 		// Replace @[variable] or @[variable::oldValue] with @[variable::newValue]
 		const modifiedSource = sourceLine.replace(
@@ -203,7 +210,8 @@ export function processAndRenderNumeralsBlockFromSource(
 	settings: NumeralsSettings,
 	numberFormat: mathjsFormat,
 	preProcessors: StringReplaceMap[],
-	app: App
+	app: App,
+	currencyUnitNames: ReadonlySet<string> = defaultCurrencyUnitNames
 ): NumeralsBlockResult {
 
 	// Phase 1: Determine render style
@@ -262,7 +270,8 @@ export function processAndRenderNumeralsBlockFromSource(
 		numberFormat,
 		ctx,
 		app,
-		el
+		el,
+		currencyUnitNames
 	);
 
 	// Phase 7: Render
@@ -270,6 +279,7 @@ export function processAndRenderNumeralsBlockFromSource(
 		renderStyle: blockRenderStyle,
 		settings,
 		numberFormat,
+		currencyUnitNames,
 		preProcessors,
 	};
 

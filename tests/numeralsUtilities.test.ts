@@ -982,7 +982,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
         const lines = el.querySelectorAll(".numerals-line");
         expect(lines.length).toBe(1);
-        expect(lines[0].textContent).toContain(`$100 + $1,000${resultSeparator}1,100 USD`);
+        expect(lines[0].textContent).toContain(`$100 + $1,000${resultSeparator}1,100.00 USD`);
     });
 
     it("handles errors in math expressions gracefully", () => {
@@ -1010,8 +1010,8 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, numberFormat, preProcessors, mockApp);
 		const lines = el.querySelectorAll(".numerals-line");
 		expect(lines.length).toBe(2);
-		expect(lines[0].textContent).toContain(`amount = 100 USD + $1,000${resultSeparator}1,100 USD`);
-		expect(lines[1].textContent).toContain(`tax = 10% * amount${resultSeparator}110 USD`);
+		expect(lines[0].textContent).toContain(`amount = 100 USD + $1,000${resultSeparator}1,100.00 USD`);
+		expect(lines[1].textContent).toContain(`tax = 10% * amount${resultSeparator}110.00 USD`);
 
 		expect(el).toMatchSnapshot();
 	});
@@ -1036,10 +1036,10 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		expect(lines[3].textContent).toContain(`grapes = 10${resultSeparator}10`);
 		expect(lines[4].textContent).toContain(`fruit = @sum${resultSeparator}17`);
 		expect(lines[5].textContent).toContain(`# Money`);
-		expect(lines[6].textContent).toContain(`monday = $10${resultSeparator}10 USD`);
-		expect(lines[7].textContent).toContain(`tuesday = $20${resultSeparator}20 USD`);
-		expect(lines[8].textContent).toContain(`wednesday = $30${resultSeparator}30 USD`);
-		expect(lines[9].textContent).toContain(`profit = @total${resultSeparator}60 USD`);
+		expect(lines[6].textContent).toContain(`monday = $10${resultSeparator}10.00 USD`);
+		expect(lines[7].textContent).toContain(`tuesday = $20${resultSeparator}20.00 USD`);
+		expect(lines[8].textContent).toContain(`wednesday = $30${resultSeparator}30.00 USD`);
+		expect(lines[9].textContent).toContain(`profit = @total${resultSeparator}60.00 USD`);
 	});
 
     it("renders only result-annotated rows when @hideRows is used", () => {

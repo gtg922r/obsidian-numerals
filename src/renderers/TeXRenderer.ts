@@ -7,6 +7,8 @@ import {
 	mathjaxLoop,
 	replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw,
 	getLocaleFormatter,
+	formatNumeralsResult,
+	isPureCurrencyUnit,
 } from '../rendering/displayUtils';
 
 /**
@@ -108,9 +110,10 @@ export class TeXRenderer extends BaseLineRenderer {
 		context: RenderContext
 	): void {
 		// Format result to string with reasonable precision, no grouping
-		let processedResult = math.format(
+		let processedResult = formatNumeralsResult(
 			lineData.result,
-			getLocaleFormatter('en-US', { useGrouping: false })
+			getLocaleFormatter('en-US', { useGrouping: false }),
+			context.currencyUnitNames
 		);
 
 		// Apply preprocessors (reverse currency transformations for parsing)
@@ -119,7 +122,9 @@ export class TeXRenderer extends BaseLineRenderer {
 		}
 
 		// Convert to TeX
-		let texResult = math.parse(processedResult).toTex();
+		let texResult = isPureCurrencyUnit(lineData.result, context.currencyUnitNames)
+			? processedResult.replace(/^(.+)\s+([A-Z]{3})$/u, '$1~\\mathrm{$2}')
+			: math.parse(processedResult).toTex();
 		texResult = texCurrencyReplacement(texResult);
 
 		// Render with MathJax
