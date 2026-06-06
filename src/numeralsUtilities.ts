@@ -45,5 +45,7 @@ export {
 	htmlToElements,
 	mathjaxLoop,
 	getLocaleFormatter,
+	withFixedDecimalPlaces,
+	formatNumeralsResult,
 	defaultCurrencyMap,
 } from './rendering/displayUtils';

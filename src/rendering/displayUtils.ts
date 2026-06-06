@@ -1,6 +1,6 @@
 import { finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
 import * as math from 'mathjs';
-import { CurrencyType } from '../numerals.types';
+import { CurrencyType, mathjsFormat } from '../numerals.types';
 
 const MAX_FIXED_FORMAT_LEADING_DECIMAL_ZEROES = 5;
 
@@ -158,6 +158,32 @@ export function getLocaleFormatter(
 		}
 		return formattedValue;
 	};
+}
+
+export function withFixedDecimalPlaces(
+	numberFormat: mathjsFormat,
+	decimalPlaces: number | undefined
+): mathjsFormat {
+	if (decimalPlaces === undefined) {
+		return numberFormat;
+	}
+
+	if (numberFormat && typeof numberFormat === 'object') {
+		return {
+			...numberFormat,
+			notation: 'fixed',
+			precision: decimalPlaces,
+		};
+	}
+
+	return {
+		notation: 'fixed',
+		precision: decimalPlaces,
+	};
+}
+
+export function formatNumeralsResult(result: unknown, numberFormat: mathjsFormat): string {
+	return math.format(result, numberFormat);
 }
 
 function countLeadingDecimalZeroes(value: number): number {

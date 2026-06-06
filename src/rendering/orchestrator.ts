@@ -1,4 +1,3 @@
-import * as math from 'mathjs';
 import { App, MarkdownPostProcessorContext } from 'obsidian';
 import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, NumeralsError, NumeralsBlockResult, mathjsFormat, NumeralsScope, StringReplaceMap, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
 import { RendererFactory } from '../renderers';
@@ -6,6 +5,7 @@ import { getScopeFromFrontmatter } from '../processing/scope';
 import { preProcessBlockForNumeralsDirectives } from '../processing/preprocessor';
 import { evaluateMathFromSourceStrings } from '../processing/evaluator';
 import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
+import { formatNumeralsResult, withFixedDecimalPlaces } from './displayUtils';
 import { prepareLineData } from './linePreparation';
 import { findEditorForPath } from './editorNavigation';
 
@@ -151,7 +151,7 @@ export function handleResultInsertions(
 
 		const curLine = lineStart + i + 1;
 		const sourceLine = editor.getLine(curLine);
-		const insertionValue = math.format(results[i], numberFormat);
+		const insertionValue = formatNumeralsResult(results[i], numberFormat);
 
 		// Replace @[variable] or @[variable::oldValue] with @[variable::newValue]
 		const modifiedSource = sourceLine.replace(
@@ -232,6 +232,7 @@ export function processAndRenderNumeralsBlockFromSource(
 
 	// Phase 2: Preprocess (using cross-note resolved source)
 	const processedBlock = preProcessBlockForNumeralsDirectives(crossNoteResult.resolvedSource, preProcessors);
+	const blockNumberFormat = withFixedDecimalPlaces(numberFormat, processedBlock.blockInfo.decimalPlaces);
 
 	// Phase 3: Apply block styles
 	applyBlockStyles({
@@ -259,7 +260,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	handleResultInsertions(
 		evaluationResult.results,
 		processedBlock.blockInfo.insertion_lines,
-		numberFormat,
+		blockNumberFormat,
 		ctx,
 		app,
 		el
@@ -269,7 +270,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	const renderContext: RenderContext = {
 		renderStyle: blockRenderStyle,
 		settings,
-		numberFormat,
+		numberFormat: blockNumberFormat,
 		preProcessors,
 	};
 
