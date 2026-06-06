@@ -6,6 +6,7 @@
 import { handleResultInsertions } from '../src/numeralsUtilities';
 import { getLocaleFormatter } from '../src/numeralsUtilities';
 import { App, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
+import * as math from 'mathjs';
 
 // Mock Obsidian types
 type MockEditor = {
@@ -26,6 +27,12 @@ describe('handleResultInsertions', () => {
 	let numberFormat: any;
 
 	beforeEach(() => {
+		try {
+			math.createUnit('USD', { aliases: ['usd'] });
+		} catch {
+			/* unit already exists */
+		}
+
 		// Mock editor
 		mockEditor = {
 			getLine: jest.fn(),
@@ -308,6 +315,29 @@ describe('handleResultInsertions', () => {
 		const call = mockEditor.setLine.mock.calls[0];
 		expect(call[0]).toBe(1);
 		expect(call[1]).toMatch(/@\[value::\d+/);
+	});
+
+	it('should insert pure currency results with two decimal places', () => {
+		const results = [math.evaluate('120.1 USD')];
+		const insertionLines = [0];
+		const insertResults = handleResultInsertions as (...args: unknown[]) => void;
+
+		mockCtx.getSectionInfo.mockReturnValue({ lineStart: 0 });
+		mockEditor.getLine.mockReturnValue('@[total]');
+
+		insertResults(
+			results,
+			insertionLines,
+			numberFormat,
+			mockCtx as unknown as MarkdownPostProcessorContext,
+			mockApp as App,
+			mockEl,
+			new Set(['USD'])
+		);
+
+		jest.runAllTimers();
+
+		expect(mockEditor.setLine).toHaveBeenCalledWith(1, '@[total::120.10 USD]');
 	});
 
 	it('should preserve text after insertion directive', () => {

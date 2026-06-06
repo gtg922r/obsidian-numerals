@@ -179,6 +179,7 @@ describe('Rendering Pipeline Types', () => {
 				renderStyle: NumeralsRenderStyle.Plain,
 				settings: DEFAULT_SETTINGS,
 				numberFormat: undefined,
+				currencyUnitNames: new Set(['USD']),
 				preProcessors: [],
 			};
 
@@ -191,6 +192,7 @@ describe('Rendering Pipeline Types', () => {
 				renderStyle: NumeralsRenderStyle.TeX,
 				settings: DEFAULT_SETTINGS,
 				numberFormat: { notation: 'fixed' },
+				currencyUnitNames: new Set(['USD']),
 				preProcessors: [],
 			};
 
@@ -208,6 +210,7 @@ describe('Rendering Pipeline Types', () => {
 				renderStyle: NumeralsRenderStyle.SyntaxHighlight,
 				settings: DEFAULT_SETTINGS,
 				numberFormat: undefined,
+				currencyUnitNames: new Set(['USD']),
 				preProcessors,
 			};
 

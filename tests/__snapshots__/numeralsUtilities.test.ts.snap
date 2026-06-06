@@ -114,7 +114,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 10 USD
+       → 10.00 USD
     </span>
   </div>
   <div
@@ -129,7 +129,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 20 USD
+       → 20.00 USD
     </span>
   </div>
   <div
@@ -144,7 +144,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 30 USD
+       → 30.00 USD
     </span>
   </div>
   <div
@@ -167,7 +167,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 60 USD
+       → 60.00 USD
     </span>
   </div>
   <div
@@ -425,7 +425,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 100,000 USD
+       → 100,000.00 USD
     </span>
   </div>
   <div
@@ -455,7 +455,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 20,000 USD
+       → 20,000.00 USD
     </span>
   </div>
   <div
@@ -875,7 +875,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 1,100 USD
+       → 1,100.00 USD
     </span>
   </div>
   <div
@@ -1055,7 +1055,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 10 USD
+       → 10.00 USD
     </span>
   </div>
   <div
@@ -1070,7 +1070,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 20 USD
+       → 20.00 USD
     </span>
   </div>
   <div
@@ -1085,7 +1085,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 30 USD
+       → 30.00 USD
     </span>
   </div>
   <div
@@ -1108,7 +1108,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 60 USD
+       → 60.00 USD
     </span>
   </div>
   <div
@@ -1366,7 +1366,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 100,000 USD
+       → 100,000.00 USD
     </span>
   </div>
   <div
@@ -1396,7 +1396,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 20,000 USD
+       → 20,000.00 USD
     </span>
   </div>
   <div
@@ -1816,7 +1816,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 1,100 USD
+       → 1,100.00 USD
     </span>
   </div>
   <div
@@ -1996,7 +1996,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 10 USD
+       → 10.00 USD
     </span>
   </div>
   <div
@@ -2011,7 +2011,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 20 USD
+       → 20.00 USD
     </span>
   </div>
   <div
@@ -2026,7 +2026,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 30 USD
+       → 30.00 USD
     </span>
   </div>
   <div
@@ -2049,7 +2049,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 60 USD
+       → 60.00 USD
     </span>
   </div>
   <div
@@ -2307,7 +2307,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 100,000 USD
+       → 100,000.00 USD
     </span>
   </div>
   <div
@@ -2337,7 +2337,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 20,000 USD
+       → 20,000.00 USD
     </span>
   </div>
   <div
@@ -2757,7 +2757,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 1,100 USD
+       → 1,100.00 USD
     </span>
   </div>
   <div
@@ -2937,7 +2937,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 10 USD
+       → 10.00 USD
     </span>
   </div>
   <div
@@ -2952,7 +2952,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 20 USD
+       → 20.00 USD
     </span>
   </div>
   <div
@@ -2967,7 +2967,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 30 USD
+       → 30.00 USD
     </span>
   </div>
   <div
@@ -2990,7 +2990,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 60 USD
+       → 60.00 USD
     </span>
   </div>
   <div
@@ -3248,7 +3248,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 100,000 USD
+       → 100,000.00 USD
     </span>
   </div>
   <div
@@ -3278,7 +3278,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 20,000 USD
+       → 20,000.00 USD
     </span>
   </div>
   <div
@@ -3698,7 +3698,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 1,100 USD
+       → 1,100.00 USD
     </span>
   </div>
   <div
@@ -3878,7 +3878,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 10 USD
+       → 10.00 USD
     </span>
   </div>
   <div
@@ -3893,7 +3893,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 20 USD
+       → 20.00 USD
     </span>
   </div>
   <div
@@ -3908,7 +3908,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 30 USD
+       → 30.00 USD
     </span>
   </div>
   <div
@@ -3931,7 +3931,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 60 USD
+       → 60.00 USD
     </span>
   </div>
   <div
@@ -4189,7 +4189,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 100,000 USD
+       → 100,000.00 USD
     </span>
   </div>
   <div
@@ -4219,7 +4219,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 20,000 USD
+       → 20,000.00 USD
     </span>
   </div>
   <div
@@ -4639,7 +4639,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 1,100 USD
+       → 1,100.00 USD
     </span>
   </div>
   <div
@@ -4900,7 +4900,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 1,100 USD
+       → 1,100.00 USD
     </span>
   </div>
   <div
@@ -4915,7 +4915,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
     <span
       class="numerals-result"
     >
-       → 110 USD
+       → 110.00 USD
     </span>
   </div>
 </div>

@@ -33,9 +33,18 @@ import {
 	DEFAULT_SETTINGS,
 } from '../src/numerals.types';
 import { getLocaleFormatter } from '../src/numeralsUtilities';
+import * as math from 'mathjs';
 
 // Mock Obsidian DOM methods
 beforeAll(() => {
+	for (const unit of ['USD', 'CAD']) {
+		try {
+			math.createUnit(unit, { aliases: [unit.toLowerCase()] });
+		} catch {
+			/* unit already exists */
+		}
+	}
+
 	Object.defineProperty(HTMLElement.prototype, 'createEl', {
 		value: jest.fn(function (this: HTMLElement, tag, options) {
 			const element = document.createElement(tag);
@@ -81,6 +90,7 @@ describe('Renderer Implementations', () => {
 			renderStyle: NumeralsRenderStyle.Plain,
 			settings: DEFAULT_SETTINGS,
 			numberFormat: getLocaleFormatter(),
+			currencyUnitNames: new Set(['USD', 'CAD']),
 			preProcessors: [],
 		};
 	});
@@ -191,6 +201,98 @@ describe('Renderer Implementations', () => {
 			const totalElement = container.querySelector('.numerals-sum');
 			expect(totalElement).not.toBeNull();
 			expect(totalElement?.textContent).toBe('@total');
+		});
+
+		it.each([
+			['120 USD', '120.00 USD'],
+			['120.1 USD', '120.10 USD'],
+			['120.3499 USD', '120.35 USD'],
+		])('formats pure USD currency result %s with exactly two decimals', (expression, expected) => {
+			const lineData: LineRenderData = {
+				index: 0,
+				rawInput: `$${expression.split(' ')[0]}`,
+				processedInput: expression,
+				result: math.evaluate(expression),
+				isEmpty: false,
+				isEmitter: false,
+				isHidden: false,
+				comment: null,
+			};
+			context = {
+				...context,
+				currencyUnitNames: new Set(['USD']),
+			} as RenderContext & { currencyUnitNames: Set<string> };
+
+			renderer.renderLine(container, lineData, context);
+
+			const result = container.querySelector('.numerals-result');
+			expect(result?.textContent).toBe(` → ${expected}`);
+		});
+
+		it('formats configured non-USD currency units from the currency map', () => {
+			const lineData: LineRenderData = {
+				index: 0,
+				rawInput: '$120.1',
+				processedInput: '120.1 CAD',
+				result: math.evaluate('120.1 CAD'),
+				isEmpty: false,
+				isEmitter: false,
+				isHidden: false,
+				comment: null,
+			};
+			context = {
+				...context,
+				currencyUnitNames: new Set(['CAD']),
+			} as RenderContext & { currencyUnitNames: Set<string> };
+
+			renderer.renderLine(container, lineData, context);
+
+			const result = container.querySelector('.numerals-result');
+			expect(result?.textContent).toBe(' → 120.10 CAD');
+		});
+
+		it('leaves compound currency rates under existing precision behavior', () => {
+			const lineData: LineRenderData = {
+				index: 0,
+				rawInput: '$0.042/floz',
+				processedInput: '0.042 USD / floz',
+				result: math.evaluate('0.042 USD / floz'),
+				isEmpty: false,
+				isEmitter: false,
+				isHidden: false,
+				comment: null,
+			};
+			context = {
+				...context,
+				currencyUnitNames: new Set(['USD']),
+			} as RenderContext & { currencyUnitNames: Set<string> };
+
+			renderer.renderLine(container, lineData, context);
+
+			const result = container.querySelector('.numerals-result');
+			expect(result?.textContent).toBe(' → 0.042 USD / floz');
+		});
+
+		it('keeps non-currency numeric results on the selected number format', () => {
+			const lineData: LineRenderData = {
+				index: 0,
+				rawInput: '120',
+				processedInput: '120',
+				result: 120,
+				isEmpty: false,
+				isEmitter: false,
+				isHidden: false,
+				comment: null,
+			};
+			context = {
+				...context,
+				currencyUnitNames: new Set(['USD']),
+			} as RenderContext & { currencyUnitNames: Set<string> };
+
+			renderer.renderLine(container, lineData, context);
+
+			const result = container.querySelector('.numerals-result');
+			expect(result?.textContent).toBe(' → 120');
 		});
 	});
 

@@ -1,6 +1,6 @@
 import { finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
 import * as math from 'mathjs';
-import { CurrencyType } from '../numerals.types';
+import { CurrencyType, mathjsFormat } from '../numerals.types';
 
 const MAX_FIXED_FORMAT_LEADING_DECIMAL_ZEROES = 5;
 
@@ -86,6 +86,8 @@ export const defaultCurrencyMap: CurrencyType[] = [
 	{	symbol: "₹", unicode: "x20B9",	name: "rupee", 	currency: "INR"}	
 ];
 
+const defaultCurrencyUnitNames = new Set(defaultCurrencyMap.map(m => m.currency).filter(Boolean));
+
 const currencyTexReplacements = defaultCurrencyMap.map(m => ({
 	regex: new RegExp('\\\\*\\' + m.symbol, 'g'),
 	replacement: '\\' + m.name + ' ',
@@ -158,6 +160,95 @@ export function getLocaleFormatter(
 		}
 		return formattedValue;
 	};
+}
+
+interface MathjsUnitWithComponents {
+	units: math.Unit['units'];
+	value: number;
+}
+
+export function isPureCurrencyUnit(
+	value: unknown,
+	currencyUnitNames: ReadonlySet<string> = defaultCurrencyUnitNames
+): value is MathjsUnitWithComponents {
+	if (!math.isUnit(value)) {
+		return false;
+	}
+
+	const unitValue = value as MathjsUnitWithComponents;
+	if (unitValue.units.length !== 1) {
+		return false;
+	}
+
+	const [component] = unitValue.units;
+	return component.power === 1 && currencyUnitNames.has(component.unit.name);
+}
+
+export function formatNumeralsResult(
+	value: unknown,
+	numberFormat: mathjsFormat,
+	currencyUnitNames: ReadonlySet<string> = defaultCurrencyUnitNames
+): string {
+	if (isPureCurrencyUnit(value, currencyUnitNames)) {
+		return math.format(value, getCurrencyNumberFormat(numberFormat));
+	}
+
+	return numberFormat !== undefined
+		? math.format(value, numberFormat)
+		: math.format(value);
+}
+
+function getCurrencyNumberFormat(numberFormat: mathjsFormat): mathjsFormat {
+	if (typeof numberFormat === 'function') {
+		return (value: unknown): string => {
+			if (typeof value === 'number') {
+				return formatNumberWithTwoDecimals(value, numberFormat);
+			}
+			return math.format(value);
+		};
+	}
+
+	return { notation: 'fixed', precision: 2 };
+}
+
+function formatNumberWithTwoDecimals(
+	value: number,
+	baseFormatter: (value: number) => string
+): string {
+	if (!Number.isFinite(value)) {
+		return baseFormatter(value);
+	}
+
+	const roundedValue = roundToTwoDecimalPlaces(value);
+	const formattedValue = baseFormatter(roundedValue);
+	if (/[eE][+-]?\d+$/.test(formattedValue)) {
+		return roundedValue.toFixed(2);
+	}
+
+	const decimalSeparator = getDecimalSeparator(baseFormatter);
+	const decimalIndex = formattedValue.lastIndexOf(decimalSeparator);
+	if (decimalIndex === -1) {
+		return `${formattedValue}${decimalSeparator}00`;
+	}
+
+	const fractionDigits = formattedValue.length - decimalIndex - decimalSeparator.length;
+	if (fractionDigits === 0) {
+		return `${formattedValue}00`;
+	}
+	if (fractionDigits === 1) {
+		return `${formattedValue}0`;
+	}
+	return formattedValue;
+}
+
+function roundToTwoDecimalPlaces(value: number): number {
+	return Math.round((value + Math.sign(value) * Number.EPSILON) * 100) / 100;
+}
+
+function getDecimalSeparator(formatter: (value: number) => string): string {
+	const formatted = formatter(1.1);
+	const match = formatted.match(/1(\D+)1/u);
+	return match?.[1] ?? '.';
 }
 
 function countLeadingDecimalZeroes(value: number): number {

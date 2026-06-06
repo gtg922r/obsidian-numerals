@@ -123,7 +123,8 @@ export default class NumeralsPlugin extends Plugin {
 			this.settings,
 			this.numberFormat,
 			this.preProcessors,
-			this.app
+			this.app,
+			this.getCurrencyUnitNames()
 		);
 
 		addGlobalsFromScopeToPageCache(ctx.sourcePath, blockResult.scope, this.scopeCache);
@@ -160,7 +161,8 @@ export default class NumeralsPlugin extends Plugin {
 				this.settings,
 				this.numberFormat,
 				this.preProcessors,
-				this.app
+				this.app,
+				this.getCurrencyUnitNames()
 			);
 
 			addGlobalsFromScopeToPageCache(ctx.sourcePath, blockResult.scope, this.scopeCache);
@@ -229,6 +231,10 @@ export default class NumeralsPlugin extends Plugin {
 		this.updatePreProcessors();
 	}
 
+	private getCurrencyUnitNames(): ReadonlySet<string> {
+		return new Set(this.currencyMap.map(m => m.currency).filter(Boolean));
+	}
+
 	private updatePreProcessors() {
 		const currencyPreProcessors = this.currencyMap.map(m => {
 			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
@@ -280,7 +286,8 @@ export default class NumeralsPlugin extends Plugin {
 				() => this.settings,
 				() => this.numberFormat,
 				() => this.preProcessors,
-				this.scopeCache
+				this.scopeCache,
+				() => this.getCurrencyUnitNames()
 			)
 		);
 
@@ -291,7 +298,8 @@ export default class NumeralsPlugin extends Plugin {
 				() => this.numberFormat,
 				() => this.preProcessors,
 				this.scopeCache,
-				this.app
+				this.app,
+				() => this.getCurrencyUnitNames()
 			)
 		);
 

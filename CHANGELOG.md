@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Fixed
+- Pure currency results now default to two decimal places while compound currency rates keep existing precision behavior.
+
 ## [1.10.2] - 2026-05-19
 
 ### Changed

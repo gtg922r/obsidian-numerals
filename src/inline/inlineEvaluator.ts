@@ -3,6 +3,9 @@ import { App } from 'obsidian';
 import { NumeralsScope, NumeralsSettings, mathjsFormat, StringReplaceMap, InlineEvaluationResult } from '../numerals.types';
 import { replaceStringsInTextFromMap } from '../processing/preprocessor';
 import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
+import { defaultCurrencyMap, formatNumeralsResult } from '../rendering/displayUtils';
+
+const defaultCurrencyUnitNames = new Set(defaultCurrencyMap.map(m => m.currency).filter(Boolean));
 
 /**
  * Evaluate a single inline expression against a scope.
@@ -33,6 +36,7 @@ export function evaluateInlineExpression(
 	app?: App,
 	sourcePath?: string,
 	settings?: NumeralsSettings,
+	currencyUnitNames: ReadonlySet<string> = defaultCurrencyUnitNames,
 ): InlineEvaluationResult {
 	// Resolve cross-note references before preprocessing
 	let processed = expression;
@@ -76,9 +80,7 @@ export function evaluateInlineExpression(
 		throw new Error('Expression produced no result');
 	}
 
-	const formatted = numberFormat !== undefined
-		? math.format(result, numberFormat)
-		: math.format(result);
+	const formatted = formatNumeralsResult(result, numberFormat, currencyUnitNames);
 
 	// Extract note-global ($-prefixed) variable assignments.
 	// Compare the local scope against the original to find new or changed $-keys.
