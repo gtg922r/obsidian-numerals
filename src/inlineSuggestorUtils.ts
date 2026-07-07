@@ -6,6 +6,8 @@
  * for auto-complete suggestions.
  */
 
+import { InlineTriggerSettings } from './numerals.types';
+
 /**
  * Result of detecting an inline Numerals context on a line.
  */
@@ -49,23 +51,24 @@ function findInlineCodeSegments(line: string): Array<{ from: number; to: number 
  *
  * @param line - The full text of the current editor line
  * @param cursorCh - The cursor's column (0-based character offset)
- * @param resultTrigger - The trigger prefix for result-only mode (e.g. '#:')
- * @param equationTrigger - The trigger prefix for equation mode (e.g. '#=:')
+ * @param triggerSettings - The four configured trigger prefixes from settings
  * @returns Context if cursor is inside an inline Numerals span, null otherwise
  */
 export function findInlineNumeralsContext(
 	line: string,
 	cursorCh: number,
-	resultTrigger: string,
-	equationTrigger: string,
+	triggerSettings: InlineTriggerSettings,
 ): InlineNumeralsContext | null {
 	const segments = findInlineCodeSegments(line);
 
 	// Build trigger candidates, filtering out empty triggers.
-	// Sort longest-first to handle prefix conflicts (e.g. '#=:' before '#:').
-	const triggers: string[] = [];
-	if (resultTrigger) triggers.push(resultTrigger);
-	if (equationTrigger) triggers.push(equationTrigger);
+	// Sort longest-first to handle prefix conflicts (e.g. '#=$:' before '#=:').
+	const triggers = [
+		triggerSettings.resultTrigger,
+		triggerSettings.equationTrigger,
+		triggerSettings.texResultTrigger,
+		triggerSettings.texEquationTrigger,
+	].filter(t => t.length > 0);
 	triggers.sort((a, b) => b.length - a.length);
 
 	if (triggers.length === 0) return null;

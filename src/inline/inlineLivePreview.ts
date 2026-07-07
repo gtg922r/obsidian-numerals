@@ -42,11 +42,18 @@ import {
 	mathjsFormat,
 	StringReplaceMap,
 	InlineNumeralsMode,
+	NumeralsRenderStyle,
+	InlineTriggerSettings,
 } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
 import { parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 import { getDataviewApi } from '../dataview';
+import {
+	preProcessorsEqual,
+	renderInlineInputContent,
+	renderInlineValueContent,
+} from './inlineRenderer';
 
 /****************************************************
  * Formatting context helpers
@@ -136,6 +143,10 @@ export class InlineNumeralsWidget extends WidgetType {
 		private readonly separator: string,
 		private readonly isError: boolean,
 		private readonly formattingClasses: string[] = [],
+		private readonly renderStyle: NumeralsRenderStyle = NumeralsRenderStyle.Plain,
+		private readonly rawResult: unknown = resultText,
+		private readonly processedExpression: string = rawExpression,
+		private readonly preProcessors: StringReplaceMap[] = [],
 	) {
 		super();
 	}
@@ -151,6 +162,12 @@ export class InlineNumeralsWidget extends WidgetType {
 			this.rawExpression === other.rawExpression &&
 			this.separator === other.separator &&
 			this.isError === other.isError &&
+			this.renderStyle === other.renderStyle &&
+			// rawResult is intentionally not compared: mathjs results can be
+			// fresh objects on every evaluation pass, and any visible change
+			// is already captured by resultText and processedExpression.
+			this.processedExpression === other.processedExpression &&
+			preProcessorsEqual(this.preProcessors, other.preProcessors) &&
 			this.formattingClasses.length === other.formattingClasses.length &&
 			this.formattingClasses.every((c, i) => c === other.formattingClasses[i])
 		);
@@ -160,6 +177,11 @@ export class InlineNumeralsWidget extends WidgetType {
 		const ownerDocument = view?.dom.ownerDocument ?? activeDocument;
 		const span = ownerDocument.createElement('span');
 		span.classList.add('cm-inline-code', 'numerals-inline');
+
+		// TeX-rendered spans strip the code chrome so they read as native inline math
+		if (this.renderStyle === NumeralsRenderStyle.TeX) {
+			span.classList.add('numerals-inline-tex');
+		}
 
 		// Apply inherited formatting (bold, italic, etc.)
 		for (const cls of this.formattingClasses) {
@@ -177,7 +199,12 @@ export class InlineNumeralsWidget extends WidgetType {
 
 			const inputEl = ownerDocument.createElement('span');
 			inputEl.className = 'numerals-inline-input';
-			inputEl.textContent = this.rawExpression;
+			renderInlineInputContent(
+				inputEl,
+				this.rawExpression,
+				this.processedExpression,
+				this.renderStyle
+			);
 
 			const sepEl = ownerDocument.createElement('span');
 			sepEl.className = 'numerals-inline-separator';
@@ -185,7 +212,13 @@ export class InlineNumeralsWidget extends WidgetType {
 
 			const valueEl = ownerDocument.createElement('span');
 			valueEl.className = 'numerals-inline-value';
-			valueEl.textContent = this.resultText;
+			renderInlineValueContent(
+				valueEl,
+				this.resultText,
+				this.rawResult,
+				this.renderStyle,
+				this.preProcessors
+			);
 
 			span.appendChild(inputEl);
 			span.appendChild(sepEl);
@@ -196,7 +229,13 @@ export class InlineNumeralsWidget extends WidgetType {
 
 			const valueEl = ownerDocument.createElement('span');
 			valueEl.className = 'numerals-inline-value';
-			valueEl.textContent = this.resultText;
+			renderInlineValueContent(
+				valueEl,
+				this.resultText,
+				this.rawResult,
+				this.renderStyle,
+				this.preProcessors
+			);
 
 			span.appendChild(valueEl);
 		}
@@ -220,8 +259,7 @@ interface PrevResultRef {
 /** Context assembled once per decoration pass. */
 interface DecorationContext {
 	settings: NumeralsSettings;
-	resultTrigger: string;
-	equationTrigger: string;
+	triggers: InlineTriggerSettings;
 	numberFormat: mathjsFormat | undefined;
 	preProcessors: StringReplaceMap[];
 	getScope: () => NumeralsScope;
@@ -247,9 +285,19 @@ function createDecorationContext(
 
 	if (!settings.enableInlineNumerals) return null;
 
-	const resultTrigger = settings.inlineResultTrigger;
-	const equationTrigger = settings.inlineEquationTrigger;
-	if (!resultTrigger && !equationTrigger) return null;
+	const triggers: InlineTriggerSettings = {
+		resultTrigger: settings.inlineResultTrigger,
+		equationTrigger: settings.inlineEquationTrigger,
+		texResultTrigger: settings.inlineTexResultTrigger,
+		texEquationTrigger: settings.inlineTexEquationTrigger,
+	};
+	// Guard against all triggers empty (would match every code span)
+	if (
+		!triggers.resultTrigger &&
+		!triggers.equationTrigger &&
+		!triggers.texResultTrigger &&
+		!triggers.texEquationTrigger
+	) return null;
 
 	// Lazy scope resolution — only built on first matching expression
 	let scope: NumeralsScope | null = null;
@@ -274,8 +322,7 @@ function createDecorationContext(
 
 	return {
 		settings,
-		resultTrigger,
-		equationTrigger,
+		triggers,
 		numberFormat: getNumberFormat(),
 		preProcessors,
 		getScope,
@@ -310,7 +357,7 @@ function tryBuildNodeDecoration(
 ): Range<Decoration> | null {
 	const text = doc.sliceString(nodeFrom, nodeTo);
 
-	const parsed = parseInlineExpression(text, ctx.resultTrigger, ctx.equationTrigger);
+	const parsed = parseInlineExpression(text, ctx.triggers);
 	if (!parsed) return null;
 
 	// Span includes backtick delimiters (1 char each side)
@@ -324,6 +371,8 @@ function tryBuildNodeDecoration(
 
 	// Evaluate
 	let resultText: string;
+	let rawResult: unknown = '';
+	let processedExpression = parsed.expression;
 	let isError = false;
 	try {
 		const scope = ctx.getScope();
@@ -338,6 +387,8 @@ function tryBuildNodeDecoration(
 			ctx.settings,
 		);
 		resultText = result.formatted;
+		rawResult = result.raw;
+		processedExpression = result.processedExpression;
 		prevResultRef.value = result.raw;
 		for (const path of result.referencedPaths) {
 			ctx.referencedPaths.add(path);
@@ -363,6 +414,8 @@ function tryBuildNodeDecoration(
 		}
 	} catch {
 		resultText = '';
+		rawResult = '';
+		processedExpression = parsed.expression;
 		isError = true;
 		prevResultRef.value = undefined;
 	}
@@ -376,6 +429,10 @@ function tryBuildNodeDecoration(
 		ctx.settings.inlineEquationSeparator,
 		isError,
 		formattingClasses,
+		parsed.renderStyle,
+		rawResult,
+		processedExpression,
+		ctx.preProcessors,
 	);
 
 	return Decoration.replace({ widget }).range(spanFrom, spanTo);

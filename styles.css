@@ -324,6 +324,16 @@ body {
     border-bottom: 1px dotted var(--text-error);
 }
 
+/* TeX-rendered inline numerals: look like native inline math, not code.
+ * Reading mode sits on a <code> element; Live Preview on a cm-inline-code span. */
+.numerals-inline-tex,
+.numerals-inline-tex.cm-inline-code {
+    background-color: transparent;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+}
+
 /* Settings: currency mapping input fields */
 .numerals-settings-currency-input {
     text-align: center;

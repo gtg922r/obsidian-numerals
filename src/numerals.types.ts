@@ -67,6 +67,8 @@ export interface NumeralsSettings {
 	enableInlineNumerals: boolean;
 	inlineResultTrigger: string;
 	inlineEquationTrigger: string;
+	inlineTexResultTrigger: string;
+	inlineTexEquationTrigger: string;
 	inlineEquationSeparator: string;
 	provideInlineSuggestions: boolean;
 	// Cross-note reference settings
@@ -93,6 +95,8 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	enableInlineNumerals:				true,
 	inlineResultTrigger:				"#:",
 	inlineEquationTrigger:				"#=:",
+	inlineTexResultTrigger:				"#$:",
+	inlineTexEquationTrigger:			"#=$:",
 	inlineEquationSeparator:				" = ",
 	provideInlineSuggestions:			true,
 	// Cross-note reference settings
@@ -221,10 +225,20 @@ export enum InlineNumeralsMode {
 	Equation = "Equation",
 }
 
+/** The four inline trigger prefixes, straight from settings. Empty string disables a trigger. */
+export interface InlineTriggerSettings {
+	resultTrigger: string;
+	equationTrigger: string;
+	texResultTrigger: string;
+	texEquationTrigger: string;
+}
+
 /** Parsed Inline Numerals expression */
 export interface InlineNumeralsExpression {
 	/** The rendering mode determined by which trigger was matched */
 	mode: InlineNumeralsMode;
+	/** The render style determined by which trigger was matched (Plain or TeX; never SyntaxHighlight) */
+	renderStyle: NumeralsRenderStyle;
 	/** The raw expression text after the trigger prefix */
 	expression: string;
 }
@@ -235,6 +249,8 @@ export interface InlineEvaluationResult {
 	formatted: string;
 	/** The raw mathjs result value (for chaining via @prev) */
 	raw: unknown;
+	/** Expression after cross-note resolution, preprocessing, and inline directives */
+	processedExpression: string;
 	/** Note-global ($-prefixed) variables that were assigned during evaluation */
 	globals: Map<string, unknown>;
 	/** File paths referenced via [[note]].property syntax */

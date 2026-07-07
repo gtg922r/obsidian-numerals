@@ -1,9 +1,10 @@
 import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
-import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap, InlineNumeralsMode } from '../numerals.types';
+import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap, InlineNumeralsMode, InlineEvaluationResult, NumeralsRenderStyle } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
 import { parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 import { getDataviewApi } from '../dataview';
+import { renderInlineInputContent, renderInlineValueContent } from './inlineRenderer';
 
 /**
  * Write `$`-prefixed globals to the shared scope cache.
@@ -34,6 +35,7 @@ function addGlobalsToScopeCache(
  * @param codeEl - The <code> element to render into
  * @param expression - The raw expression text (trigger already stripped)
  * @param mode - Whether to show result-only or equation style
+ * @param renderStyle - Whether to render as plain text or TeX (from the matched trigger)
  * @param result - The formatted result string
  * @param settings - Plugin settings (for separator string)
  */
@@ -41,20 +43,47 @@ function renderInlineResult(
 	codeEl: HTMLElement,
 	expression: string,
 	mode: InlineNumeralsMode,
-	result: string,
-	settings: NumeralsSettings
+	renderStyle: NumeralsRenderStyle,
+	result: InlineEvaluationResult,
+	settings: NumeralsSettings,
+	preProcessors: StringReplaceMap[]
 ): void {
 	codeEl.empty();
 	codeEl.addClass('numerals-inline');
 
+	// TeX-rendered spans strip the code chrome so they read as native inline math
+	if (renderStyle === NumeralsRenderStyle.TeX) {
+		codeEl.addClass('numerals-inline-tex');
+	}
+
 	if (mode === InlineNumeralsMode.Equation) {
 		codeEl.addClass('numerals-inline-equation');
-		codeEl.createEl('span', { cls: 'numerals-inline-input', text: expression });
+		const inputEl = codeEl.createEl('span', { cls: 'numerals-inline-input' });
+		renderInlineInputContent(
+			inputEl,
+			expression,
+			result.processedExpression,
+			renderStyle
+		);
 		codeEl.createEl('span', { cls: 'numerals-inline-separator', text: settings.inlineEquationSeparator });
-		codeEl.createEl('span', { cls: 'numerals-inline-value', text: result });
+		const valueEl = codeEl.createEl('span', { cls: 'numerals-inline-value' });
+		renderInlineValueContent(
+			valueEl,
+			result.formatted,
+			result.raw,
+			renderStyle,
+			preProcessors
+		);
 	} else {
 		codeEl.addClass('numerals-inline-result');
-		codeEl.createEl('span', { cls: 'numerals-inline-value', text: result });
+		const valueEl = codeEl.createEl('span', { cls: 'numerals-inline-value' });
+		renderInlineValueContent(
+			valueEl,
+			result.formatted,
+			result.raw,
+			renderStyle,
+			preProcessors
+		);
 	}
 }
 
@@ -117,11 +146,12 @@ function processInlineCodeElement(
 ): InlineProcessingResult {
 	const text = codeEl.dataset.numeralsInlineSource ?? codeEl.innerText;
 
-	const parsed = parseInlineExpression(
-		text,
-		settings.inlineResultTrigger,
-		settings.inlineEquationTrigger
-	);
+	const parsed = parseInlineExpression(text, {
+		resultTrigger: settings.inlineResultTrigger,
+		equationTrigger: settings.inlineEquationTrigger,
+		texResultTrigger: settings.inlineTexResultTrigger,
+		texEquationTrigger: settings.inlineTexEquationTrigger,
+	});
 
 	if (!parsed) return { referencedPaths: [] };
 
@@ -150,7 +180,7 @@ function processInlineCodeElement(
 			addGlobalsToScopeCache(scopeCache, sourcePath, result.globals);
 		}
 
-		renderInlineResult(codeEl, parsed.expression, parsed.mode, result.formatted, settings);
+		renderInlineResult(codeEl, parsed.expression, parsed.mode, parsed.renderStyle, result, settings, preProcessors);
 		return { referencedPaths: result.referencedPaths };
 	} catch {
 		prevResultRef.value = undefined;
@@ -189,11 +219,16 @@ export function createInlineNumeralsPostProcessor(
 		const settings = getSettings();
 		if (!settings.enableInlineNumerals) return;
 
-		const resultTrigger = settings.inlineResultTrigger;
-		const equationTrigger = settings.inlineEquationTrigger;
+		// Collect the non-empty triggers (empty string disables a trigger).
+		const activeTriggers = [
+			settings.inlineResultTrigger,
+			settings.inlineEquationTrigger,
+			settings.inlineTexResultTrigger,
+			settings.inlineTexEquationTrigger,
+		].filter(t => t.length > 0);
 
-		// Guard against empty triggers (would match every <code> element)
-		if (!resultTrigger && !equationTrigger) return;
+		// Guard against all triggers empty (would match every <code> element)
+		if (activeTriggers.length === 0) return;
 
 		const codeElements = el.querySelectorAll<HTMLElement>('code');
 		if (codeElements.length === 0) return;
@@ -201,8 +236,7 @@ export function createInlineNumeralsPostProcessor(
 		// Quick-reject: check if any code element starts with a trigger
 		// before building scope (which is the expensive part)
 		const hasMatch = Array.from(codeElements).some(code =>
-			code.innerText.startsWith(resultTrigger) ||
-			code.innerText.startsWith(equationTrigger)
+			activeTriggers.some(t => code.innerText.startsWith(t))
 		);
 		if (!hasMatch) return;
 

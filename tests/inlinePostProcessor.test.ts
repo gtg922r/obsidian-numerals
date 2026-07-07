@@ -11,6 +11,12 @@ jest.mock("obsidian", () => ({
 	MarkdownRenderChild: class {
 		registerEvent = jest.fn((ref) => mockRegisteredEvents.push(ref));
 	},
+	renderMath: jest.fn((tex: string) => {
+		const span = document.createElement('span');
+		span.textContent = `TeX:${tex}`;
+		return span;
+	}),
+	finishRenderMath: jest.fn().mockResolvedValue(undefined),
 }), { virtual: true });
 jest.mock(
 	"obsidian-dataview",
@@ -94,11 +100,12 @@ function simulateInlinePipeline(
 	scope: NumeralsScope = new NumeralsScope(),
 	settings: NumeralsSettings = DEFAULT_SETTINGS
 ): { mode: string; expression: string; result: string } | null {
-	const parsed = parseInlineExpression(
-		inlineText,
-		settings.inlineResultTrigger,
-		settings.inlineEquationTrigger
-	);
+	const parsed = parseInlineExpression(inlineText, {
+		resultTrigger: settings.inlineResultTrigger,
+		equationTrigger: settings.inlineEquationTrigger,
+		texResultTrigger: settings.inlineTexResultTrigger,
+		texEquationTrigger: settings.inlineTexEquationTrigger,
+	});
 	if (!parsed) return null;
 
 	const { formatted } = evaluateInlineExpression(
@@ -149,6 +156,88 @@ describe('inline numerals integration', () => {
 		});
 	});
 
+	describe('TeX rendering mode', () => {
+		// TeX rendering is chosen per-expression via the `#$:` / `#=$:` triggers,
+		// not a global setting. Uses DEFAULT_SETTINGS trigger prefixes unchanged.
+		function createPostProcessor(preProcessors: StringReplaceMap[] = []) {
+			const app = {
+				vault: {
+					getAbstractFileByPath: jest.fn(() => null),
+				},
+				metadataCache: {
+					getFileCache: jest.fn(),
+				},
+			};
+			return createInlineNumeralsPostProcessor(
+				app as any,
+				() => DEFAULT_SETTINGS,
+				() => undefined,
+				() => preProcessors,
+				new Map(),
+			);
+		}
+
+		function renderInline(inlineText: string, preProcessors: StringReplaceMap[] = []): HTMLElement {
+			const container = document.createElement('p');
+			const code = document.createElement('code');
+			code.innerText = inlineText;
+			container.appendChild(code);
+			createPostProcessor(preProcessors)(container, { sourcePath: 'source.md', addChild: jest.fn() } as any);
+			return code;
+		}
+
+		it('renders "#$:" result-only inline values with MathJax in Reading mode', async () => {
+			const code = renderInline('#$: 3ft in inches');
+			await Promise.resolve();
+
+			expect(code.classList.contains('numerals-inline-tex')).toBe(true);
+			const texValue = code.querySelector('.numerals-inline-value .numerals-tex');
+			expect(texValue).not.toBeNull();
+			expect(texValue?.textContent).toBe('TeX:36~\\mathrm{inches}');
+		});
+
+		it('renders "#=$:" equation input and result with MathJax in Reading mode', async () => {
+			const code = renderInline('#=$: sqrt(144)');
+			await Promise.resolve();
+
+			expect(code.classList.contains('numerals-inline-tex')).toBe(true);
+			expect(code.querySelector('.numerals-inline-input .numerals-tex')?.textContent).toBe('TeX:\\sqrt{144}');
+			expect(code.querySelector('.numerals-inline-separator')?.textContent).toBe(' = ');
+			expect(code.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('TeX:12');
+		});
+
+		it('renders plain "#:" results as text, without any MathJax span', () => {
+			const code = renderInline('#: 2+3');
+
+			expect(code.classList.contains('numerals-inline-tex')).toBe(false);
+			expect(code.querySelector('.numerals-tex')).toBeNull();
+			expect(code.querySelector('.numerals-inline-value')?.textContent).toBe('5');
+		});
+
+		it('renders a "#$:" currency result with MathJax', async () => {
+			const code = renderInline('#$: $100 + $20', preProcessors);
+			await Promise.resolve();
+
+			const texValue = code.querySelector('.numerals-inline-value .numerals-tex');
+			expect(texValue).not.toBeNull();
+			expect(texValue?.textContent).toContain('120');
+		});
+
+		it('renders the standard error span for an invalid TeX-trigger expression', () => {
+			const code = renderInline('#$: @@invalid@@');
+
+			expect(code.classList.contains('numerals-inline-error')).toBe(true);
+			expect(code.querySelector('.numerals-tex')).toBeNull();
+		});
+
+		it('quick-reject still matches when only TeX triggers appear in the document', async () => {
+			const code = renderInline('#=$: 2+3');
+			await Promise.resolve();
+
+			expect(code.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('TeX:5');
+		});
+	});
+
 	describe('scope isolation', () => {
 		it('should not mutate the shared scope', () => {
 			const scope = new NumeralsScope();
@@ -174,7 +263,12 @@ describe('inline numerals integration', () => {
 
 	describe('error handling', () => {
 		it('should throw on invalid expression', () => {
-			const parsed = parseInlineExpression('#: @@invalid@@', '#:', '#=:');
+			const parsed = parseInlineExpression('#: @@invalid@@', {
+				resultTrigger: '#:',
+				equationTrigger: '#=:',
+				texResultTrigger: '#$:',
+				texEquationTrigger: '#=$:',
+			});
 			expect(parsed).not.toBeNull();
 			expect(() => {
 				evaluateInlineExpression(parsed!.expression, new NumeralsScope(), undefined, []);

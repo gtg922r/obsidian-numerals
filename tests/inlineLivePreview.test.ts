@@ -9,6 +9,12 @@
 jest.mock('obsidian', () => ({
 	editorInfoField: {},
 	editorLivePreviewField: {},
+	renderMath: jest.fn((tex: string) => {
+		const span = document.createElement('span');
+		span.textContent = `TeX:${tex}`;
+		return span;
+	}),
+	finishRenderMath: jest.fn().mockResolvedValue(undefined),
 }), { virtual: true });
 
 jest.mock('obsidian-dataview', () => ({
@@ -20,7 +26,7 @@ import {
 	getFormattingClasses,
 	selectionOverlapsRange,
 } from '../src/inline/inlineLivePreview';
-import { InlineNumeralsMode } from '../src/numerals.types';
+import { InlineNumeralsMode, NumeralsRenderStyle } from '../src/numerals.types';
 import { EditorSelection } from '@codemirror/state';
 
 beforeAll(() => {
@@ -131,6 +137,18 @@ describe('InlineNumeralsWidget', () => {
 			expect(el.querySelector('.numerals-inline-separator')).toBeNull();
 		});
 
+		it('should render result-only TeX mode with MathJax inside the value span', async () => {
+			const widget = new InlineNumeralsWidget(
+				'36', InlineNumeralsMode.ResultOnly, '3ft in inches', ' = ', false,
+				[], NumeralsRenderStyle.TeX, 36, '3 ft in inches', []
+			);
+			const el = widget.toDOM();
+			await Promise.resolve();
+
+			expect(el.classList.contains('numerals-inline-result')).toBe(true);
+			expect(el.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('TeX:36');
+		});
+
 		it('should render equation mode with input, separator, and value spans', () => {
 			const widget = new InlineNumeralsWidget(
 				'5 ft', InlineNumeralsMode.Equation, '3ft + 2ft', ' = ', false
@@ -141,6 +159,19 @@ describe('InlineNumeralsWidget', () => {
 			expect(el.querySelector('.numerals-inline-input')?.textContent).toBe('3ft + 2ft');
 			expect(el.querySelector('.numerals-inline-separator')?.textContent).toBe(' = ');
 			expect(el.querySelector('.numerals-inline-value')?.textContent).toBe('5 ft');
+		});
+
+		it('should render equation TeX mode with MathJax input and value spans', async () => {
+			const widget = new InlineNumeralsWidget(
+				'12', InlineNumeralsMode.Equation, 'sqrt(144)', ' = ', false,
+				[], NumeralsRenderStyle.TeX, 12, 'sqrt(144)', []
+			);
+			const el = widget.toDOM();
+			await Promise.resolve();
+
+			expect(el.querySelector('.numerals-inline-input .numerals-tex')?.textContent).toBe('TeX:\\sqrt{144}');
+			expect(el.querySelector('.numerals-inline-separator')?.textContent).toBe(' = ');
+			expect(el.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('TeX:12');
 		});
 
 		it('should create widget nodes from the editor ownerDocument', () => {
@@ -249,6 +280,34 @@ describe('InlineNumeralsWidget', () => {
 			const a = new InlineNumeralsWidget('5', InlineNumeralsMode.ResultOnly, '3+2', ' = ', false, ['cm-strong', 'cm-em']);
 			const b = new InlineNumeralsWidget('5', InlineNumeralsMode.ResultOnly, '3+2', ' = ', false, ['cm-strong', 'cm-em']);
 			expect(a.eq(b)).toBe(true);
+		});
+
+		it('should return true when only the rawResult object identity differs', () => {
+			// mathjs results (e.g. Unit objects) are fresh instances on every
+			// evaluation pass; comparing them by reference would force a DOM
+			// rebuild (and MathJax re-render) on every cursor move.
+			const a = new InlineNumeralsWidget(
+				'5 m', InlineNumeralsMode.ResultOnly, '2m+3m', ' = ', false,
+				[], NumeralsRenderStyle.TeX, { value: 5 }, '2m+3m', []
+			);
+			const b = new InlineNumeralsWidget(
+				'5 m', InlineNumeralsMode.ResultOnly, '2m+3m', ' = ', false,
+				[], NumeralsRenderStyle.TeX, { value: 5 }, '2m+3m', []
+			);
+			expect(a.eq(b)).toBe(true);
+		});
+
+		it('should return false when render style differs', () => {
+			const plain = new InlineNumeralsWidget(
+				'5', InlineNumeralsMode.ResultOnly, '3+2', ' = ', false,
+				[], NumeralsRenderStyle.Plain, 5, '3+2', []
+			);
+			const tex = new InlineNumeralsWidget(
+				'5', InlineNumeralsMode.ResultOnly, '3+2', ' = ', false,
+				[], NumeralsRenderStyle.TeX, 5, '3+2', []
+			);
+
+			expect(plain.eq(tex)).toBe(false);
 		});
 	});
 });

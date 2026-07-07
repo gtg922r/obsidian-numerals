@@ -26,12 +26,14 @@ import {
 	SyntaxHighlightRenderer,
 	RendererFactory,
 } from '../src/renderers';
+import * as math from 'mathjs';
 import {
 	LineRenderData,
 	RenderContext,
 	NumeralsRenderStyle,
 	DEFAULT_SETTINGS,
 } from '../src/numerals.types';
+import { expressionToTeX, resultToTeX } from '../src/rendering/texRendering';
 import { getLocaleFormatter } from '../src/numeralsUtilities';
 
 // Mock Obsidian DOM methods
@@ -315,7 +317,18 @@ describe('Renderer Implementations', () => {
 			renderer = new TeXRenderer();
 		});
 
-		it('should render normal line', () => {
+		it('should convert expressions and results using shared TeX helpers', () => {
+			expect(expressionToTeX('sqrt(144)')).toBe('\\sqrt{144}');
+			expect(resultToTeX(math.evaluate('3 ft to inches'), [])).toBe('36~\\mathrm{inches}');
+		});
+
+		it('should restore the @prev directive in expressionToTeX', () => {
+			// Inline mode substitutes @prev with the __prev magic variable before
+			// evaluation; expressionToTeX restores it for display.
+			expect(expressionToTeX('__prev * 2')).toBe('@prev\\cdot2');
+		});
+
+		it('should render normal line', async () => {
 			const lineData: LineRenderData = {
 				index: 0,
 				rawInput: '2 + 2',
@@ -328,6 +341,7 @@ describe('Renderer Implementations', () => {
 			};
 
 			renderer.renderLine(container, lineData, context);
+			await Promise.resolve();
 
 			const input = container.querySelector('.numerals-input');
 			const result = container.querySelector('.numerals-result');
@@ -338,6 +352,8 @@ describe('Renderer Implementations', () => {
 			// Should have TeX spans
 			const texSpans = container.querySelectorAll('.numerals-tex');
 			expect(texSpans.length).toBe(2); // input and result
+			expect(input?.textContent).toContain('TeX:2+2');
+			expect(result?.textContent).toContain('TeX:4');
 		});
 
 		it('should render empty line', () => {

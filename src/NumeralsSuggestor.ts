@@ -159,8 +159,12 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 		const inlineCtx = findInlineNumeralsContext(
 			currentLine,
 			cursor.ch,
-			this.plugin.settings.inlineResultTrigger,
-			this.plugin.settings.inlineEquationTrigger,
+			{
+				resultTrigger: this.plugin.settings.inlineResultTrigger,
+				equationTrigger: this.plugin.settings.inlineEquationTrigger,
+				texResultTrigger: this.plugin.settings.inlineTexResultTrigger,
+				texEquationTrigger: this.plugin.settings.inlineTexEquationTrigger,
+			},
 		);
 
 		if (!inlineCtx) {

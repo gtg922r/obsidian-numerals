@@ -18,6 +18,8 @@ import * as math from 'mathjs';
 import { defaultCurrencyMap } from '../src/rendering/displayUtils';
 import {
 	InlineNumeralsMode,
+	InlineTriggerSettings,
+	NumeralsRenderStyle,
 	NumeralsScope,
 	StringReplaceMap,
 	mathjsFormat,
@@ -53,11 +55,15 @@ for (const moneyType of defaultCurrencyMap) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-const DEFAULT_RESULT_TRIGGER = '#:';
-const DEFAULT_EQUATION_TRIGGER = '#=:';
+const DEFAULT_TRIGGERS: InlineTriggerSettings = {
+	resultTrigger: '#:',
+	equationTrigger: '#=:',
+	texResultTrigger: '#$:',
+	texEquationTrigger: '#=$:',
+};
 
-function parse(text: string, resultTrigger = DEFAULT_RESULT_TRIGGER, equationTrigger = DEFAULT_EQUATION_TRIGGER) {
-	return parseInlineExpression(text, resultTrigger, equationTrigger);
+function parse(text: string, triggers: Partial<InlineTriggerSettings> = {}) {
+	return parseInlineExpression(text, { ...DEFAULT_TRIGGERS, ...triggers });
 }
 
 // ---------------------------------------------------------------------------
@@ -71,6 +77,7 @@ describe('parseInlineExpression', () => {
 			const result = parse('#: 3+2');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.Plain);
 			expect(result!.expression).toBe('3+2');
 		});
 
@@ -78,6 +85,23 @@ describe('parseInlineExpression', () => {
 			const result = parse('#=: 3+2');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.Plain);
+			expect(result!.expression).toBe('3+2');
+		});
+
+		it('should parse TeX result-only trigger "#$: 3+2"', () => {
+			const result = parse('#$: 3+2');
+			expect(result).not.toBeNull();
+			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.TeX);
+			expect(result!.expression).toBe('3+2');
+		});
+
+		it('should parse TeX equation trigger "#=$: 3+2"', () => {
+			const result = parse('#=$: 3+2');
+			expect(result).not.toBeNull();
+			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.TeX);
 			expect(result!.expression).toBe('3+2');
 		});
 
@@ -122,6 +146,22 @@ describe('parseInlineExpression', () => {
 			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
 			expect(result!.expression).toBe('5*3');
 		});
+
+		it('should check "#=$:" before "#=:", "#$:", and "#:" among the four defaults', () => {
+			const result = parse('#=$: 5*3');
+			expect(result).not.toBeNull();
+			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.TeX);
+			expect(result!.expression).toBe('5*3');
+		});
+
+		it('should parse "#$: 5*3" as TeX ResultOnly and not confuse it with "#:"', () => {
+			const result = parse('#$: 5*3');
+			expect(result).not.toBeNull();
+			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.TeX);
+			expect(result!.expression).toBe('5*3');
+		});
 	});
 
 	// --- Whitespace handling ------------------------------------------------
@@ -142,29 +182,57 @@ describe('parseInlineExpression', () => {
 
 	// --- Custom triggers ----------------------------------------------------
 	describe('custom triggers', () => {
+		const allEmpty: InlineTriggerSettings = {
+			resultTrigger: '',
+			equationTrigger: '',
+			texResultTrigger: '',
+			texEquationTrigger: '',
+		};
+
 		it('should match custom result trigger "@$:"', () => {
-			const result = parse('@$: 100', '@$:', '@=:');
+			const result = parse('@$: 100', { ...allEmpty, resultTrigger: '@$:', equationTrigger: '@=:' });
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
 			expect(result!.expression).toBe('100');
 		});
 
 		it('should match custom equation trigger "@=:"', () => {
-			const result = parse('@=: 3+2', '@$:', '@=:');
+			const result = parse('@=: 3+2', { ...allEmpty, resultTrigger: '@$:', equationTrigger: '@=:' });
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
 			expect(result!.expression).toBe('3+2');
 		});
 
 		it('should match custom triggers "nm:" and "nm=:"', () => {
-			const result = parse('nm=: 3+2', 'nm:', 'nm=:');
+			const result = parse('nm=: 3+2', { ...allEmpty, resultTrigger: 'nm:', equationTrigger: 'nm=:' });
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
 			expect(result!.expression).toBe('3+2');
 		});
 
 		it('should return null when text does not match custom triggers', () => {
-			expect(parse('=: 100', '@$:', '@=:')).toBeNull();
+			expect(parse('=: 100', { ...allEmpty, resultTrigger: '@$:', equationTrigger: '@=:' })).toBeNull();
+		});
+
+		it('should resolve longest-first when one custom trigger is a prefix of another', () => {
+			// texResultTrigger '#' is a prefix of the plain resultTrigger '##';
+			// longest-first means '##' wins for text starting '##'.
+			const custom: InlineTriggerSettings = {
+				resultTrigger: '##',
+				equationTrigger: '',
+				texResultTrigger: '#',
+				texEquationTrigger: '',
+			};
+			const result = parse('## 3+2', custom);
+			expect(result).not.toBeNull();
+			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.Plain);
+			expect(result!.expression).toBe('3+2');
+
+			const texResult = parse('# 3+2', custom);
+			expect(texResult).not.toBeNull();
+			expect(texResult!.renderStyle).toBe(NumeralsRenderStyle.TeX);
+			expect(texResult!.expression).toBe('3+2');
 		});
 	});
 
@@ -172,23 +240,32 @@ describe('parseInlineExpression', () => {
 	describe('empty trigger safety', () => {
 		it('should ignore empty result trigger', () => {
 			// Empty trigger would match everything — must be filtered out
-			const result = parse('some code', '', '#=:');
+			const result = parse('some code', { resultTrigger: '', equationTrigger: '#=:', texResultTrigger: '', texEquationTrigger: '' });
 			expect(result).toBeNull();
 		});
 
 		it('should ignore empty equation trigger', () => {
-			const result = parse('some code', '=:', '');
+			const result = parse('some code', { resultTrigger: '=:', equationTrigger: '', texResultTrigger: '', texEquationTrigger: '' });
 			expect(result).toBeNull();
 		});
 
-		it('should still match valid trigger when the other is empty', () => {
-			const result = parse('#: 3+2', '#:', '');
+		it('should still match valid trigger when the others are empty', () => {
+			const result = parse('#: 3+2', { resultTrigger: '#:', equationTrigger: '', texResultTrigger: '', texEquationTrigger: '' });
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
 		});
 
-		it('should return null when both triggers are empty', () => {
-			expect(parse('anything', '', '')).toBeNull();
+		it('should return null when all four triggers are empty', () => {
+			expect(parse('anything', { resultTrigger: '', equationTrigger: '', texResultTrigger: '', texEquationTrigger: '' })).toBeNull();
+		});
+
+		it('should disable only TeX modes when the TeX triggers are empty', () => {
+			const noTex: Partial<InlineTriggerSettings> = { texResultTrigger: '', texEquationTrigger: '' };
+			// Plain triggers still work
+			expect(parse('#: 3+2', noTex)!.renderStyle).toBe(NumeralsRenderStyle.Plain);
+			// TeX trigger text no longer matches a trigger
+			expect(parse('#$: 3+2', noTex)).toBeNull();
+			expect(parse('#=$: 3+2', noTex)).toBeNull();
 		});
 	});
 });
@@ -374,6 +451,11 @@ describe('evaluateInlineExpression', () => {
 			const result = evaluateInlineExpression('$1,000 * 2', emptyScope, defaultFormat, preProcessors);
 			expect(result.formatted).toContain('2000');
 			expect(result.formatted).toContain('USD');
+		});
+
+		it('should return the processed expression used for mathjs evaluation', () => {
+			const result = evaluateInlineExpression('$1,000 * 2', emptyScope, defaultFormat, preProcessors);
+			expect(result.processedExpression).toBe('1000 USD * 2');
 		});
 
 		it('should handle multiple thousands separators: "$1,000,000"', () => {

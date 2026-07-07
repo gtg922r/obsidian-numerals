@@ -10,12 +10,17 @@ jest.mock(
 );
 
 import { findInlineNumeralsContext } from '../src/inlineSuggestorUtils';
+import { InlineTriggerSettings } from '../src/numerals.types';
 
-const RESULT_TRIGGER = '#:';
-const EQUATION_TRIGGER = '#=:';
+const DEFAULT_TRIGGERS: InlineTriggerSettings = {
+	resultTrigger: '#:',
+	equationTrigger: '#=:',
+	texResultTrigger: '#$:',
+	texEquationTrigger: '#=$:',
+};
 
-function find(line: string, cursorCh: number, resultTrigger = RESULT_TRIGGER, equationTrigger = EQUATION_TRIGGER) {
-	return findInlineNumeralsContext(line, cursorCh, resultTrigger, equationTrigger);
+function find(line: string, cursorCh: number, triggers: Partial<InlineTriggerSettings> = {}) {
+	return findInlineNumeralsContext(line, cursorCh, { ...DEFAULT_TRIGGERS, ...triggers });
 }
 
 describe('findInlineNumeralsContext', () => {
@@ -167,25 +172,53 @@ describe('findInlineNumeralsContext', () => {
 		});
 	});
 
+	// --- TeX triggers ---
+	describe('TeX triggers', () => {
+		it('should detect cursor inside a TeX result-only span', () => {
+			// `(0)#(1)$(2):(3) (4)s(5)q(6)r(7)t(8)`(9)
+			const line = '`#$: sqrt`';
+			const result = find(line, 8); // cursor at 't' in sqrt
+			expect(result).not.toBeNull();
+			expect(result!.triggerPrefix).toBe('#$:');
+			expect(result!.expressionStartCh).toBe(4);
+		});
+
+		it('should detect cursor inside a TeX equation span', () => {
+			// `(0)#(1)=(2)$(3):(4) (5)x(6)`(7)
+			const line = '`#=$: x`';
+			const result = find(line, 6); // cursor at 'x'
+			expect(result).not.toBeNull();
+			expect(result!.triggerPrefix).toBe('#=$:');
+			expect(result!.expressionStartCh).toBe(5);
+		});
+	});
+
 	// --- Custom triggers ---
 	describe('custom triggers', () => {
+		const allEmpty: InlineTriggerSettings = {
+			resultTrigger: '',
+			equationTrigger: '',
+			texResultTrigger: '',
+			texEquationTrigger: '',
+		};
+
 		it('should work with custom trigger prefixes', () => {
 			const line = '`nm: sqrt(2)`';
-			const result = find(line, 10, 'nm:', 'nm=:');
+			const result = find(line, 10, { ...allEmpty, resultTrigger: 'nm:', equationTrigger: 'nm=:' });
 			expect(result).not.toBeNull();
 			expect(result!.triggerPrefix).toBe('nm:');
 		});
 
 		it('should handle empty result trigger gracefully', () => {
 			const line = '`#=: x`';
-			const result = find(line, 5, '', '#=:');
+			const result = find(line, 5, { ...allEmpty, equationTrigger: '#=:' });
 			expect(result).not.toBeNull();
 			expect(result!.triggerPrefix).toBe('#=:');
 		});
 
-		it('should return null when both triggers are empty', () => {
+		it('should return null when all triggers are empty', () => {
 			const line = '`anything`';
-			expect(find(line, 5, '', '')).toBeNull();
+			expect(find(line, 5, allEmpty)).toBeNull();
 		});
 	});
 
@@ -196,6 +229,13 @@ describe('findInlineNumeralsContext', () => {
 			const result = find(line, 7);
 			expect(result).not.toBeNull();
 			expect(result!.triggerPrefix).toBe('#=:');
+		});
+
+		it('should match "#=$:" over "#=:", "#$:", and "#:" among the four defaults', () => {
+			const line = '`#=$: 5*3`';
+			const result = find(line, 7);
+			expect(result).not.toBeNull();
+			expect(result!.triggerPrefix).toBe('#=$:');
 		});
 	});
 });

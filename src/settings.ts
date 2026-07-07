@@ -472,6 +472,34 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName('TeX result trigger') // eslint-disable-line obsidianmd/ui/sentence-case
+			.setDesc(htmlToElements(
+				`Prefix for inline code that renders only the result with TeX (MathJax).<br>`
+				+ `Example: <code>#$: sqrt(2)/2</code> renders the result as typeset math`
+			))
+			.addText(text => text
+				.setPlaceholder('#$:')
+				.setValue(this.plugin.settings.inlineTexResultTrigger)
+				.onChange(async (value) => {
+					this.plugin.settings.inlineTexResultTrigger = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('TeX equation trigger') // eslint-disable-line obsidianmd/ui/sentence-case
+			.setDesc(htmlToElements(
+				`Prefix for inline code that renders the expression and result with TeX (MathJax).<br>`
+				+ `Example: <code>#=$: sqrt(2)/2</code> renders as typeset math like <b>√2⁄2 = 0.7071</b>`
+			))
+			.addText(text => text
+				.setPlaceholder('#=$:')
+				.setValue(this.plugin.settings.inlineTexEquationTrigger)
+				.onChange(async (value) => {
+					this.plugin.settings.inlineTexEquationTrigger = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
 			.setName('Equation separator')
 			.setDesc('String shown between the expression and result in equation mode')
 			.addText(text => text

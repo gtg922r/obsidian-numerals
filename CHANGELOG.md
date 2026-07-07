@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Added
+- Per-expression TeX rendering for Inline Numerals via the new `#$:` (result only) and `#=$:` (equation) trigger prefixes, which render with MathJax in both Live Preview and Reading mode. Both prefixes are configurable in settings. (Closes #161)
+
 ## [1.10.2] - 2026-05-19
 
 ### Changed
