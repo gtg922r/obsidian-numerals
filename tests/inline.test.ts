@@ -376,6 +376,11 @@ describe('evaluateInlineExpression', () => {
 			expect(result.formatted).toContain('USD');
 		});
 
+		it('should return the processed expression used for mathjs evaluation', () => {
+			const result = evaluateInlineExpression('$1,000 * 2', emptyScope, defaultFormat, preProcessors);
+			expect(result.processedExpression).toBe('1000 USD * 2');
+		});
+
 		it('should handle multiple thousands separators: "$1,000,000"', () => {
 			const result = evaluateInlineExpression('$1,000,000 + $0', emptyScope, defaultFormat, preProcessors);
 			// mathjs uses exponential notation for large numbers by default

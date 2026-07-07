@@ -89,5 +89,5 @@ export function evaluateInlineExpression(
 		}
 	}
 
-	return { formatted, raw: result, globals, referencedPaths };
+	return { formatted, raw: result, processedExpression: processed, globals, referencedPaths };
 }

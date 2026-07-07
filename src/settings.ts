@@ -444,6 +444,21 @@ export class NumeralsSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName('Inline rendering style')
+			.setDesc('Choose how inline calculation results are rendered')
+			.addDropdown(dropDown => {
+				dropDown.addOption(NumeralsRenderStyle.Plain, 'Plain text');
+				dropDown.addOption(NumeralsRenderStyle.TeX, 'TeX style'); // eslint-disable-line obsidianmd/ui/sentence-case
+				dropDown.setValue(this.plugin.settings.inlineRenderStyle);
+				dropDown.onChange(async (value) => {
+					const renderStyleStr = value as keyof typeof NumeralsRenderStyle;
+					this.plugin.settings.inlineRenderStyle =
+						NumeralsRenderStyle[renderStyleStr] ?? NumeralsRenderStyle.Plain;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
 			.setName('Result-only trigger')
 			.setDesc(htmlToElements(
 				`Prefix for inline code that shows only the result.<br>`

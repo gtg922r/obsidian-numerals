@@ -1,9 +1,10 @@
 import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
-import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap, InlineNumeralsMode } from '../numerals.types';
+import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap, InlineNumeralsMode, InlineEvaluationResult } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
 import { parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 import { getDataviewApi } from '../dataview';
+import { renderInlineInputContent, renderInlineValueContent } from './inlineRenderer';
 
 /**
  * Write `$`-prefixed globals to the shared scope cache.
@@ -41,20 +42,41 @@ function renderInlineResult(
 	codeEl: HTMLElement,
 	expression: string,
 	mode: InlineNumeralsMode,
-	result: string,
-	settings: NumeralsSettings
+	result: InlineEvaluationResult,
+	settings: NumeralsSettings,
+	preProcessors: StringReplaceMap[]
 ): void {
 	codeEl.empty();
 	codeEl.addClass('numerals-inline');
 
 	if (mode === InlineNumeralsMode.Equation) {
 		codeEl.addClass('numerals-inline-equation');
-		codeEl.createEl('span', { cls: 'numerals-inline-input', text: expression });
+		const inputEl = codeEl.createEl('span', { cls: 'numerals-inline-input' });
+		renderInlineInputContent(
+			inputEl,
+			expression,
+			result.processedExpression,
+			settings.inlineRenderStyle
+		);
 		codeEl.createEl('span', { cls: 'numerals-inline-separator', text: settings.inlineEquationSeparator });
-		codeEl.createEl('span', { cls: 'numerals-inline-value', text: result });
+		const valueEl = codeEl.createEl('span', { cls: 'numerals-inline-value' });
+		renderInlineValueContent(
+			valueEl,
+			result.formatted,
+			result.raw,
+			settings.inlineRenderStyle,
+			preProcessors
+		);
 	} else {
 		codeEl.addClass('numerals-inline-result');
-		codeEl.createEl('span', { cls: 'numerals-inline-value', text: result });
+		const valueEl = codeEl.createEl('span', { cls: 'numerals-inline-value' });
+		renderInlineValueContent(
+			valueEl,
+			result.formatted,
+			result.raw,
+			settings.inlineRenderStyle,
+			preProcessors
+		);
 	}
 }
 
@@ -150,7 +172,7 @@ function processInlineCodeElement(
 			addGlobalsToScopeCache(scopeCache, sourcePath, result.globals);
 		}
 
-		renderInlineResult(codeEl, parsed.expression, parsed.mode, result.formatted, settings);
+		renderInlineResult(codeEl, parsed.expression, parsed.mode, result, settings, preProcessors);
 		return { referencedPaths: result.referencedPaths };
 	} catch {
 		prevResultRef.value = undefined;

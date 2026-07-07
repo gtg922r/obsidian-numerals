@@ -11,6 +11,12 @@ jest.mock("obsidian", () => ({
 	MarkdownRenderChild: class {
 		registerEvent = jest.fn((ref) => mockRegisteredEvents.push(ref));
 	},
+	renderMath: jest.fn((tex: string) => {
+		const span = document.createElement('span');
+		span.textContent = `TeX:${tex}`;
+		return span;
+	}),
+	finishRenderMath: jest.fn().mockResolvedValue(undefined),
 }), { virtual: true });
 jest.mock(
 	"obsidian-dataview",
@@ -22,6 +28,7 @@ import * as math from 'mathjs';
 import { defaultCurrencyMap } from '../src/rendering/displayUtils';
 import {
 	NumeralsSettings,
+	NumeralsRenderStyle,
 	NumeralsScope,
 	DEFAULT_SETTINGS,
 	StringReplaceMap,
@@ -146,6 +153,54 @@ describe('inline numerals integration', () => {
 			const output = simulateInlinePipeline('#=: sqrt(144)');
 			expect(output).not.toBeNull();
 			expect(output!.result).toBe('12');
+		});
+	});
+
+	describe('TeX rendering mode', () => {
+		function createTexPostProcessor() {
+			const app = {
+				vault: {
+					getAbstractFileByPath: jest.fn(() => null),
+				},
+				metadataCache: {
+					getFileCache: jest.fn(),
+				},
+			};
+			return createInlineNumeralsPostProcessor(
+				app as any,
+				() => ({ ...DEFAULT_SETTINGS, inlineRenderStyle: NumeralsRenderStyle.TeX }),
+				() => undefined,
+				() => [],
+				new Map(),
+			);
+		}
+
+		it('renders result-only inline values with MathJax in Reading mode', async () => {
+			const container = document.createElement('p');
+			const code = document.createElement('code');
+			code.innerText = '#: 3ft in inches';
+			container.appendChild(code);
+
+			createTexPostProcessor()(container, { sourcePath: 'source.md', addChild: jest.fn() } as any);
+			await Promise.resolve();
+
+			const texValue = code.querySelector('.numerals-inline-value .numerals-tex');
+			expect(texValue).not.toBeNull();
+			expect(texValue?.textContent).toBe('TeX:36~\\mathrm{inches}');
+		});
+
+		it('renders equation input and result with MathJax in Reading mode', async () => {
+			const container = document.createElement('p');
+			const code = document.createElement('code');
+			code.innerText = '#=: sqrt(144)';
+			container.appendChild(code);
+
+			createTexPostProcessor()(container, { sourcePath: 'source.md', addChild: jest.fn() } as any);
+			await Promise.resolve();
+
+			expect(code.querySelector('.numerals-inline-input .numerals-tex')?.textContent).toBe('TeX:\\sqrt{144}');
+			expect(code.querySelector('.numerals-inline-separator')?.textContent).toBe(' = ');
+			expect(code.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('TeX:12');
 		});
 	});
 

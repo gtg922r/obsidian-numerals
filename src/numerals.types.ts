@@ -65,6 +65,7 @@ export interface NumeralsSettings {
 	enableGreekAutoComplete: boolean;
 	// Inline Numerals settings
 	enableInlineNumerals: boolean;
+	inlineRenderStyle: NumeralsRenderStyle;
 	inlineResultTrigger: string;
 	inlineEquationTrigger: string;
 	inlineEquationSeparator: string;
@@ -91,6 +92,7 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	enableGreekAutoComplete: 			true,
 	// Inline Numerals settings
 	enableInlineNumerals:				true,
+	inlineRenderStyle:					NumeralsRenderStyle.Plain,
 	inlineResultTrigger:				"#:",
 	inlineEquationTrigger:				"#=:",
 	inlineEquationSeparator:				" = ",
@@ -235,6 +237,8 @@ export interface InlineEvaluationResult {
 	formatted: string;
 	/** The raw mathjs result value (for chaining via @prev) */
 	raw: unknown;
+	/** Expression after cross-note resolution, preprocessing, and inline directives */
+	processedExpression: string;
 	/** Note-global ($-prefixed) variables that were assigned during evaluation */
 	globals: Map<string, unknown>;
 	/** File paths referenced via [[note]].property syntax */

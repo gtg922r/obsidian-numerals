@@ -1,13 +1,7 @@
-import * as math from 'mathjs';
 import { LineRenderData, RenderContext } from '../numerals.types';
 import { BaseLineRenderer } from './BaseLineRenderer';
-import {
-	texCurrencyReplacement,
-	unescapeSubscripts,
-	mathjaxLoop,
-	replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw,
-	getLocaleFormatter,
-} from '../rendering/displayUtils';
+import { mathjaxLoop } from '../rendering/displayUtils';
+import { expressionToTeX, resultToTeX } from '../rendering/texRendering';
 
 /**
  * TeX renderer for Numerals blocks.
@@ -70,17 +64,10 @@ export class TeXRenderer extends BaseLineRenderer {
 	 * @private
 	 */
 	private renderInputTeX(inputElement: HTMLElement, lineData: LineRenderData): void {
-		// Convert input to TeX
-		const preprocessedTex = math.parse(lineData.processedInput).toTex();
-
-		// Apply transformations
-		let inputTex = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(
-			preprocessedTex,
-			lineData.rawInput + (lineData.comment || ''),
-			'@Sum()'
+		const inputTex = expressionToTeX(
+			lineData.processedInput,
+			lineData.rawInput + (lineData.comment || '')
 		);
-		inputTex = unescapeSubscripts(inputTex);
-		inputTex = texCurrencyReplacement(inputTex);
 
 		// Render with MathJax
 		const inputTexElement = inputElement.createEl('span', { cls: 'numerals-tex' });
@@ -107,20 +94,7 @@ export class TeXRenderer extends BaseLineRenderer {
 		lineData: LineRenderData,
 		context: RenderContext
 	): void {
-		// Format result to string with reasonable precision, no grouping
-		let processedResult = math.format(
-			lineData.result,
-			getLocaleFormatter('en-US', { useGrouping: false })
-		);
-
-		// Apply preprocessors (reverse currency transformations for parsing)
-		for (const processor of context.preProcessors) {
-			processedResult = processedResult.replace(processor.regex, processor.replaceStr);
-		}
-
-		// Convert to TeX
-		let texResult = math.parse(processedResult).toTex();
-		texResult = texCurrencyReplacement(texResult);
+		const texResult = resultToTeX(lineData.result, context.preProcessors);
 
 		// Render with MathJax
 		const resultTexElement = resultElement.createEl('span', { cls: 'numerals-tex' });

@@ -42,11 +42,17 @@ import {
 	mathjsFormat,
 	StringReplaceMap,
 	InlineNumeralsMode,
+	NumeralsRenderStyle,
 } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
 import { parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 import { getDataviewApi } from '../dataview';
+import {
+	preProcessorsEqual,
+	renderInlineInputContent,
+	renderInlineValueContent,
+} from './inlineRenderer';
 
 /****************************************************
  * Formatting context helpers
@@ -136,6 +142,10 @@ export class InlineNumeralsWidget extends WidgetType {
 		private readonly separator: string,
 		private readonly isError: boolean,
 		private readonly formattingClasses: string[] = [],
+		private readonly renderStyle: NumeralsRenderStyle = NumeralsRenderStyle.Plain,
+		private readonly rawResult: unknown = resultText,
+		private readonly processedExpression: string = rawExpression,
+		private readonly preProcessors: StringReplaceMap[] = [],
 	) {
 		super();
 	}
@@ -151,6 +161,10 @@ export class InlineNumeralsWidget extends WidgetType {
 			this.rawExpression === other.rawExpression &&
 			this.separator === other.separator &&
 			this.isError === other.isError &&
+			this.renderStyle === other.renderStyle &&
+			this.rawResult === other.rawResult &&
+			this.processedExpression === other.processedExpression &&
+			preProcessorsEqual(this.preProcessors, other.preProcessors) &&
 			this.formattingClasses.length === other.formattingClasses.length &&
 			this.formattingClasses.every((c, i) => c === other.formattingClasses[i])
 		);
@@ -177,7 +191,12 @@ export class InlineNumeralsWidget extends WidgetType {
 
 			const inputEl = ownerDocument.createElement('span');
 			inputEl.className = 'numerals-inline-input';
-			inputEl.textContent = this.rawExpression;
+			renderInlineInputContent(
+				inputEl,
+				this.rawExpression,
+				this.processedExpression,
+				this.renderStyle
+			);
 
 			const sepEl = ownerDocument.createElement('span');
 			sepEl.className = 'numerals-inline-separator';
@@ -185,7 +204,13 @@ export class InlineNumeralsWidget extends WidgetType {
 
 			const valueEl = ownerDocument.createElement('span');
 			valueEl.className = 'numerals-inline-value';
-			valueEl.textContent = this.resultText;
+			renderInlineValueContent(
+				valueEl,
+				this.resultText,
+				this.rawResult,
+				this.renderStyle,
+				this.preProcessors
+			);
 
 			span.appendChild(inputEl);
 			span.appendChild(sepEl);
@@ -196,7 +221,13 @@ export class InlineNumeralsWidget extends WidgetType {
 
 			const valueEl = ownerDocument.createElement('span');
 			valueEl.className = 'numerals-inline-value';
-			valueEl.textContent = this.resultText;
+			renderInlineValueContent(
+				valueEl,
+				this.resultText,
+				this.rawResult,
+				this.renderStyle,
+				this.preProcessors
+			);
 
 			span.appendChild(valueEl);
 		}
@@ -324,6 +355,8 @@ function tryBuildNodeDecoration(
 
 	// Evaluate
 	let resultText: string;
+	let rawResult: unknown = '';
+	let processedExpression = parsed.expression;
 	let isError = false;
 	try {
 		const scope = ctx.getScope();
@@ -338,6 +371,8 @@ function tryBuildNodeDecoration(
 			ctx.settings,
 		);
 		resultText = result.formatted;
+		rawResult = result.raw;
+		processedExpression = result.processedExpression;
 		prevResultRef.value = result.raw;
 		for (const path of result.referencedPaths) {
 			ctx.referencedPaths.add(path);
@@ -363,6 +398,8 @@ function tryBuildNodeDecoration(
 		}
 	} catch {
 		resultText = '';
+		rawResult = '';
+		processedExpression = parsed.expression;
 		isError = true;
 		prevResultRef.value = undefined;
 	}
@@ -376,6 +413,10 @@ function tryBuildNodeDecoration(
 		ctx.settings.inlineEquationSeparator,
 		isError,
 		formattingClasses,
+		ctx.settings.inlineRenderStyle,
+		rawResult,
+		processedExpression,
+		ctx.preProcessors,
 	);
 
 	return Decoration.replace({ widget }).range(spanFrom, spanTo);

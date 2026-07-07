@@ -58,6 +58,8 @@ Inline Numerals expressions are ordinary inline code with a trigger prefix:
 
 Inline calculations work in Live Preview and Reading mode. They support the same math engine, number formatting, units, currency symbols, variables, frontmatter, and Dataview values as math blocks.
 
+Use the `Inline rendering style` setting to render inline results as plain text or TeX-style MathJax. Plain text remains the default; TeX style renders both the expression and answer in equation mode.
+
 ### Math Blocks
 
 Numerals math blocks are ideal for longer calculations:
