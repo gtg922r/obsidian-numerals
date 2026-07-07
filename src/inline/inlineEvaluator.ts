@@ -21,7 +21,7 @@ import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
  * @param app - The Obsidian App instance (optional; required for cross-note references)
  * @param sourcePath - Path of the current file (optional; required for cross-note references)
  * @param settings - Numerals settings (optional; required for cross-note references)
- * @returns Object with `formatted` (display string) and `raw` (mathjs value for chaining)
+ * @returns Object with display, raw, and processed expression values
  * @throws If mathjs cannot evaluate the expression, or @prev is used without a previous result
  */
 export function evaluateInlineExpression(
@@ -89,5 +89,5 @@ export function evaluateInlineExpression(
 		}
 	}
 
-	return { formatted, raw: result, globals, referencedPaths };
+	return { formatted, raw: result, processedExpression: processed, globals, referencedPaths };
 }

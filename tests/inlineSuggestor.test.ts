@@ -38,6 +38,22 @@ describe('findInlineNumeralsContext', () => {
 			expect(result!.triggerPrefix).toBe('#=:');
 		});
 
+		it('should detect cursor inside TeX result-only inline code', () => {
+			const line = 'text `#$: sqrt(144)` more';
+			const result = find(line, line.indexOf('`', 6)); // cursor before closing backtick
+			expect(result).not.toBeNull();
+			expect(result!.triggerPrefix).toBe('#$:');
+			expect(result!.expressionUpToCursor).toBe(' sqrt(144)');
+		});
+
+		it('should detect cursor inside TeX equation inline code', () => {
+			const line = 'text `#=$: sqrt(144)` more';
+			const result = find(line, line.indexOf('`', 6)); // cursor before closing backtick
+			expect(result).not.toBeNull();
+			expect(result!.triggerPrefix).toBe('#=$:');
+			expect(result!.expressionUpToCursor).toBe(' sqrt(144)');
+		});
+
 		it('should return null when cursor is outside inline code', () => {
 			const line = 'text `#: 3+2` more';
 			const result = find(line, 16); // cursor in 'more'
@@ -174,6 +190,13 @@ describe('findInlineNumeralsContext', () => {
 			const result = find(line, 10, 'nm:', 'nm=:');
 			expect(result).not.toBeNull();
 			expect(result!.triggerPrefix).toBe('nm:');
+		});
+
+		it('should keep fixed TeX trigger detection when plain triggers are customized', () => {
+			const line = '`#=$: sqrt(2)`';
+			const result = find(line, 13, 'nm:', 'nm=:');
+			expect(result).not.toBeNull();
+			expect(result!.triggerPrefix).toBe('#=$:');
 		});
 
 		it('should handle empty result trigger gracefully', () => {

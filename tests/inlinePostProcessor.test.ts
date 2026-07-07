@@ -11,6 +11,12 @@ jest.mock("obsidian", () => ({
 	MarkdownRenderChild: class {
 		registerEvent = jest.fn((ref) => mockRegisteredEvents.push(ref));
 	},
+	renderMath: jest.fn((tex: string) => {
+		const span = document.createElement('span');
+		span.textContent = `TeX:${tex}`;
+		return span;
+	}),
+	finishRenderMath: jest.fn().mockResolvedValue(undefined),
 }), { virtual: true });
 jest.mock(
 	"obsidian-dataview",
@@ -146,6 +152,70 @@ describe('inline numerals integration', () => {
 			const output = simulateInlinePipeline('#=: sqrt(144)');
 			expect(output).not.toBeNull();
 			expect(output!.result).toBe('12');
+		});
+	});
+
+	describe('TeX rendering mode', () => {
+		it('should render "#$: sqrt(144)" as a TeX result in Reading mode', async () => {
+			const app = {
+				vault: { getAbstractFileByPath: jest.fn(() => ({ path: 'source.md' })) },
+				metadataCache: {
+					getFileCache: jest.fn(() => ({ frontmatter: {} })),
+					on: jest.fn(),
+				},
+			};
+			const ctx = { sourcePath: 'source.md', addChild: jest.fn() };
+			const container = document.createElement('p');
+			const code = document.createElement('code');
+			code.innerText = '#$: sqrt(144)';
+			container.appendChild(code);
+
+			const postProcessor = createInlineNumeralsPostProcessor(
+				app as any,
+				() => DEFAULT_SETTINGS,
+				() => undefined,
+				() => [],
+				new Map(),
+			);
+
+			postProcessor(container, ctx as any);
+			await Promise.resolve();
+
+			expect(code.classList.contains('numerals-inline-result')).toBe(true);
+			expect(code.classList.contains('numerals-inline-tex')).toBe(true);
+			expect(code.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('TeX:12');
+		});
+
+		it('should render "#=$: sqrt(144)" with TeX input and result in Reading mode', async () => {
+			const app = {
+				vault: { getAbstractFileByPath: jest.fn(() => ({ path: 'source.md' })) },
+				metadataCache: {
+					getFileCache: jest.fn(() => ({ frontmatter: {} })),
+					on: jest.fn(),
+				},
+			};
+			const ctx = { sourcePath: 'source.md', addChild: jest.fn() };
+			const container = document.createElement('p');
+			const code = document.createElement('code');
+			code.innerText = '#=$: sqrt(144)';
+			container.appendChild(code);
+
+			const postProcessor = createInlineNumeralsPostProcessor(
+				app as any,
+				() => DEFAULT_SETTINGS,
+				() => undefined,
+				() => [],
+				new Map(),
+			);
+
+			postProcessor(container, ctx as any);
+			await Promise.resolve();
+
+			expect(code.classList.contains('numerals-inline-equation')).toBe(true);
+			expect(code.classList.contains('numerals-inline-tex')).toBe(true);
+			expect(code.querySelector('.numerals-inline-input .numerals-tex')?.textContent).toBe('TeX:\\sqrt{144}');
+			expect(code.querySelector('.numerals-inline-separator')?.textContent).toBe(' = ');
+			expect(code.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('TeX:12');
 		});
 	});
 

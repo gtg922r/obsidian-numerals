@@ -18,6 +18,7 @@ import * as math from 'mathjs';
 import { defaultCurrencyMap } from '../src/rendering/displayUtils';
 import {
 	InlineNumeralsMode,
+	NumeralsRenderStyle,
 	NumeralsScope,
 	StringReplaceMap,
 	mathjsFormat,
@@ -71,6 +72,7 @@ describe('parseInlineExpression', () => {
 			const result = parse('#: 3+2');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.Plain);
 			expect(result!.expression).toBe('3+2');
 		});
 
@@ -78,6 +80,23 @@ describe('parseInlineExpression', () => {
 			const result = parse('#=: 3+2');
 			expect(result).not.toBeNull();
 			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.Plain);
+			expect(result!.expression).toBe('3+2');
+		});
+
+		it('should parse TeX result-only trigger "#$: 3+2"', () => {
+			const result = parse('#$: 3+2');
+			expect(result).not.toBeNull();
+			expect(result!.mode).toBe(InlineNumeralsMode.ResultOnly);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.TeX);
+			expect(result!.expression).toBe('3+2');
+		});
+
+		it('should parse TeX equation trigger "#=$: 3+2"', () => {
+			const result = parse('#=$: 3+2');
+			expect(result).not.toBeNull();
+			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.TeX);
 			expect(result!.expression).toBe('3+2');
 		});
 
@@ -138,6 +157,13 @@ describe('parseInlineExpression', () => {
 			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
 			expect(result!.expression).toBe('3ft in inches');
 		});
+
+		it('should preserve a leading $ variable after the TeX trigger delimiter', () => {
+			const result = parse('#$: $rate * 2');
+			expect(result).not.toBeNull();
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.TeX);
+			expect(result!.expression).toBe('$rate * 2');
+		});
 	});
 
 	// --- Custom triggers ----------------------------------------------------
@@ -165,6 +191,14 @@ describe('parseInlineExpression', () => {
 
 		it('should return null when text does not match custom triggers', () => {
 			expect(parse('=: 100', '@$:', '@=:')).toBeNull();
+		});
+
+		it('should still match fixed TeX triggers when plain triggers are customized', () => {
+			const result = parse('#=$: sqrt(144)', '@$:', '@=:');
+			expect(result).not.toBeNull();
+			expect(result!.mode).toBe(InlineNumeralsMode.Equation);
+			expect(result!.renderStyle).toBe(NumeralsRenderStyle.TeX);
+			expect(result!.expression).toBe('sqrt(144)');
 		});
 	});
 
@@ -408,6 +442,11 @@ describe('evaluateInlineExpression', () => {
 		it('should use default format when format is undefined', () => {
 			const result = evaluateInlineExpression('2 + 2', emptyScope, undefined, noPreProcessors);
 			expect(result.formatted).toBe('4');
+		});
+
+		it('should return the processed expression used for TeX rendering', () => {
+			const result = evaluateInlineExpression('$1,000 + @prev', emptyScope, undefined, preProcessors, math.evaluate('5 USD'));
+			expect(result.processedExpression).toBe('1000 USD + __prev');
 		});
 	});
 });

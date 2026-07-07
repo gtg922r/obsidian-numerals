@@ -14,6 +14,7 @@
 | --- | --- |
 | Inline calculations | `` `#: 3ft * 4ft` `` -> `12 ft^2` |
 | Show-your-work equations | `` `#=: 2 * (3ft + 4ft)` `` -> `2 * (3 ft + 4 ft) = 14 ft` |
+| Inline TeX calculations | `` `#$: sqrt(144)` `` -> TeX-rendered `12` |
 | Full math blocks | <code>```math<br>20 mi / 4 hr to m/s<br>```</code> -> `2.235 m / s` |
 | Units and conversions | `100 km/hr in mi/hr` -> `62.137 mi / hr` |
 | Currency math | `$100/hr * 3 days` -> `7,200 USD` |
@@ -55,8 +56,10 @@ Inline Numerals expressions are ordinary inline code with a trigger prefix:
 | --- | --- | --- |
 | `` `#: 3ft * 4ft` `` | `12 ft^2` | Showing just the answer |
 | `` `#=: 3ft * 4ft` `` | `3 ft * 4 ft = 12 ft^2` | Showing the expression and answer |
+| `` `#$: sqrt(144)` `` | TeX-rendered `12` | Typeset inline results |
+| `` `#=$: sqrt(144)` `` | TeX-rendered `sqrt(144) = 12` | Typeset inline equations |
 
-Inline calculations work in Live Preview and Reading mode. They support the same math engine, number formatting, units, currency symbols, variables, frontmatter, and Dataview values as math blocks.
+Inline calculations work in Live Preview and Reading mode. They support the same math engine, number formatting, units, currency symbols, variables, frontmatter, and Dataview values as math blocks. Use `#$:` or `#=$:` on individual expressions when you want TeX-style rendering without changing the default inline triggers.
 
 ### Math Blocks
 

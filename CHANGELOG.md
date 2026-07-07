@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Added
+- Inline TeX rendering syntax: use `` `#$: expression` `` for TeX-rendered inline results and `` `#=$: expression` `` for TeX-rendered inline equations. (Closes #161)
+
 ## [1.10.2] - 2026-05-19
 
 ### Changed

@@ -225,6 +225,8 @@ export enum InlineNumeralsMode {
 export interface InlineNumeralsExpression {
 	/** The rendering mode determined by which trigger was matched */
 	mode: InlineNumeralsMode;
+	/** The visual style to use for the rendered inline expression */
+	renderStyle: NumeralsRenderStyle;
 	/** The raw expression text after the trigger prefix */
 	expression: string;
 }
@@ -235,6 +237,8 @@ export interface InlineEvaluationResult {
 	formatted: string;
 	/** The raw mathjs result value (for chaining via @prev) */
 	raw: unknown;
+	/** The preprocessed expression that was evaluated by mathjs */
+	processedExpression: string;
 	/** Note-global ($-prefixed) variables that were assigned during evaluation */
 	globals: Map<string, unknown>;
 	/** File paths referenced via [[note]].property syntax */

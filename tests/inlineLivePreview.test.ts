@@ -9,6 +9,12 @@
 jest.mock('obsidian', () => ({
 	editorInfoField: {},
 	editorLivePreviewField: {},
+	renderMath: jest.fn((tex: string) => {
+		const span = document.createElement('span');
+		span.textContent = `TeX:${tex}`;
+		return span;
+	}),
+	finishRenderMath: jest.fn().mockResolvedValue(undefined),
 }), { virtual: true });
 
 jest.mock('obsidian-dataview', () => ({
@@ -20,7 +26,7 @@ import {
 	getFormattingClasses,
 	selectionOverlapsRange,
 } from '../src/inline/inlineLivePreview';
-import { InlineNumeralsMode } from '../src/numerals.types';
+import { InlineNumeralsMode, NumeralsRenderStyle } from '../src/numerals.types';
 import { EditorSelection } from '@codemirror/state';
 
 beforeAll(() => {
@@ -143,6 +149,50 @@ describe('InlineNumeralsWidget', () => {
 			expect(el.querySelector('.numerals-inline-value')?.textContent).toBe('5 ft');
 		});
 
+		it('should render result-only TeX mode with MathJax inside the value span', async () => {
+			const widget = new InlineNumeralsWidget(
+				'12',
+				InlineNumeralsMode.ResultOnly,
+				'sqrt(144)',
+				' = ',
+				false,
+				[],
+				NumeralsRenderStyle.TeX,
+				12,
+				'sqrt(144)',
+				[],
+			);
+			const el = widget.toDOM();
+			await Promise.resolve();
+
+			expect(el.classList.contains('numerals-inline-result')).toBe(true);
+			expect(el.classList.contains('numerals-inline-tex')).toBe(true);
+			expect(el.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('TeX:12');
+		});
+
+		it('should render equation TeX mode with MathJax input and value spans', async () => {
+			const widget = new InlineNumeralsWidget(
+				'12',
+				InlineNumeralsMode.Equation,
+				'sqrt(144)',
+				' = ',
+				false,
+				[],
+				NumeralsRenderStyle.TeX,
+				12,
+				'sqrt(144)',
+				[],
+			);
+			const el = widget.toDOM();
+			await Promise.resolve();
+
+			expect(el.classList.contains('numerals-inline-equation')).toBe(true);
+			expect(el.classList.contains('numerals-inline-tex')).toBe(true);
+			expect(el.querySelector('.numerals-inline-input .numerals-tex')?.textContent).toBe('TeX:\\sqrt{144}');
+			expect(el.querySelector('.numerals-inline-separator')?.textContent).toBe(' = ');
+			expect(el.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('TeX:12');
+		});
+
 		it('should create widget nodes from the editor ownerDocument', () => {
 			const editorDocument = document.implementation.createHTMLDocument('editor');
 			const editorDom = editorDocument.createElement('div');
@@ -249,6 +299,12 @@ describe('InlineNumeralsWidget', () => {
 			const a = new InlineNumeralsWidget('5', InlineNumeralsMode.ResultOnly, '3+2', ' = ', false, ['cm-strong', 'cm-em']);
 			const b = new InlineNumeralsWidget('5', InlineNumeralsMode.ResultOnly, '3+2', ' = ', false, ['cm-strong', 'cm-em']);
 			expect(a.eq(b)).toBe(true);
+		});
+
+		it('should return false when render style differs', () => {
+			const a = new InlineNumeralsWidget('5', InlineNumeralsMode.ResultOnly, '3+2', ' = ', false, [], NumeralsRenderStyle.Plain);
+			const b = new InlineNumeralsWidget('5', InlineNumeralsMode.ResultOnly, '3+2', ' = ', false, [], NumeralsRenderStyle.TeX);
+			expect(a.eq(b)).toBe(false);
 		});
 	});
 });

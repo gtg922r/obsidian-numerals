@@ -434,7 +434,8 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setDesc(htmlToElements(
 				`Evaluate math expressions in inline code when prefixed with a trigger string.<br>`
 				+ `For example: <code>#: 3ft in inches</code> renders as the result, `
-				+ `and <code>#=: 3ft + 2ft</code> shows the equation and result.`
+				+ `<code>#=: 3ft + 2ft</code> shows the equation and result, `
+				+ `and <code>#$: sqrt(144)</code> renders the result in TeX style.`
 			))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableInlineNumerals)

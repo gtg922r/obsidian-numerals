@@ -1,9 +1,10 @@
 import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
-import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap, InlineNumeralsMode } from '../numerals.types';
+import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
-import { parseInlineExpression } from './inlineParser';
+import { hasInlineTrigger, parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 import { getDataviewApi } from '../dataview';
+import { renderInlineResultContent } from './inlineRenderer';
 
 /**
  * Write `$`-prefixed globals to the shared scope cache.
@@ -22,39 +23,6 @@ function addGlobalsToScopeCache(
 	}
 	for (const [key, value] of globals) {
 		pageScope.set(key, value);
-	}
-}
-
-/**
- * Render an Inline Numerals result into a container element.
- *
- * Replaces the content of the given element with the evaluated result.
- * In Equation mode, shows "input = result". In ResultOnly mode, shows just the result.
- *
- * @param codeEl - The <code> element to render into
- * @param expression - The raw expression text (trigger already stripped)
- * @param mode - Whether to show result-only or equation style
- * @param result - The formatted result string
- * @param settings - Plugin settings (for separator string)
- */
-function renderInlineResult(
-	codeEl: HTMLElement,
-	expression: string,
-	mode: InlineNumeralsMode,
-	result: string,
-	settings: NumeralsSettings
-): void {
-	codeEl.empty();
-	codeEl.addClass('numerals-inline');
-
-	if (mode === InlineNumeralsMode.Equation) {
-		codeEl.addClass('numerals-inline-equation');
-		codeEl.createEl('span', { cls: 'numerals-inline-input', text: expression });
-		codeEl.createEl('span', { cls: 'numerals-inline-separator', text: settings.inlineEquationSeparator });
-		codeEl.createEl('span', { cls: 'numerals-inline-value', text: result });
-	} else {
-		codeEl.addClass('numerals-inline-result');
-		codeEl.createEl('span', { cls: 'numerals-inline-value', text: result });
 	}
 }
 
@@ -150,7 +118,18 @@ function processInlineCodeElement(
 			addGlobalsToScopeCache(scopeCache, sourcePath, result.globals);
 		}
 
-		renderInlineResult(codeEl, parsed.expression, parsed.mode, result.formatted, settings);
+		codeEl.empty();
+		renderInlineResultContent(
+			codeEl,
+			parsed.mode,
+			parsed.renderStyle,
+			parsed.expression,
+			result.processedExpression,
+			result.formatted,
+			result.raw,
+			settings.inlineEquationSeparator,
+			preProcessors,
+		);
 		return { referencedPaths: result.referencedPaths };
 	} catch {
 		prevResultRef.value = undefined;
@@ -189,20 +168,15 @@ export function createInlineNumeralsPostProcessor(
 		const settings = getSettings();
 		if (!settings.enableInlineNumerals) return;
 
-		const resultTrigger = settings.inlineResultTrigger;
-		const equationTrigger = settings.inlineEquationTrigger;
-
-		// Guard against empty triggers (would match every <code> element)
-		if (!resultTrigger && !equationTrigger) return;
-
 		const codeElements = el.querySelectorAll<HTMLElement>('code');
 		if (codeElements.length === 0) return;
 
 		// Quick-reject: check if any code element starts with a trigger
 		// before building scope (which is the expensive part)
+		const resultTrigger = settings.inlineResultTrigger;
+		const equationTrigger = settings.inlineEquationTrigger;
 		const hasMatch = Array.from(codeElements).some(code =>
-			code.innerText.startsWith(resultTrigger) ||
-			code.innerText.startsWith(equationTrigger)
+			hasInlineTrigger(code.innerText, resultTrigger, equationTrigger)
 		);
 		if (!hasMatch) return;
 

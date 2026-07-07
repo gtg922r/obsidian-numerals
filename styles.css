@@ -313,6 +313,10 @@ body {
     font-weight: var(--font-semibold, 600);
 }
 
+.numerals-inline .numerals-tex {
+    display: inline-block;
+}
+
 /* Faint separator between input and result in equation mode */
 .numerals-inline-equation .numerals-inline-separator {
     color: var(--text-faint);

@@ -1,3 +1,5 @@
+import { getInlineTriggerCandidates } from './inline/inlineParser';
+
 /**
  * Utilities for the Numerals inline code suggestor.
  *
@@ -61,12 +63,8 @@ export function findInlineNumeralsContext(
 ): InlineNumeralsContext | null {
 	const segments = findInlineCodeSegments(line);
 
-	// Build trigger candidates, filtering out empty triggers.
-	// Sort longest-first to handle prefix conflicts (e.g. '#=:' before '#:').
-	const triggers: string[] = [];
-	if (resultTrigger) triggers.push(resultTrigger);
-	if (equationTrigger) triggers.push(equationTrigger);
-	triggers.sort((a, b) => b.length - a.length);
+	const triggers = getInlineTriggerCandidates(resultTrigger, equationTrigger)
+		.map(candidate => candidate.trigger);
 
 	if (triggers.length === 0) return null;
 
