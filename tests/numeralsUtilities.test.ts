@@ -16,7 +16,8 @@ const mockApp = {
 				getLine: jest.fn(),
 				setLine: jest.fn()
 			}
-		}))
+		})),
+		iterateAllLeaves: jest.fn(),
 	}
 } as any;
 
@@ -48,7 +49,7 @@ import { makeDisplayContext } from "./testHelpers";
 
 import * as math from 'mathjs';
 import { defaultCurrencyMap } from "../src/numeralsUtilities";
-import { MarkdownPostProcessorContext } from "obsidian";
+import { MarkdownPostProcessorContext, MarkdownView } from "obsidian";
 const currencyPreProcessors = defaultCurrencyMap.map(m => {
 	return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
 })
@@ -376,6 +377,108 @@ apples = 2
 		);
 		expect(result.blockInfo.hidden_lines).toEqual([]);
 		expect(result.blockInfo.shouldHideNonEmitterLines).toBe(false);
+	});
+
+	it("parses @format fixed N, hides the line, and records the directive", () => {
+		const sampleBlock = `@format fixed 2
+10 / 3`;
+
+		const result = preProcessBlockForNumeralsDirectives(sampleBlock, undefined);
+
+		expect(result.processedSource).toEqual("\n10 / 3");
+		expect(result.blockInfo.hidden_lines).toEqual([0]);
+		expect(result.blockInfo.formatDirective).toEqual({ notation: "fixed", precision: 2 });
+	});
+
+	it("parses @format sci N as exponential notation with precision", () => {
+		const result = preProcessBlockForNumeralsDirectives("@format sci 3\n12345", undefined);
+
+		expect(result.blockInfo.formatDirective).toEqual({ notation: "exponential", precision: 3 });
+	});
+
+	it("parses @format eng without precision (mathjs default precision)", () => {
+		const result = preProcessBlockForNumeralsDirectives("@format eng\n12345", undefined);
+
+		expect(result.blockInfo.formatDirective).toEqual({ notation: "engineering" });
+		expect(result.blockInfo.formatDirective).not.toHaveProperty("precision");
+	});
+
+	it("accepts all notation aliases case-insensitively", () => {
+		const cases: [string, string][] = [
+			["@format EXPONENTIAL 1", "exponential"],
+			["@format Scientific 1", "exponential"],
+			["@format EXP 1", "exponential"],
+			["@format Engineering 1", "engineering"],
+			["@FORMAT Fixed 1", "fixed"],
+		];
+		for (const [line, notation] of cases) {
+			const result = preProcessBlockForNumeralsDirectives(`${line}\n1`, undefined);
+			expect(result.blockInfo.formatDirective).toEqual({ notation, precision: 1 });
+		}
+	});
+
+	it("treats @decimalPlaces / @decimalPlace as an alias for @format fixed N", () => {
+		const resultPlural = preProcessBlockForNumeralsDirectives("@decimalPlaces 2\n1 / 3", undefined);
+		const resultSingular = preProcessBlockForNumeralsDirectives("@decimalPlace 4\n1 / 3", undefined);
+
+		expect(resultPlural.blockInfo.formatDirective).toEqual({ notation: "fixed", precision: 2 });
+		expect(resultPlural.processedSource).toEqual("\n1 / 3");
+		expect(resultSingular.blockInfo.formatDirective).toEqual({ notation: "fixed", precision: 4 });
+	});
+
+	it("lets the last valid directive in a block win", () => {
+		const sampleBlock = `@format fixed 1
+1 / 3
+@decimalPlaces 3
+2 / 3`;
+
+		const result = preProcessBlockForNumeralsDirectives(sampleBlock, undefined);
+
+		expect(result.processedSource).toEqual("\n1 / 3\n\n2 / 3");
+		expect(result.blockInfo.hidden_lines).toEqual([0, 2]);
+		expect(result.blockInfo.formatDirective).toEqual({ notation: "fixed", precision: 3 });
+	});
+
+	it("leaves invalid @format directives as visible mathjs input", () => {
+		const invalidLines = [
+			"@format bogus 2",
+			"@format fixed -1",
+			"@format fixed 1.5",
+			"@decimalPlaces",
+		];
+		for (const line of invalidLines) {
+			const result = preProcessBlockForNumeralsDirectives(`${line}\n1 / 3`, undefined);
+			expect(result.processedSource).toEqual(`${line}\n1 / 3`);
+			expect(result.blockInfo.hidden_lines).toEqual([]);
+			expect(result.blockInfo.formatDirective).toBeUndefined();
+		}
+	});
+
+	it("still applies a later valid directive when an earlier one is invalid", () => {
+		const sampleBlock = `@format bogus 2
+1 / 3
+@format fixed 2
+2 / 3`;
+
+		const result = preProcessBlockForNumeralsDirectives(sampleBlock, undefined);
+
+		expect(result.processedSource).toEqual("@format bogus 2\n1 / 3\n\n2 / 3");
+		expect(result.blockInfo.hidden_lines).toEqual([2]);
+		expect(result.blockInfo.formatDirective).toEqual({ notation: "fixed", precision: 2 });
+	});
+
+	it("does not strip a @format directive suffixed with an emitter marker", () => {
+		// `@format fixed 2 =>` is rejected by the detector; after the `=>`
+		// removal it must remain visible input (a mathjs error), not be
+		// silently blanked by directive stripping.
+		const sampleBlock = `@format fixed 2 =>
+10 / 3`;
+
+		const result = preProcessBlockForNumeralsDirectives(sampleBlock, undefined);
+
+		expect(result.processedSource).toEqual("@format fixed 2\n10 / 3");
+		expect(result.blockInfo.hidden_lines).toEqual([]);
+		expect(result.blockInfo.formatDirective).toBeUndefined();
 	});
 });
 
@@ -893,6 +996,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     beforeEach(() => {
         el = document.createElement("div");
+		mockApp.workspace.iterateAllLeaves.mockReset();
 		Object.defineProperty(HTMLElement.prototype, 'toggleClass', {
 			value: function(className: string, value: boolean) {
 				if (value) this.classList.add(className);
@@ -944,6 +1048,10 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
         numberFormat = getLocaleFormatter();
         displayContext = makeDisplayContext({ numberFormat });
     });
+
+	afterEach(() => {
+		jest.useRealTimers();
+	});
 
 	const resultSeparator = DEFAULT_SETTINGS.resultSeparator;
 
@@ -1018,6 +1126,125 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		expect(lines[1].textContent).toContain(`tax = 10% * amount${resultSeparator}$110.00`);
 
 		expect(el).toMatchSnapshot();
+	});
+
+	it("applies @format fixed N to non-currency results regardless of global format", () => {
+		source = "@format fixed 2\n10 / 3";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines.length).toBe(1);
+		expect(el.textContent).not.toContain("@format");
+		expect(lines[0].textContent).toContain(`10 / 3${resultSeparator}3.33`);
+	});
+
+	it("applies @format sci N as exponential notation", () => {
+		source = "@format sci 3\n12345";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines[0].textContent).toContain(`12345${resultSeparator}1.23e+4`);
+	});
+
+	it("applies @format eng as engineering notation with mathjs default precision", () => {
+		source = "@format eng\n12345";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines[0].textContent).toContain(`12345${resultSeparator}12.345e+3`);
+	});
+
+	it("lets @format precision win over the currency convention (symbol still applies)", () => {
+		source = "@format fixed 4\n$100 / 3";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines[0].textContent).toContain(`$100 / 3${resultSeparator}$33.3333`);
+	});
+
+	it("lets @format override a currency's zero-minor-unit convention (JPY)", () => {
+		source = "@format fixed 2\n¥1000 / 3";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines[0].textContent).toContain(`¥1000 / 3${resultSeparator}¥333.33`);
+	});
+
+	it("uses block @format precision when inserting results", () => {
+		jest.useFakeTimers();
+		const mockEditor = {
+			getLine: jest.fn().mockReturnValue("@[answer] = 10 / 3"),
+			setLine: jest.fn(),
+		};
+		mockApp.workspace.iterateAllLeaves.mockImplementation((callback: (leaf: unknown) => void) => {
+			callback({
+				view: Object.assign(Object.create(MarkdownView.prototype), {
+					file: { path: "test.md" },
+					editor: mockEditor,
+				}),
+			});
+		});
+		(ctx as unknown as { getSectionInfo: jest.Mock; sourcePath: string }).sourcePath = "test.md";
+		(ctx.getSectionInfo as jest.Mock).mockReturnValue({ lineStart: 10 });
+
+		source = "@format fixed 3\n@[answer] = 10 / 3";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+		jest.runAllTimers();
+
+		expect(mockEditor.setLine).toHaveBeenCalledWith(12, "@[answer::3.333] = 10 / 3");
+	});
+
+	it("keeps currency insertion in code form with @format precision", () => {
+		jest.useFakeTimers();
+		const mockEditor = {
+			getLine: jest.fn().mockReturnValue("@[answer] = $100 / 3"),
+			setLine: jest.fn(),
+		};
+		mockApp.workspace.iterateAllLeaves.mockImplementation((callback: (leaf: unknown) => void) => {
+			callback({
+				view: Object.assign(Object.create(MarkdownView.prototype), {
+					file: { path: "test.md" },
+					editor: mockEditor,
+				}),
+			});
+		});
+		(ctx as unknown as { getSectionInfo: jest.Mock; sourcePath: string }).sourcePath = "test.md";
+		(ctx.getSectionInfo as jest.Mock).mockReturnValue({ lineStart: 10 });
+
+		source = "@format fixed 4\n@[answer] = $100 / 3";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+		jest.runAllTimers();
+
+		expect(mockEditor.setLine).toHaveBeenCalledWith(12, "@[answer::33.3333 USD] = $100 / 3");
+	});
+
+	it("surfaces an invalid @format directive as an error while the valid one still formats", () => {
+		// The invalid directive stays as input and errors in mathjs (halting later
+		// lines), but the earlier valid directive still formats what was evaluated.
+		source = "@format fixed 2\n10 / 3\n@format bogus 2";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+
+		expect(el.querySelector(".numerals-error-line")).not.toBeNull();
+		expect(el.textContent).toContain("@format bogus 2");
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines[0].textContent).toContain(`10 / 3${resultSeparator}3.33`);
+	});
+
+	it("lets the last @format directive in a block win", () => {
+		source = "@format fixed 1\n@format fixed 3\n10 / 3";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+
+		const lines = el.querySelectorAll(".numerals-line");
+		expect(lines.length).toBe(1);
+		expect(lines[0].textContent).toContain(`10 / 3${resultSeparator}3.333`);
+	});
+
+	it("surfaces a @format directive suffixed with an emitter marker as a visible error", () => {
+		source = "@format fixed 2 =>\n10 / 3";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+
+		expect(el.querySelector(".numerals-error-line")).not.toBeNull();
+		expect(el.textContent).toContain("@format fixed 2");
 	});
 
 	it('Simple math with rolling sum', () => {

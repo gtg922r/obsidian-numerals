@@ -164,11 +164,26 @@ export interface NumeralsBlockResult {
 	referencedPaths: string[];
 }
 
+/**
+ * A parsed block-level `@format` directive (also produced by the
+ * `@decimalPlaces` alias). Describes how every result in the block should be
+ * formatted, overriding both the currency-convention decimals and the global
+ * number-format setting.
+ */
+export interface NumeralsFormatDirective {
+	/** mathjs notation to format results with. */
+	notation: 'fixed' | 'exponential' | 'engineering';
+	/** Optional non-negative precision; mathjs default precision when omitted. */
+	precision?: number;
+}
+
 export type numeralsBlockInfo = {
 	emitter_lines: number[];
 	insertion_lines: number[];
 	hidden_lines: number[];
 	shouldHideNonEmitterLines: boolean;
+	/** Block-level `@format` / `@decimalPlaces` directive (last valid one wins). */
+	formatDirective?: NumeralsFormatDirective;
 }
 
 /****************************************************

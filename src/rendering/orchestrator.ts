@@ -7,7 +7,7 @@ import { evaluateMathFromSourceStrings } from '../processing/evaluator';
 import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
 import { prepareLineData } from './linePreparation';
 import { findEditorForPath } from './editorNavigation';
-import { formatNumeralsResult } from './displayUtils';
+import { applyBlockFormat, formatNumeralsResult } from './displayUtils';
 
 /**
  * Renders error information into the container element.
@@ -244,6 +244,10 @@ export function processAndRenderNumeralsBlockFromSource(
 	// Phase 2: Preprocess (using cross-note resolved source)
 	const processedBlock = preProcessBlockForNumeralsDirectives(crossNoteResult.resolvedSource, preProcessors);
 
+	// Resolve the block-level display context, applying any `@format` directive
+	// so it drives both result rendering and result insertion.
+	const blockDisplayContext = applyBlockFormat(displayContext, processedBlock.blockInfo.formatDirective);
+
 	// Phase 3: Apply block styles
 	applyBlockStyles({
 		el,
@@ -270,7 +274,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	handleResultInsertions(
 		evaluationResult.results,
 		processedBlock.blockInfo.insertion_lines,
-		displayContext,
+		blockDisplayContext,
 		ctx,
 		app,
 		el
@@ -280,7 +284,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	const renderContext: RenderContext = {
 		renderStyle: blockRenderStyle,
 		settings,
-		displayContext,
+		displayContext: blockDisplayContext,
 		preProcessors,
 	};
 

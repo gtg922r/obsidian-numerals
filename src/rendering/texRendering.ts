@@ -37,6 +37,13 @@ export function expressionToTeX(
  * Pure currency results bypass the `math.parse(...).toTex()` reconstruction and
  * are built directly (symbol or ISO-code form) so their conventional decimals
  * and symbol/sign placement survive rendering.
+ *
+ * When a block `@format` directive is in effect (`hasExplicitFormat` with an
+ * object format), the directive's format also drives the non-currency numeric
+ * part. Directive formats are grouping-free `{ notation, precision? }` objects,
+ * so they are safe for the `math.parse` reconstruction; the same options are
+ * passed to `toTex` so exponential/engineering constants keep their notation
+ * (parsing alone would normalize `1.23e+4` back to `12300`).
  */
 export function resultToTeX(
 	result: unknown,
@@ -48,14 +55,23 @@ export function resultToTeX(
 		return currencyTex;
 	}
 
+	const explicitFormat =
+		displayContext.hasExplicitFormat &&
+		typeof displayContext.numberFormat === 'object' &&
+		displayContext.numberFormat !== null
+			? displayContext.numberFormat
+			: undefined;
+
 	let processedResult = math.format(
 		result,
-		getLocaleFormatter('en-US', { useGrouping: false })
+		explicitFormat ?? getLocaleFormatter('en-US', { useGrouping: false })
 	);
 
 	for (const processor of preProcessors) {
 		processedResult = processedResult.replace(processor.regex, processor.replaceStr);
 	}
 
-	return texCurrencyReplacement(math.parse(processedResult).toTex());
+	const parsedResult = math.parse(processedResult);
+	const tex = explicitFormat ? parsedResult.toTex(explicitFormat) : parsedResult.toTex();
+	return texCurrencyReplacement(tex);
 }
