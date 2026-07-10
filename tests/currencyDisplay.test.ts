@@ -71,7 +71,13 @@ describe('getCurrencyMinorUnits', () => {
 // ---------------------------------------------------------------------------
 describe('getPureCurrencyInfo', () => {
 	it('detects a pure currency unit', () => {
-		expect(getPureCurrencyInfo(value('100 USD'), defaultCurrencyMap)).toEqual({ code: 'USD', symbol: '$' });
+		expect(getPureCurrencyInfo(value('100 USD'), defaultCurrencyMap))
+			.toEqual({ code: 'USD', symbol: '$', unitName: 'USD' });
+	});
+
+	it('detects a lowercase-alias unit and returns the canonical code', () => {
+		expect(getPureCurrencyInfo(value('100 usd'), defaultCurrencyMap))
+			.toEqual({ code: 'USD', symbol: '$', unitName: 'usd' });
 	});
 
 	it('returns null for compound currency units', () => {
@@ -134,6 +140,33 @@ describe('formatNumeralsResult (symbol mode)', () => {
 	it('formats tiny values to $0.00', () => {
 		expect(formatNumeralsResult(value('0.0001 USD'), symbolContext())).toBe('$0.00');
 	});
+
+	it('rounds negative half-boundary values away from zero (locale format)', () => {
+		// Regression: Math.round breaks ties toward +∞, which under-rounded
+		// negative currency values at the half-minor-unit boundary.
+		const ctx = symbolContext(getLocaleFormatter('en-US'));
+		expect(formatNumeralsResult(value('-5.35 USD / 2'), ctx)).toBe('-$2.68');
+		expect(formatNumeralsResult(value('-5.005 USD'), ctx)).toBe('-$5.01');
+		expect(formatNumeralsResult(value('-120.345 USD'), ctx)).toBe('-$120.35');
+		expect(formatNumeralsResult(value('-10.01 USD / 2'), ctx)).toBe('-$5.01');
+	});
+
+	it('rounds negative half-boundary values away from zero (fixed format)', () => {
+		expect(formatNumeralsResult(value('-5.35 USD / 2'), symbolContext())).toBe('-$2.68');
+		expect(formatNumeralsResult(value('-120.345 USD'), symbolContext())).toBe('-$120.35');
+	});
+
+	it('shows no stray minus when a negative value rounds to zero', () => {
+		expect(formatNumeralsResult(value('-0.0001 USD'), symbolContext())).toBe('$0.00');
+		const ctx = symbolContext(getLocaleFormatter('en-US'));
+		expect(formatNumeralsResult(value('-0.0001 USD'), ctx)).toBe('$0.00');
+		expect(formatNumeralsResult(value('-0 USD'), ctx)).toBe('$0.00');
+	});
+
+	it('formats lowercase-alias units with the symbol: 100 usd → $100.00', () => {
+		expect(formatNumeralsResult(value('100 usd'), symbolContext())).toBe('$100.00');
+		expect(formatNumeralsResult(value('100 USD to usd'), symbolContext())).toBe('$100.00');
+	});
 });
 
 // ---------------------------------------------------------------------------
@@ -152,6 +185,11 @@ describe('formatNumeralsResult (code mode)', () => {
 	it('groups large values in code mode: 1,000,000.00 USD', () => {
 		const ctx = codeContext(getLocaleFormatter('en-US'));
 		expect(formatNumeralsResult(value('1000000 USD'), ctx)).toBe('1,000,000.00 USD');
+	});
+
+	it('renders lowercase-alias units with the canonical code: 100 usd → 100.00 USD', () => {
+		expect(formatNumeralsResult(value('100 usd'), codeContext())).toBe('100.00 USD');
+		expect(formatNumeralsResult(value('100 USD to usd'), codeContext())).toBe('100.00 USD');
 	});
 });
 
@@ -218,6 +256,11 @@ describe('formatPureCurrencyTeX', () => {
 	it('uses no grouping in the numeric part (TeX path constraint)', () => {
 		const ctx = symbolContext(getLocaleFormatter('en-US'));
 		expect(formatPureCurrencyTeX(value('1000000 USD'), ctx)).toBe('\\dollar 1000000.00');
+	});
+
+	it('renders lowercase-alias units with the canonical code in TeX', () => {
+		const ctx = codeContext();
+		expect(formatPureCurrencyTeX(value('100 usd'), ctx)).toBe('100.00~\\mathrm{USD}');
 	});
 
 	it('returns null for non-currency values', () => {

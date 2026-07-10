@@ -224,17 +224,21 @@ export function getCurrencyMinorUnits(code: string): number {
  *
  * A value is pure currency when it is a mathjs Unit with exactly one unit
  * component at power 1, a finite numeric value, and a component unit name that
- * matches an active currency code. Compound units (e.g. `$/hr`) and units with
- * a null value return `null`.
+ * matches an active currency code (case-insensitively, since Numerals registers
+ * lowercase and symbol aliases — `100 usd` reports `usd` as the unit name) or
+ * an active currency symbol. Compound units (e.g. `$/hr`) and units with a
+ * null value return `null`.
  *
  * @param value - The evaluated result to inspect.
  * @param currencies - The active currency map (symbol ↔ ISO code).
- * @returns `{ code, symbol }` for a pure currency value, otherwise `null`.
+ * @returns `{ code, symbol, unitName }` for a pure currency value — `code` is
+ * the canonical ISO code from the currency map, and `unitName` is the mathjs
+ * component name exactly as `math.format` will emit it — otherwise `null`.
  */
 export function getPureCurrencyInfo(
 	value: unknown,
 	currencies: ReadonlyArray<CurrencyType>
-): { code: string; symbol: string } | null {
+): { code: string; symbol: string; unitName: string } | null {
 	if (!math.isUnit(value)) {
 		return null;
 	}
@@ -253,13 +257,16 @@ export function getPureCurrencyInfo(
 		return null;
 	}
 
-	const code = component.unit.name;
-	const match = currencies.find(currency => currency.currency === code);
+	const unitName = component.unit.name;
+	const match = currencies.find(currency =>
+		currency.currency !== '' &&
+		(currency.currency.toUpperCase() === unitName.toUpperCase() || currency.symbol === unitName)
+	);
 	if (!match) {
 		return null;
 	}
 
-	return { code, symbol: match.symbol };
+	return { code: match.currency, symbol: match.symbol, unitName };
 }
 
 /**
@@ -282,7 +289,7 @@ export function formatNumeralsResult(value: unknown, ctx: NumeralsDisplayContext
 			: math.format(value);
 	}
 
-	const numeric = formatPureCurrencyNumeric(value, info.code, ctx);
+	const numeric = formatPureCurrencyNumeric(value, info, ctx);
 	if (ctx.currencyDisplay === CurrencyResultDisplay.CurrencyCode) {
 		return `${numeric} ${info.code}`;
 	}
@@ -314,7 +321,7 @@ export function formatPureCurrencyTeX(value: unknown, ctx: NumeralsDisplayContex
 		...ctx,
 		numberFormat: getLocaleFormatter('en-US', { useGrouping: false }),
 	};
-	const numeric = formatPureCurrencyNumeric(value, info.code, texCtx);
+	const numeric = formatPureCurrencyNumeric(value, info, texCtx);
 
 	if (ctx.currencyDisplay === CurrencyResultDisplay.CurrencyCode) {
 		return `${numeric}~\\mathrm{${info.code}}`;
@@ -325,20 +332,31 @@ export function formatPureCurrencyTeX(value: unknown, ctx: NumeralsDisplayContex
 /**
  * Format the numeric portion of a pure currency value (no symbol, no code),
  * applying conventional decimals unless an explicit format is in effect.
+ *
+ * Minor units resolve from the canonical ISO code, but the trailing unit
+ * suffix is stripped using the mathjs component name (`info.unitName`) since
+ * that is what `math.format` actually emits (e.g. `100.00 usd` for a
+ * lowercase-alias unit).
  */
 function formatPureCurrencyNumeric(
 	value: unknown,
-	code: string,
+	info: { code: string; unitName: string },
 	ctx: NumeralsDisplayContext
 ): string {
-	const minorUnits = getCurrencyMinorUnits(code);
+	const minorUnits = getCurrencyMinorUnits(info.code);
 	const resolvedFormat = ctx.hasExplicitFormat
 		? ctx.numberFormat
 		: getCurrencyNumberFormat(ctx.numberFormat, minorUnits);
 	// `math.format(value, undefined)` matches `math.format(value)`, so an
 	// explicit-but-undefined format still formats with mathjs defaults.
 	const formatted = math.format(value, resolvedFormat);
-	return stripTrailingCurrencyCode(formatted, code);
+	let numeric = stripTrailingCurrencyCode(formatted, info.unitName);
+	// A value that rounds to zero must not display a stray minus (mathjs fixed
+	// notation emits `-0.00` for negative values that round to zero).
+	if (numeric.startsWith('-') && !/[1-9]/.test(numeric)) {
+		numeric = numeric.slice(1);
+	}
+	return numeric;
 }
 
 /**
@@ -353,11 +371,13 @@ function applyCurrencySymbol(numeric: string, symbol: string): string {
 }
 
 /**
- * Strip a trailing ` CODE` suffix produced by `math.format` on a Unit.
- * Matches the exact unit code (custom codes may not be three letters).
+ * Strip a trailing ` unitName` suffix produced by `math.format` on a Unit.
+ * Matches the exact emitted unit name — the component name mathjs reports,
+ * which may be a lowercase or symbol alias rather than the canonical code
+ * (and custom codes may not be three letters), so no generic regex is used.
  */
-function stripTrailingCurrencyCode(formatted: string, code: string): string {
-	const suffix = ` ${code}`;
+function stripTrailingCurrencyCode(formatted: string, unitName: string): string {
+	const suffix = ` ${unitName}`;
 	return formatted.endsWith(suffix)
 		? formatted.slice(0, -suffix.length)
 		: formatted;
@@ -424,10 +444,16 @@ function formatNumberWithFixedDecimals(
 	return formattedValue;
 }
 
-/** Round to N decimal places, nudging by EPSILON to avoid float artifacts. */
+/**
+ * Round to N decimal places with half-away-from-zero tie-breaking, matching
+ * Intl's `halfExpand` and mathjs fixed notation. (Plain `Math.round` breaks
+ * ties toward +∞, which mis-rounds negative half-boundary values like -2.675.)
+ * Negative zero is normalized to positive zero so no stray minus is shown.
+ */
 function roundToDecimalPlaces(value: number, decimals: number): number {
 	const factor = 10 ** decimals;
-	return Math.round((value + Math.sign(value) * Number.EPSILON) * factor) / factor;
+	const rounded = Math.sign(value) * Math.round(Math.abs(value) * factor) / factor;
+	return rounded === 0 ? 0 : rounded;
 }
 
 /** Detect the decimal separator a locale formatter uses (e.g. `.` or `,`). */
