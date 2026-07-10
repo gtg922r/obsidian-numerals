@@ -34,13 +34,26 @@ export enum NumeralsRenderStyle {
 
 export enum NumeralsNumberFormat {
 	System = "System",
-	Fixed = "Fixed",	
+	Fixed = "Fixed",
 	Exponential = "Exponential",
 	Engineering = "Engineering",
 	Format_CommaThousands_PeriodDecimal = "Format_CommaThousands_PeriodDecimal",
 	Format_PeriodThousands_CommaDecimal = "Format_PeriodThousands_CommaDecimal",
 	Format_SpaceThousands_CommaDecimal = "Format_SpaceThousands_CommaDecimal",
 	Format_Indian = "Format_Indian"
+}
+
+/**
+ * How a pure currency result is displayed.
+ *
+ * Applies only to results that are a single currency unit (e.g. `12.50 USD`).
+ * Compound units such as `$/hr` are unaffected.
+ */
+export enum CurrencyResultDisplay {
+	/** Prefix the currency symbol: `$12.50` (default) */
+	Symbol = "symbol",
+	/** Suffix the ISO currency code: `12.50 USD` (pre-existing behavior) */
+	CurrencyCode = "code",
 }
 
 interface CurrencySymbolMapping {
@@ -60,6 +73,7 @@ export interface NumeralsSettings {
 	provideSuggestions: boolean;
 	suggestionsIncludeMathjsSymbols: boolean;
 	numberFormat: NumeralsNumberFormat;
+	currencyResultDisplay: CurrencyResultDisplay;
 	forceProcessAllFrontmatter: boolean;
 	customCurrencySymbol: CurrencyType | null;
 	enableGreekAutoComplete: boolean;
@@ -88,6 +102,7 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	provideSuggestions: 				true,
 	suggestionsIncludeMathjsSymbols: 	false,
 	numberFormat: 						NumeralsNumberFormat.System,
+	currencyResultDisplay: 				CurrencyResultDisplay.Symbol,
 	forceProcessAllFrontmatter: 		false,
 	customCurrencySymbol: 				null,
 	enableGreekAutoComplete: 			true,
@@ -113,6 +128,28 @@ export interface CurrencyType {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
+
+/**
+ * Everything the result→string formatter needs to render a value.
+ *
+ * Replaces the ad-hoc threading of `numberFormat` alongside currency data.
+ * Built once per render (see `NumeralsPlugin.getDisplayContext`) and passed
+ * through the block, inline, TeX, and result-insertion surfaces.
+ */
+export interface NumeralsDisplayContext {
+	/** Resolved number format (global setting; a block `@format` directive may override it) */
+	numberFormat: mathjsFormat;
+	/**
+	 * True when a block `@format` directive set the format explicitly.
+	 * Suppresses currency-convention decimals so the directive wins.
+	 * (Reserved for the `@format` directive feature; unset in the base feature.)
+	 */
+	hasExplicitFormat?: boolean;
+	/** Active currency map (symbol ↔ ISO code), from plugin settings */
+	currencies: ReadonlyArray<CurrencyType>;
+	/** How pure currency results render (symbol vs. ISO code) */
+	currencyDisplay: CurrencyResultDisplay;
+}
 
 export class NumeralsScope extends Map<string, unknown>{}
 
@@ -198,8 +235,8 @@ export interface RenderContext {
 	renderStyle: NumeralsRenderStyle;
 	/** User settings affecting display and formatting */
 	settings: NumeralsSettings;
-	/** Number formatting configuration for displaying results */
-	numberFormat: mathjsFormat;
+	/** Number formatting and currency-display configuration for results */
+	displayContext: NumeralsDisplayContext;
 	/** String replacements to apply (e.g., currency symbols) */
 	preProcessors: StringReplaceMap[];
 }

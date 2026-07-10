@@ -1,6 +1,5 @@
-import * as math from 'mathjs';
 import { App, MarkdownPostProcessorContext } from 'obsidian';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, NumeralsError, NumeralsBlockResult, mathjsFormat, NumeralsScope, StringReplaceMap, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
+import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, NumeralsError, NumeralsBlockResult, NumeralsDisplayContext, CurrencyResultDisplay, NumeralsScope, StringReplaceMap, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
 import { RendererFactory } from '../renderers';
 import { getScopeFromFrontmatter } from '../processing/scope';
 import { preProcessBlockForNumeralsDirectives } from '../processing/preprocessor';
@@ -8,6 +7,7 @@ import { evaluateMathFromSourceStrings } from '../processing/evaluator';
 import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
 import { prepareLineData } from './linePreparation';
 import { findEditorForPath } from './editorNavigation';
+import { formatNumeralsResult } from './displayUtils';
 
 /**
  * Renders error information into the container element.
@@ -92,9 +92,15 @@ export function renderNumeralsBlock(
  * The insertion uses the format: @[variableName::calculatedValue]
  * where calculatedValue is the formatted result from evaluation.
  *
+ * Inserted values always use the ISO currency-code form (e.g. `12.50 USD`),
+ * regardless of the currency display setting: the inserted text is a data
+ * surface (round-tripped by Numerals and read by tools like Dataview), and
+ * keeping the code form avoids `$` replacement-pattern hazards in the write-back
+ * `String.replace`. Conventional decimals still apply.
+ *
  * @param results - Array of evaluated results
  * @param insertionLines - Array of line indices that have insertion directives
- * @param numberFormat - Format specification for displaying numbers
+ * @param displayContext - Number-format + currency-display configuration
  * @param ctx - Markdown post processor context (provides section info)
  * @param app - Obsidian App instance (provides editor access)
  * @param el - The HTML element being rendered (used to get section info)
@@ -108,7 +114,7 @@ export function renderNumeralsBlock(
  * handleResultInsertions(
  *   [100],
  *   [0],
- *   numberFormat,
+ *   displayContext,
  *   ctx,
  *   app,
  *   el
@@ -124,11 +130,16 @@ export function renderNumeralsBlock(
 export function handleResultInsertions(
 	results: unknown[],
 	insertionLines: number[],
-	numberFormat: mathjsFormat,
+	displayContext: NumeralsDisplayContext,
 	ctx: MarkdownPostProcessorContext,
 	app: App,
 	el: HTMLElement
 ): void {
+	// Inserted values are a data surface — always emit the ISO-code form.
+	const insertionContext: NumeralsDisplayContext = {
+		...displayContext,
+		currencyDisplay: CurrencyResultDisplay.CurrencyCode,
+	};
 	for (const i of insertionLines) {
 		const sectionInfo = ctx.getSectionInfo(el);
 		const lineStart = sectionInfo?.lineStart;
@@ -151,7 +162,7 @@ export function handleResultInsertions(
 
 		const curLine = lineStart + i + 1;
 		const sourceLine = editor.getLine(curLine);
-		const insertionValue = math.format(results[i], numberFormat);
+		const insertionValue = formatNumeralsResult(results[i], insertionContext);
 
 		// Replace @[variable] or @[variable::oldValue] with @[variable::newValue]
 		const modifiedSource = sourceLine.replace(
@@ -186,14 +197,14 @@ export function handleResultInsertions(
  * @param settings - A NumeralsSettings object that provides settings for the rendering process. These   
  * settings can control aspects such as the layout style, whether to alternate row colors, and whether   
  * to hide lines without markup when emitting.  
- * @param numberFormat - A mathjsFormat function that is used to format numbers in the Numerals block.  
- * @param preProcessors - An array of StringReplaceMap objects that specify text replacements to be   
- * made in the source string before it is processed.  
+ * @param displayContext - Number-format + currency-display configuration for results.
+ * @param preProcessors - An array of StringReplaceMap objects that specify text replacements to be
+ * made in the source string before it is processed.
  * @param app - The Obsidian App instance.
- *  
- * @returns void  
  *
- */  
+ * @returns void
+ *
+ */
 export function processAndRenderNumeralsBlockFromSource(
 	el: HTMLElement,
 	source: string,
@@ -201,7 +212,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	metadata: {[key: string]: unknown} | undefined,
 	type: NumeralsRenderStyle | undefined,
 	settings: NumeralsSettings,
-	numberFormat: mathjsFormat,
+	displayContext: NumeralsDisplayContext,
 	preProcessors: StringReplaceMap[],
 	app: App
 ): NumeralsBlockResult {
@@ -259,7 +270,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	handleResultInsertions(
 		evaluationResult.results,
 		processedBlock.blockInfo.insertion_lines,
-		numberFormat,
+		displayContext,
 		ctx,
 		app,
 		el
@@ -269,7 +280,7 @@ export function processAndRenderNumeralsBlockFromSource(
 	const renderContext: RenderContext = {
 		renderStyle: blockRenderStyle,
 		settings,
-		numberFormat,
+		displayContext,
 		preProcessors,
 	};
 

@@ -94,7 +94,7 @@ export class TeXRenderer extends BaseLineRenderer {
 		lineData: LineRenderData,
 		context: RenderContext
 	): void {
-		const texResult = resultToTeX(lineData.result, context.preProcessors);
+		const texResult = resultToTeX(lineData.result, context.preProcessors, context.displayContext);
 
 		// Render with MathJax
 		const resultTexElement = resultElement.createEl('span', { cls: 'numerals-tex' });

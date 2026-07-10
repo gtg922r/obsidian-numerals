@@ -35,6 +35,7 @@ import {
 import { parseInlineExpression } from '../src/inline/inlineParser';
 import { evaluateInlineExpression } from '../src/inline/inlineEvaluator';
 import { createInlineNumeralsPostProcessor } from '../src/inline/inlinePostProcessor';
+import { makeDisplayContext } from './testHelpers';
 
 const mockRegisteredEvents: unknown[] = [];
 
@@ -111,7 +112,7 @@ function simulateInlinePipeline(
 	const { formatted } = evaluateInlineExpression(
 		parsed.expression,
 		scope,
-		undefined,
+		makeDisplayContext(),
 		preProcessors
 	);
 
@@ -171,7 +172,7 @@ describe('inline numerals integration', () => {
 			return createInlineNumeralsPostProcessor(
 				app as any,
 				() => DEFAULT_SETTINGS,
-				() => undefined,
+				() => makeDisplayContext(),
 				() => preProcessors,
 				new Map(),
 			);
@@ -271,7 +272,7 @@ describe('inline numerals integration', () => {
 			});
 			expect(parsed).not.toBeNull();
 			expect(() => {
-				evaluateInlineExpression(parsed!.expression, new NumeralsScope(), undefined, []);
+				evaluateInlineExpression(parsed!.expression, new NumeralsScope(), makeDisplayContext(), []);
 			}).toThrow();
 		});
 	});
@@ -315,7 +316,7 @@ describe('inline post-processor cross-note references', () => {
 		const postProcessor = createInlineNumeralsPostProcessor(
 			app as any,
 			() => DEFAULT_SETTINGS,
-			() => undefined,
+			() => makeDisplayContext(),
 			() => [],
 			new Map(),
 		);
@@ -340,13 +341,13 @@ describe('inline note-global ($) variable chaining', () => {
 
 	describe('globals extracted from inline evaluation', () => {
 		it('should return $x in globals when assigning $x = 10', () => {
-			const result = evaluateInlineExpression('$x = 10', new NumeralsScope(), undefined, []);
+			const result = evaluateInlineExpression('$x = 10', new NumeralsScope(), makeDisplayContext(), []);
 			expect(result.globals.size).toBe(1);
 			expect(result.globals.get('$x')).toBe(10);
 		});
 
 		it('should return no globals for non-$ assignment', () => {
-			const result = evaluateInlineExpression('y = 10', new NumeralsScope(), undefined, []);
+			const result = evaluateInlineExpression('y = 10', new NumeralsScope(), makeDisplayContext(), []);
 			expect(result.globals.size).toBe(0);
 		});
 	});
@@ -357,25 +358,25 @@ describe('inline note-global ($) variable chaining', () => {
 			const scope = new NumeralsScope();
 
 			// First expression defines $apples
-			const r1 = evaluateInlineExpression('$apples = 100', scope, undefined, []);
+			const r1 = evaluateInlineExpression('$apples = 100', scope, makeDisplayContext(), []);
 			// Post-processor would inject globals into shared scope
 			for (const [k, v] of r1.globals) { scope.set(k, v); }
 
 			// Second expression uses $apples
-			const r2 = evaluateInlineExpression('$apples * 2', scope, undefined, []);
+			const r2 = evaluateInlineExpression('$apples * 2', scope, makeDisplayContext(), []);
 			expect(r2.formatted).toBe('200');
 		});
 
 		it('should chain three globals sequentially', () => {
 			const scope = new NumeralsScope();
 
-			const r1 = evaluateInlineExpression('$a = 10', scope, undefined, []);
+			const r1 = evaluateInlineExpression('$a = 10', scope, makeDisplayContext(), []);
 			for (const [k, v] of r1.globals) { scope.set(k, v); }
 
-			const r2 = evaluateInlineExpression('$b = $a * 3', scope, undefined, []);
+			const r2 = evaluateInlineExpression('$b = $a * 3', scope, makeDisplayContext(), []);
 			for (const [k, v] of r2.globals) { scope.set(k, v); }
 
-			const r3 = evaluateInlineExpression('$a + $b', scope, undefined, []);
+			const r3 = evaluateInlineExpression('$a + $b', scope, makeDisplayContext(), []);
 			expect(r3.formatted).toBe('40');
 		});
 	});
@@ -385,7 +386,7 @@ describe('inline note-global ($) variable chaining', () => {
 			const scopeCache = new Map<string, NumeralsScope>();
 			const scope = new NumeralsScope();
 
-			const result = evaluateInlineExpression('$price = 42', scope, undefined, []);
+			const result = evaluateInlineExpression('$price = 42', scope, makeDisplayContext(), []);
 			
 			// Simulate what the post-processor does after evaluation
 			if (result.globals.size > 0) {
@@ -409,8 +410,8 @@ describe('inline note-global ($) variable chaining', () => {
 		it('should support $total = @prev pattern', () => {
 			const scope = new NumeralsScope();
 
-			const r1 = evaluateInlineExpression('100 * 1.2', scope, undefined, []);
-			const r2 = evaluateInlineExpression('$total = @prev * 1.08', scope, undefined, [], r1.raw);
+			const r1 = evaluateInlineExpression('100 * 1.2', scope, makeDisplayContext(), []);
+			const r2 = evaluateInlineExpression('$total = @prev * 1.08', scope, makeDisplayContext(), [], r1.raw);
 			
 			expect(r2.globals.has('$total')).toBe(true);
 			// 100 * 1.2 * 1.08 = 129.6

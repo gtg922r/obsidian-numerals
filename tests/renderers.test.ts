@@ -31,13 +31,23 @@ import {
 	LineRenderData,
 	RenderContext,
 	NumeralsRenderStyle,
+	CurrencyResultDisplay,
 	DEFAULT_SETTINGS,
 } from '../src/numerals.types';
 import { expressionToTeX, resultToTeX } from '../src/rendering/texRendering';
 import { getLocaleFormatter } from '../src/numeralsUtilities';
+import { makeDisplayContext } from './testHelpers';
 
 // Mock Obsidian DOM methods
 beforeAll(() => {
+	for (const code of ['USD', 'GBP', 'EUR', 'JPY', 'INR']) {
+		try {
+			math.createUnit(code, { aliases: [code.toLowerCase()] });
+		} catch {
+			/* unit already exists */
+		}
+	}
+
 	Object.defineProperty(HTMLElement.prototype, 'createEl', {
 		value: jest.fn(function (this: HTMLElement, tag, options) {
 			const element = document.createElement(tag);
@@ -82,7 +92,7 @@ describe('Renderer Implementations', () => {
 		context = {
 			renderStyle: NumeralsRenderStyle.Plain,
 			settings: DEFAULT_SETTINGS,
-			numberFormat: getLocaleFormatter(),
+			displayContext: makeDisplayContext({ numberFormat: getLocaleFormatter() }),
 			preProcessors: [],
 		};
 	});
@@ -193,6 +203,49 @@ describe('Renderer Implementations', () => {
 			const totalElement = container.querySelector('.numerals-sum');
 			expect(totalElement).not.toBeNull();
 			expect(totalElement?.textContent).toBe('@total');
+		});
+
+		it('renders pure currency results with the symbol by default', () => {
+			const lineData: LineRenderData = {
+				index: 0, rawInput: '$120.1', processedInput: '120.1 USD',
+				result: math.evaluate('120.1 USD'),
+				isEmpty: false, isEmitter: false, isHidden: false, comment: null,
+			};
+
+			renderer.renderLine(container, lineData, context);
+
+			expect(container.querySelector('.numerals-result')?.textContent).toBe(' → $120.10');
+		});
+
+		it('renders pure currency results with the ISO code when configured', () => {
+			context = {
+				...context,
+				displayContext: makeDisplayContext({
+					numberFormat: getLocaleFormatter(),
+					currencyDisplay: CurrencyResultDisplay.CurrencyCode,
+				}),
+			};
+			const lineData: LineRenderData = {
+				index: 0, rawInput: '$120.1', processedInput: '120.1 USD',
+				result: math.evaluate('120.1 USD'),
+				isEmpty: false, isEmitter: false, isHidden: false, comment: null,
+			};
+
+			renderer.renderLine(container, lineData, context);
+
+			expect(container.querySelector('.numerals-result')?.textContent).toBe(' → 120.10 USD');
+		});
+
+		it('leaves compound currency rates on existing precision', () => {
+			const lineData: LineRenderData = {
+				index: 0, rawInput: '$0.042/floz', processedInput: '0.042 USD / floz',
+				result: math.evaluate('0.042 USD / floz'),
+				isEmpty: false, isEmitter: false, isHidden: false, comment: null,
+			};
+
+			renderer.renderLine(container, lineData, context);
+
+			expect(container.querySelector('.numerals-result')?.textContent).toBe(' → 0.042 USD / floz');
 		});
 	});
 
@@ -319,7 +372,17 @@ describe('Renderer Implementations', () => {
 
 		it('should convert expressions and results using shared TeX helpers', () => {
 			expect(expressionToTeX('sqrt(144)')).toBe('\\sqrt{144}');
-			expect(resultToTeX(math.evaluate('3 ft to inches'), [])).toBe('36~\\mathrm{inches}');
+			expect(resultToTeX(math.evaluate('3 ft to inches'), [], makeDisplayContext())).toBe('36~\\mathrm{inches}');
+		});
+
+		it('renders pure currency results as symbol-mode TeX by default', () => {
+			expect(resultToTeX(math.evaluate('12.5 GBP'), [], makeDisplayContext())).toBe('\\pound 12.50');
+			expect(resultToTeX(math.evaluate('-12.5 GBP'), [], makeDisplayContext())).toBe('-\\pound 12.50');
+		});
+
+		it('renders pure currency results as code-mode TeX when configured', () => {
+			const ctx = makeDisplayContext({ currencyDisplay: CurrencyResultDisplay.CurrencyCode });
+			expect(resultToTeX(math.evaluate('12.5 GBP'), [], ctx)).toBe('12.50~\\mathrm{GBP}');
 		});
 
 		it('should restore the @prev directive in expressionToTeX', () => {

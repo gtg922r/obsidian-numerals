@@ -1,8 +1,9 @@
 import * as math from 'mathjs';
 import { App } from 'obsidian';
-import { NumeralsScope, NumeralsSettings, mathjsFormat, StringReplaceMap, InlineEvaluationResult } from '../numerals.types';
+import { NumeralsScope, NumeralsSettings, NumeralsDisplayContext, StringReplaceMap, InlineEvaluationResult } from '../numerals.types';
 import { replaceStringsInTextFromMap } from '../processing/preprocessor';
 import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
+import { formatNumeralsResult } from '../rendering/displayUtils';
 
 /**
  * Evaluate a single inline expression against a scope.
@@ -14,7 +15,7 @@ import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
  *
  * @param expression - The math expression to evaluate (trigger prefix already stripped)
  * @param scope - Variable scope (note-globals + frontmatter)
- * @param numberFormat - mathjs format options for result display
+ * @param displayContext - Number format + currency-display configuration for the result
  * @param preProcessors - String replacement rules (currency, thousands, etc.)
  * @param prevResult - The raw result of the previous inline expression (for @prev support).
  *                     Pass `undefined` when there is no previous result.
@@ -27,7 +28,7 @@ import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
 export function evaluateInlineExpression(
 	expression: string,
 	scope: NumeralsScope,
-	numberFormat: mathjsFormat,
+	displayContext: NumeralsDisplayContext,
 	preProcessors: StringReplaceMap[],
 	prevResult?: unknown,
 	app?: App,
@@ -76,9 +77,7 @@ export function evaluateInlineExpression(
 		throw new Error('Expression produced no result');
 	}
 
-	const formatted = numberFormat !== undefined
-		? math.format(result, numberFormat)
-		: math.format(result);
+	const formatted = formatNumeralsResult(result, displayContext);
 
 	// Extract note-global ($-prefixed) variable assignments.
 	// Compare the local scope against the original to find new or changed $-keys.

@@ -5,7 +5,7 @@
 import NumeralsPlugin from "./main";
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
 import { htmlToElements } from "./rendering/displayUtils";
-import { NumeralsRenderStyle, NumeralsNumberFormat, NumeralsLayout } from "./numerals.types";
+import { NumeralsRenderStyle, NumeralsNumberFormat, NumeralsLayout, CurrencyResultDisplay } from "./numerals.types";
 
 import {
     PluginSettingTab,
@@ -255,6 +255,19 @@ export class NumeralsSettingTab extends PluginSettingTab {
 					this.plugin.updateLocale();
 				});
 			})
+
+		new Setting(containerEl)
+			.setName('Currency result display')
+			.setDesc('Choose how pure currency results are displayed. Compound units (e.g. `$/hr`) are unaffected.')
+			.addDropdown(dropDown => {
+				dropDown.addOption(CurrencyResultDisplay.Symbol, 'Currency symbol ($12.50)');
+				dropDown.addOption(CurrencyResultDisplay.CurrencyCode, 'Currency code (12.50 USD)'); // eslint-disable-line obsidianmd/ui/sentence-case
+				dropDown.setValue(this.plugin.settings.currencyResultDisplay);
+				dropDown.onChange(async (value) => {
+					this.plugin.settings.currencyResultDisplay = value as CurrencyResultDisplay;
+					await this.plugin.saveSettings();
+				});
+			});
 
 		new Setting(containerEl)
 			.setName('`$` symbol currency mapping')

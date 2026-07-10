@@ -39,7 +39,8 @@ import { editorInfoField, editorLivePreviewField } from 'obsidian';
 import {
 	NumeralsSettings,
 	NumeralsScope,
-	mathjsFormat,
+	NumeralsDisplayContext,
+	CurrencyResultDisplay,
 	StringReplaceMap,
 	InlineNumeralsMode,
 	NumeralsRenderStyle,
@@ -49,11 +50,22 @@ import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing
 import { getActiveInlineTriggers, getInlineTriggers, parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 import { getDataviewApi } from '../dataview';
+import { defaultCurrencyMap } from '../rendering/displayUtils';
 import {
 	preProcessorsEqual,
 	renderInlineInputContent,
 	renderInlineValueContent,
 } from './inlineRenderer';
+
+/**
+ * Fallback display context for widgets constructed without one (defensive; the
+ * decoration builder always supplies a real context).
+ */
+const FALLBACK_DISPLAY_CONTEXT: NumeralsDisplayContext = {
+	numberFormat: undefined,
+	currencies: defaultCurrencyMap,
+	currencyDisplay: CurrencyResultDisplay.Symbol,
+};
 
 /****************************************************
  * Formatting context helpers
@@ -147,6 +159,7 @@ export class InlineNumeralsWidget extends WidgetType {
 		private readonly rawResult: unknown = resultText,
 		private readonly processedExpression: string = rawExpression,
 		private readonly preProcessors: StringReplaceMap[] = [],
+		private readonly displayContext?: NumeralsDisplayContext,
 	) {
 		super();
 	}
@@ -217,7 +230,8 @@ export class InlineNumeralsWidget extends WidgetType {
 				this.resultText,
 				this.rawResult,
 				this.renderStyle,
-				this.preProcessors
+				this.preProcessors,
+				this.displayContext ?? FALLBACK_DISPLAY_CONTEXT
 			);
 
 			span.appendChild(inputEl);
@@ -234,7 +248,8 @@ export class InlineNumeralsWidget extends WidgetType {
 				this.resultText,
 				this.rawResult,
 				this.renderStyle,
-				this.preProcessors
+				this.preProcessors,
+				this.displayContext ?? FALLBACK_DISPLAY_CONTEXT
 			);
 
 			span.appendChild(valueEl);
@@ -260,7 +275,7 @@ interface PrevResultRef {
 interface DecorationContext {
 	settings: NumeralsSettings;
 	triggers: InlineTriggerSettings;
-	numberFormat: mathjsFormat | undefined;
+	displayContext: NumeralsDisplayContext;
 	preProcessors: StringReplaceMap[];
 	getScope: () => NumeralsScope;
 	scopeCache: Map<string, NumeralsScope>;
@@ -275,7 +290,7 @@ interface DecorationContext {
  */
 function createDecorationContext(
 	getSettings: () => NumeralsSettings,
-	getNumberFormat: () => mathjsFormat | undefined,
+	getDisplayContext: () => NumeralsDisplayContext,
 	preProcessors: StringReplaceMap[],
 	scopeCache: Map<string, NumeralsScope>,
 	app: App,
@@ -313,7 +328,7 @@ function createDecorationContext(
 	return {
 		settings,
 		triggers,
-		numberFormat: getNumberFormat(),
+		displayContext: getDisplayContext(),
 		preProcessors,
 		getScope,
 		scopeCache,
@@ -369,7 +384,7 @@ function tryBuildNodeDecoration(
 		const result = evaluateInlineExpression(
 			parsed.expression,
 			scope,
-			ctx.numberFormat,
+			ctx.displayContext,
 			ctx.preProcessors,
 			prevResultRef.value,
 			ctx.app,
@@ -423,6 +438,7 @@ function tryBuildNodeDecoration(
 		rawResult,
 		processedExpression,
 		ctx.preProcessors,
+		ctx.displayContext,
 	);
 
 	return Decoration.replace({ widget }).range(spanFrom, spanTo);
@@ -557,7 +573,7 @@ function updateDecorations(
  * as evaluated widgets in Obsidian's Live Preview mode.
  *
  * @param getSettings     - Returns current plugin settings (called on each update for hot-reload)
- * @param getNumberFormat - Returns the active mathjs number format
+ * @param getDisplayContext - Returns the active number-format + currency-display configuration
  * @param getPreProcessors - Returns current string replacement preprocessors (currency symbols, etc.)
  * @param scopeCache        - Shared cache of per-file variable scopes
  * @param app               - The Obsidian App instance
@@ -565,7 +581,7 @@ function updateDecorations(
  */
 export function createInlineLivePreviewExtension(
 	getSettings: () => NumeralsSettings,
-	getNumberFormat: () => mathjsFormat | undefined,
+	getDisplayContext: () => NumeralsDisplayContext,
 	getPreProcessors: () => StringReplaceMap[],
 	scopeCache: Map<string, NumeralsScope>,
 	app: App,
@@ -680,7 +696,7 @@ export function createInlineLivePreviewExtension(
 
 				return createDecorationContext(
 					getSettings,
-					getNumberFormat,
+					getDisplayContext,
 					getPreProcessors(),
 					scopeCache,
 					app,

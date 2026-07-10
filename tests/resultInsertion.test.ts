@@ -6,6 +6,15 @@
 import { handleResultInsertions } from '../src/numeralsUtilities';
 import { getLocaleFormatter } from '../src/numeralsUtilities';
 import { App, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
+import { makeDisplayContext } from './testHelpers';
+import { CurrencyResultDisplay } from '../src/numerals.types';
+import * as math from 'mathjs';
+
+try {
+	math.createUnit('USD', { aliases: ['usd'] });
+} catch {
+	/* unit already exists */
+}
 
 // Mock Obsidian types
 type MockEditor = {
@@ -23,7 +32,7 @@ describe('handleResultInsertions', () => {
 	let mockApp: Partial<App>;
 	let mockCtx: MockContext;
 	let mockEl: HTMLElement;
-	let numberFormat: any;
+	let displayContext: any;
 
 	beforeEach(() => {
 		// Mock editor
@@ -56,7 +65,7 @@ describe('handleResultInsertions', () => {
 		mockEl = document.createElement('div');
 
 		// Number format
-		numberFormat = getLocaleFormatter();
+		displayContext = makeDisplayContext({ numberFormat: getLocaleFormatter() });
 
 		// Clear setTimeout mock
 		jest.useFakeTimers();
@@ -76,7 +85,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -101,7 +110,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -127,7 +136,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -150,7 +159,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -171,7 +180,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -193,7 +202,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -213,7 +222,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -233,7 +242,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -255,7 +264,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -275,7 +284,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -296,7 +305,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -320,7 +329,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -344,7 +353,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -376,7 +385,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -403,7 +412,7 @@ describe('handleResultInsertions', () => {
 		handleResultInsertions(
 			results,
 			insertionLines,
-			numberFormat,
+			displayContext,
 			mockCtx as unknown as MarkdownPostProcessorContext,
 			mockApp as App,
 			mockEl
@@ -415,5 +424,31 @@ describe('handleResultInsertions', () => {
 		expect(mockEditor.setLine).toHaveBeenCalledTimes(2);
 		expect(mockEditor.setLine).toHaveBeenNthCalledWith(1, 1, '@[result1::100]');
 		expect(mockEditor.setLine).toHaveBeenNthCalledWith(2, 3, '@[result3::300]');
+	});
+
+	it('inserts pure currency results in ISO-code form even under symbol display', () => {
+		// Symbol display is the default; insertion must still write the code form.
+		displayContext = makeDisplayContext({
+			numberFormat: getLocaleFormatter(),
+			currencyDisplay: CurrencyResultDisplay.Symbol,
+		});
+		const results = [math.evaluate('120.1 USD')];
+		const insertionLines = [0];
+
+		mockCtx.getSectionInfo.mockReturnValue({ lineStart: 0 });
+		mockEditor.getLine.mockReturnValue('@[total]');
+
+		handleResultInsertions(
+			results,
+			insertionLines,
+			displayContext,
+			mockCtx as unknown as MarkdownPostProcessorContext,
+			mockApp as App,
+			mockEl
+		);
+
+		jest.runAllTimers();
+
+		expect(mockEditor.setLine).toHaveBeenCalledWith(1, '@[total::120.10 USD]');
 	});
 });

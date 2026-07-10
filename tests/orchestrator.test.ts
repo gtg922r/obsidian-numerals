@@ -1,5 +1,6 @@
 import { renderError, renderNumeralsBlock } from '../src/numeralsUtilities';
 import { EvaluationResult, ProcessedBlock, RenderContext, NumeralsRenderStyle, NumeralsSettings, numeralsBlockInfo } from '../src/numerals.types';
+import { makeDisplayContext } from './testHelpers';
 import * as math from 'mathjs';
 
 // Mock Obsidian functions before importing renderers
@@ -109,7 +110,7 @@ describe('renderNumeralsBlock', () => {
 		context = {
 			renderStyle: NumeralsRenderStyle.Plain,
 			settings,
-			numberFormat: math.format,
+			displayContext: makeDisplayContext({ numberFormat: math.format }),
 			preProcessors: []
 		};
 	});

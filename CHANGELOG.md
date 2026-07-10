@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 - Per-expression TeX rendering for Inline Numerals via the new `#$:` (result only) and `#=$:` (equation) trigger prefixes, which render with MathJax in both Live Preview and Reading mode. Both prefixes are configurable in settings. (Closes #161)
+- New **Currency result display** setting to choose between the currency symbol form (`$12.50`, default) and the ISO currency-code form (`12.50 USD`). (Closes #160, #75)
+
+### Changed
+- Pure currency results now display with their currency symbol and conventional decimal places by default (e.g. `$100/hr * 3 days` → `$7,200.00`, `1234 JPY` → `¥1,234`, `100 GBP / 3` → `£33.33`). Decimal conventions come from each currency's ISO minor units (JPY uses 0 decimals). Formatting is consistent across math blocks, Inline Numerals, TeX rendering, and result insertion. Compound units such as `$/hr` are unaffected. Inserted results (`@[name::value]`) always use the ISO-code form so stored values round-trip cleanly.
 
 ## [1.10.2] - 2026-05-19
 
