@@ -1,4 +1,4 @@
-import { NumeralsRenderStyle, StringReplaceMap } from '../numerals.types';
+import { NumeralsDisplayContext, NumeralsRenderStyle, StringReplaceMap } from '../numerals.types';
 import { mathjaxLoop } from '../rendering/displayUtils';
 import { expressionToTeX, resultToTeX } from '../rendering/texRendering';
 
@@ -52,13 +52,14 @@ export function renderInlineValueContent(
 	formattedResult: string,
 	rawResult: unknown,
 	renderStyle: NumeralsRenderStyle,
-	preProcessors: StringReplaceMap[]
+	preProcessors: StringReplaceMap[],
+	displayContext: NumeralsDisplayContext
 ): void {
 	renderTexOrText(
 		container,
 		formattedResult,
 		renderStyle,
-		() => resultToTeX(rawResult, preProcessors)
+		() => resultToTeX(rawResult, preProcessors, displayContext)
 	);
 }
 

@@ -10,6 +10,7 @@ import {
 	NumeralsRenderStyle,
 	NumeralsNumberFormat,
 	NumeralsSettings,
+	NumeralsDisplayContext,
 	mathjsFormat,
 	DEFAULT_SETTINGS,
 	NumeralsScope,
@@ -121,7 +122,7 @@ export default class NumeralsPlugin extends Plugin {
 			metadata,
 			type,
 			this.settings,
-			this.numberFormat,
+			this.getDisplayContext(),
 			this.preProcessors,
 			this.app
 		);
@@ -158,7 +159,7 @@ export default class NumeralsPlugin extends Plugin {
 				metadata,
 				type,
 				this.settings,
-				this.numberFormat,
+				this.getDisplayContext(),
 				this.preProcessors,
 				this.app
 			);
@@ -278,7 +279,7 @@ export default class NumeralsPlugin extends Plugin {
 			createInlineNumeralsPostProcessor(
 				this.app,
 				() => this.settings,
-				() => this.numberFormat,
+				() => this.getDisplayContext(),
 				() => this.preProcessors,
 				this.scopeCache
 			)
@@ -288,7 +289,7 @@ export default class NumeralsPlugin extends Plugin {
 		this.registerEditorExtension(
 			createInlineLivePreviewExtension(
 				() => this.settings,
-				() => this.numberFormat,
+				() => this.getDisplayContext(),
 				() => this.preProcessors,
 				this.scopeCache,
 				this.app
@@ -355,5 +356,18 @@ export default class NumeralsPlugin extends Plugin {
 
 	updateLocale(): void {
 		this.numberFormat = getMathjsFormat(this.settings.numberFormat);
+	}
+
+	/**
+	 * Build the display context threaded through every rendering surface.
+	 * Read live at render time so number-format and currency settings changes
+	 * take effect without re-registering processors.
+	 */
+	private getDisplayContext(): NumeralsDisplayContext {
+		return {
+			numberFormat: this.numberFormat,
+			currencies: this.currencyMap,
+			currencyDisplay: this.settings.currencyResultDisplay,
+		};
 	}
 }

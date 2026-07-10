@@ -46,4 +46,8 @@ export {
 	mathjaxLoop,
 	getLocaleFormatter,
 	defaultCurrencyMap,
+	formatNumeralsResult,
+	formatPureCurrencyTeX,
+	getPureCurrencyInfo,
+	getCurrencyMinorUnits,
 } from './rendering/displayUtils';

@@ -15,6 +15,7 @@ import {
 	mathjsFormat,
 	numeralsBlockInfo,
 } from '../src/numerals.types';
+import { makeDisplayContext } from './testHelpers';
 
 describe('Rendering Pipeline Types', () => {
 	describe('ProcessedBlock', () => {
@@ -178,7 +179,7 @@ describe('Rendering Pipeline Types', () => {
 			const context: RenderContext = {
 				renderStyle: NumeralsRenderStyle.Plain,
 				settings: DEFAULT_SETTINGS,
-				numberFormat: undefined,
+				displayContext: makeDisplayContext(),
 				preProcessors: [],
 			};
 
@@ -190,12 +191,12 @@ describe('Rendering Pipeline Types', () => {
 			const context: RenderContext = {
 				renderStyle: NumeralsRenderStyle.TeX,
 				settings: DEFAULT_SETTINGS,
-				numberFormat: { notation: 'fixed' },
+				displayContext: makeDisplayContext({ numberFormat: { notation: 'fixed' } }),
 				preProcessors: [],
 			};
 
 			expect(context.renderStyle).toBe(NumeralsRenderStyle.TeX);
-			expect(context.numberFormat).toHaveProperty('notation', 'fixed');
+			expect(context.displayContext.numberFormat).toHaveProperty('notation', 'fixed');
 		});
 
 		it('should accept valid RenderContext with preProcessors', () => {
@@ -207,7 +208,7 @@ describe('Rendering Pipeline Types', () => {
 			const context: RenderContext = {
 				renderStyle: NumeralsRenderStyle.SyntaxHighlight,
 				settings: DEFAULT_SETTINGS,
-				numberFormat: undefined,
+				displayContext: makeDisplayContext(),
 				preProcessors,
 			};
 

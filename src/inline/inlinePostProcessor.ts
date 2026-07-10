@@ -1,5 +1,5 @@
 import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
-import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap, InlineNumeralsMode, InlineEvaluationResult, NumeralsRenderStyle } from '../numerals.types';
+import { NumeralsSettings, NumeralsScope, NumeralsDisplayContext, StringReplaceMap, InlineNumeralsMode, InlineEvaluationResult, NumeralsRenderStyle } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
 import { getActiveInlineTriggers, getInlineTriggers, parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
@@ -46,7 +46,8 @@ function renderInlineResult(
 	renderStyle: NumeralsRenderStyle,
 	result: InlineEvaluationResult,
 	settings: NumeralsSettings,
-	preProcessors: StringReplaceMap[]
+	preProcessors: StringReplaceMap[],
+	displayContext: NumeralsDisplayContext
 ): void {
 	codeEl.empty();
 	codeEl.addClass('numerals-inline');
@@ -72,7 +73,8 @@ function renderInlineResult(
 			result.formatted,
 			result.raw,
 			renderStyle,
-			preProcessors
+			preProcessors,
+			displayContext
 		);
 	} else {
 		codeEl.addClass('numerals-inline-result');
@@ -82,7 +84,8 @@ function renderInlineResult(
 			result.formatted,
 			result.raw,
 			renderStyle,
-			preProcessors
+			preProcessors,
+			displayContext
 		);
 	}
 }
@@ -137,7 +140,7 @@ function processInlineCodeElement(
 	codeEl: HTMLElement,
 	scope: NumeralsScope,
 	settings: NumeralsSettings,
-	numberFormat: mathjsFormat,
+	displayContext: NumeralsDisplayContext,
 	preProcessors: StringReplaceMap[],
 	prevResultRef: PrevResultRef,
 	scopeCache: Map<string, NumeralsScope>,
@@ -156,7 +159,7 @@ function processInlineCodeElement(
 		const result = evaluateInlineExpression(
 			parsed.expression,
 			scope,
-			numberFormat,
+			displayContext,
 			preProcessors,
 			prevResultRef.value,
 			app,
@@ -175,7 +178,7 @@ function processInlineCodeElement(
 			addGlobalsToScopeCache(scopeCache, sourcePath, result.globals);
 		}
 
-		renderInlineResult(codeEl, parsed.expression, parsed.mode, parsed.renderStyle, result, settings, preProcessors);
+		renderInlineResult(codeEl, parsed.expression, parsed.mode, parsed.renderStyle, result, settings, preProcessors, displayContext);
 		return { referencedPaths: result.referencedPaths };
 	} catch {
 		prevResultRef.value = undefined;
@@ -197,8 +200,8 @@ function processInlineCodeElement(
  * - Post-processors only fire on render, not on scroll
  *
  * @param app - The Obsidian App instance
- * @param settings - Plugin settings (read at call time for hot-reload)
- * @param numberFormat - Number formatting configuration
+ * @param getSettings - Returns current plugin settings (read at call time for hot-reload)
+ * @param getDisplayContext - Returns the active number-format + currency-display configuration
  * @param getPreProcessors - Returns current preprocessing rules (currency, thousands, etc.)
  * @param scopeCache - Shared scope cache for note-global variables
  * @returns The post-processor function (for registration with Plugin.registerMarkdownPostProcessor)
@@ -206,7 +209,7 @@ function processInlineCodeElement(
 export function createInlineNumeralsPostProcessor(
 	app: App,
 	getSettings: () => NumeralsSettings,
-	getNumberFormat: () => mathjsFormat,
+	getDisplayContext: () => NumeralsDisplayContext,
 	getPreProcessors: () => StringReplaceMap[],
 	scopeCache: Map<string, NumeralsScope>
 ): (el: HTMLElement, ctx: MarkdownPostProcessorContext) => void {
@@ -245,7 +248,7 @@ export function createInlineNumeralsPostProcessor(
 				preProcessors
 			);
 
-			const numberFormat = getNumberFormat();
+			const displayContext = getDisplayContext();
 
 			// Track previous result for @prev support.
 			// Resets per section (post-processor call), so @prev only chains
@@ -259,7 +262,7 @@ export function createInlineNumeralsPostProcessor(
 					codeEl,
 					scope,
 					currentSettings,
-					numberFormat,
+					displayContext,
 					preProcessors,
 					prevResultRef,
 					scopeCache,

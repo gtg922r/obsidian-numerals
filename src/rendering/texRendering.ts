@@ -1,10 +1,11 @@
 import * as math from 'mathjs';
-import { StringReplaceMap } from '../numerals.types';
+import { NumeralsDisplayContext, StringReplaceMap } from '../numerals.types';
 import {
 	texCurrencyReplacement,
 	unescapeSubscripts,
 	replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw,
 	getLocaleFormatter,
+	formatPureCurrencyTeX,
 } from './displayUtils';
 
 /**
@@ -32,11 +33,21 @@ export function expressionToTeX(
 /**
  * Convert an evaluated mathjs result into TeX using the same no-grouping,
  * period-decimal formatting that block TeX rendering uses.
+ *
+ * Pure currency results bypass the `math.parse(...).toTex()` reconstruction and
+ * are built directly (symbol or ISO-code form) so their conventional decimals
+ * and symbol/sign placement survive rendering.
  */
 export function resultToTeX(
 	result: unknown,
-	preProcessors: StringReplaceMap[]
+	preProcessors: StringReplaceMap[],
+	displayContext: NumeralsDisplayContext
 ): string {
+	const currencyTex = formatPureCurrencyTeX(result, displayContext);
+	if (currencyTex !== null) {
+		return currencyTex;
+	}
+
 	let processedResult = math.format(
 		result,
 		getLocaleFormatter('en-US', { useGrouping: false })

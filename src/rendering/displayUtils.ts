@@ -1,6 +1,6 @@
 import { finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
 import * as math from 'mathjs';
-import { CurrencyType } from '../numerals.types';
+import { CurrencyType, CurrencyResultDisplay, NumeralsDisplayContext, mathjsFormat } from '../numerals.types';
 
 const MAX_FIXED_FORMAT_LEADING_DECIMAL_ZEROES = 5;
 
@@ -166,4 +166,273 @@ function countLeadingDecimalZeroes(value: number): number {
 		return 0;
 	}
 	return Math.max(0, -Math.floor(Math.log10(absValue)) - 1);
+}
+
+/****************************************************
+ * Currency-aware result formatting
+ ****************************************************/
+
+/**
+ * A mathjs Unit narrowed to the fields Numerals inspects for currency
+ * detection: its component list and its numeric value.
+ */
+interface MathjsUnitWithComponents {
+	units: math.Unit['units'];
+	value: number | null;
+}
+
+/** Fallback minor-unit count for currencies Intl cannot resolve. */
+const DEFAULT_CURRENCY_MINOR_UNITS = 2;
+
+/** Cache of ISO code → conventional minor-unit (decimal) count. */
+const currencyMinorUnitsCache = new Map<string, number>();
+
+/**
+ * Resolve the number of conventional minor units (decimal places) for an ISO
+ * currency code via `Intl.NumberFormat`, cached per code.
+ *
+ * Examples: USD/GBP/EUR/INR → 2, JPY → 0. Codes that Intl cannot resolve
+ * (e.g. custom non-ISO codes) fall back to {@link DEFAULT_CURRENCY_MINOR_UNITS}.
+ *
+ * @param code - The ISO 4217 currency code (e.g. `"USD"`).
+ * @returns The conventional decimal-place count for the currency.
+ */
+export function getCurrencyMinorUnits(code: string): number {
+	const cached = currencyMinorUnitsCache.get(code);
+	if (cached !== undefined) {
+		return cached;
+	}
+
+	let minorUnits = DEFAULT_CURRENCY_MINOR_UNITS;
+	try {
+		const resolved = new Intl.NumberFormat('en-US', {
+			style: 'currency',
+			currency: code,
+		}).resolvedOptions();
+		minorUnits = resolved.maximumFractionDigits ?? DEFAULT_CURRENCY_MINOR_UNITS;
+	} catch {
+		minorUnits = DEFAULT_CURRENCY_MINOR_UNITS;
+	}
+
+	currencyMinorUnitsCache.set(code, minorUnits);
+	return minorUnits;
+}
+
+/**
+ * Determine whether a value is a "pure" currency result and, if so, resolve
+ * its ISO code and display symbol.
+ *
+ * A value is pure currency when it is a mathjs Unit with exactly one unit
+ * component at power 1, a finite numeric value, and a component unit name that
+ * matches an active currency code. Compound units (e.g. `$/hr`) and units with
+ * a null value return `null`.
+ *
+ * @param value - The evaluated result to inspect.
+ * @param currencies - The active currency map (symbol ↔ ISO code).
+ * @returns `{ code, symbol }` for a pure currency value, otherwise `null`.
+ */
+export function getPureCurrencyInfo(
+	value: unknown,
+	currencies: ReadonlyArray<CurrencyType>
+): { code: string; symbol: string } | null {
+	if (!math.isUnit(value)) {
+		return null;
+	}
+
+	const unit = value as unknown as MathjsUnitWithComponents;
+	if (unit.units.length !== 1) {
+		return null;
+	}
+
+	const [component] = unit.units;
+	if (component.power !== 1) {
+		return null;
+	}
+
+	if (typeof unit.value !== 'number' || !Number.isFinite(unit.value)) {
+		return null;
+	}
+
+	const code = component.unit.name;
+	const match = currencies.find(currency => currency.currency === code);
+	if (!match) {
+		return null;
+	}
+
+	return { code, symbol: match.symbol };
+}
+
+/**
+ * Format an evaluated result for display, restoring currency conventions.
+ *
+ * Non-currency values format exactly as before via `math.format`. Pure
+ * currency values are formatted with their conventional decimal places (unless
+ * `ctx.hasExplicitFormat` is set) and rendered either with the currency symbol
+ * (`$12.50`) or the ISO code (`12.50 USD`) per `ctx.currencyDisplay`.
+ *
+ * @param value - The evaluated result (number, Unit, matrix, etc.).
+ * @param ctx - Display context (number format + currency configuration).
+ * @returns The formatted display string.
+ */
+export function formatNumeralsResult(value: unknown, ctx: NumeralsDisplayContext): string {
+	const info = getPureCurrencyInfo(value, ctx.currencies);
+	if (!info) {
+		return ctx.numberFormat !== undefined
+			? math.format(value, ctx.numberFormat)
+			: math.format(value);
+	}
+
+	const numeric = formatPureCurrencyNumeric(value, info.code, ctx);
+	if (ctx.currencyDisplay === CurrencyResultDisplay.CurrencyCode) {
+		return `${numeric} ${info.code}`;
+	}
+	return applyCurrencySymbol(numeric, info.symbol);
+}
+
+/**
+ * Build the TeX string for a pure currency result, bypassing the
+ * `math.parse(...).toTex()` reconstruction path.
+ *
+ * The numeric part always uses an en-US, no-grouping formatter (a constraint of
+ * the TeX rendering path) with conventional decimals. Symbol mode emits e.g.
+ * `\pound 12.50` (sign outside: `-\pound 12.50`); code mode emits
+ * `12.50~\mathrm{GBP}`.
+ *
+ * @param value - The evaluated result to inspect.
+ * @param ctx - Display context (currency configuration).
+ * @returns The TeX string, or `null` when the value is not pure currency.
+ */
+export function formatPureCurrencyTeX(value: unknown, ctx: NumeralsDisplayContext): string | null {
+	const info = getPureCurrencyInfo(value, ctx.currencies);
+	if (!info) {
+		return null;
+	}
+
+	// The TeX path cannot carry grouping separators through parsing, so the
+	// numeric part is always formatted en-US without grouping.
+	const texCtx: NumeralsDisplayContext = {
+		...ctx,
+		numberFormat: getLocaleFormatter('en-US', { useGrouping: false }),
+	};
+	const numeric = formatPureCurrencyNumeric(value, info.code, texCtx);
+
+	if (ctx.currencyDisplay === CurrencyResultDisplay.CurrencyCode) {
+		return `${numeric}~\\mathrm{${info.code}}`;
+	}
+	return texCurrencyReplacement(applyCurrencySymbol(numeric, info.symbol));
+}
+
+/**
+ * Format the numeric portion of a pure currency value (no symbol, no code),
+ * applying conventional decimals unless an explicit format is in effect.
+ */
+function formatPureCurrencyNumeric(
+	value: unknown,
+	code: string,
+	ctx: NumeralsDisplayContext
+): string {
+	const minorUnits = getCurrencyMinorUnits(code);
+	const resolvedFormat = ctx.hasExplicitFormat
+		? ctx.numberFormat
+		: getCurrencyNumberFormat(ctx.numberFormat, minorUnits);
+	// `math.format(value, undefined)` matches `math.format(value)`, so an
+	// explicit-but-undefined format still formats with mathjs defaults.
+	const formatted = math.format(value, resolvedFormat);
+	return stripTrailingCurrencyCode(formatted, code);
+}
+
+/**
+ * Prefix a formatted numeric string with a currency symbol, keeping any
+ * negative sign outside the symbol (e.g. `-12.50` → `-£12.50`).
+ */
+function applyCurrencySymbol(numeric: string, symbol: string): string {
+	if (numeric.startsWith('-')) {
+		return `-${symbol}${numeric.slice(1)}`;
+	}
+	return `${symbol}${numeric}`;
+}
+
+/**
+ * Strip a trailing ` CODE` suffix produced by `math.format` on a Unit.
+ * Matches the exact unit code (custom codes may not be three letters).
+ */
+function stripTrailingCurrencyCode(formatted: string, code: string): string {
+	const suffix = ` ${code}`;
+	return formatted.endsWith(suffix)
+		? formatted.slice(0, -suffix.length)
+		: formatted;
+}
+
+/**
+ * Derive the mathjs format used for a pure currency's numeric part.
+ *
+ * Object/undefined base formats become `{ notation: 'fixed', precision: N }`.
+ * Callback (locale) formats are wrapped so the fraction is rounded and padded
+ * or truncated to exactly N digits, respecting the locale decimal separator.
+ */
+function getCurrencyNumberFormat(numberFormat: mathjsFormat, minorUnits: number): mathjsFormat {
+	if (typeof numberFormat === 'function') {
+		const baseFormatter = numberFormat;
+		return (value: unknown): string => {
+			if (typeof value === 'number') {
+				return formatNumberWithFixedDecimals(value, baseFormatter, minorUnits);
+			}
+			return math.format(value);
+		};
+	}
+
+	return { notation: 'fixed', precision: minorUnits };
+}
+
+/**
+ * Format a number through a locale formatter, then round and pad/truncate its
+ * fraction to exactly `decimals` digits (0 → no decimal separator at all).
+ */
+function formatNumberWithFixedDecimals(
+	value: number,
+	baseFormatter: (value: number) => string,
+	decimals: number
+): string {
+	if (!Number.isFinite(value)) {
+		return baseFormatter(value);
+	}
+
+	const roundedValue = roundToDecimalPlaces(value, decimals);
+	const formattedValue = baseFormatter(roundedValue);
+	// Locale formatters can fall back to exponential for extreme values; the
+	// fixed-decimal padding below does not apply to that notation.
+	if (/[eE][+-]?\d+$/.test(formattedValue)) {
+		return roundedValue.toFixed(decimals);
+	}
+
+	const decimalSeparator = getDecimalSeparator(baseFormatter);
+	const decimalIndex = formattedValue.lastIndexOf(decimalSeparator);
+
+	if (decimals === 0) {
+		// No fractional part wanted — drop any separator and digits after it.
+		return decimalIndex === -1 ? formattedValue : formattedValue.slice(0, decimalIndex);
+	}
+
+	if (decimalIndex === -1) {
+		return `${formattedValue}${decimalSeparator}${'0'.repeat(decimals)}`;
+	}
+
+	const fractionDigits = formattedValue.length - decimalIndex - decimalSeparator.length;
+	if (fractionDigits < decimals) {
+		return `${formattedValue}${'0'.repeat(decimals - fractionDigits)}`;
+	}
+	return formattedValue;
+}
+
+/** Round to N decimal places, nudging by EPSILON to avoid float artifacts. */
+function roundToDecimalPlaces(value: number, decimals: number): number {
+	const factor = 10 ** decimals;
+	return Math.round((value + Math.sign(value) * Number.EPSILON) * factor) / factor;
+}
+
+/** Detect the decimal separator a locale formatter uses (e.g. `.` or `,`). */
+function getDecimalSeparator(formatter: (value: number) => string): string {
+	const formatted = formatter(1.1);
+	const match = formatted.match(/1(\D+)1/u);
+	return match?.[1] ?? '.';
 }

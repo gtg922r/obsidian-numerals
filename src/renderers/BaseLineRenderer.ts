@@ -1,6 +1,6 @@
-import * as math from 'mathjs';
 import { LineRenderData, RenderContext } from '../numerals.types';
 import { renderComment } from '../rendering/linePreparation';
+import { formatNumeralsResult } from '../rendering/displayUtils';
 import { ILineRenderer } from './ILineRenderer';
 
 /**
@@ -90,7 +90,7 @@ export abstract class BaseLineRenderer implements ILineRenderer {
 	): void {
 		const formattedResult =
 			context.settings.resultSeparator +
-			math.format(lineData.result, context.numberFormat);
+			formatNumeralsResult(lineData.result, context.displayContext);
 		resultElement.setText(formattedResult);
 	}
 }

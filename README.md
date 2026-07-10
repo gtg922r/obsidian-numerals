@@ -16,10 +16,10 @@
 | Show-your-work equations | `` `#=: 2 * (3ft + 4ft)` `` -> `2 * (3 ft + 4 ft) = 14 ft` |
 | Full math blocks | <code>```math<br>20 mi / 4 hr to m/s<br>```</code> -> `2.235 m / s` |
 | Units and conversions | `100 km/hr in mi/hr` -> `62.137 mi / hr` |
-| Currency math | `$100/hr * 3 days` -> `7,200 USD` |
+| Currency math | `$100/hr * 3 days` -> `$7,200.00` |
 | Note-wide variables | `$rate = $150/hr`, then `` `#: $rate * 40hr` `` |
 | Cross-note references | `[[Client Settings]].rates.hourly * 8hr` |
-| Result insertion | `@[profit] = revenue - expenses` writes `@[profit::10 USD]` |
+| Result insertion | `@[profit] = revenue - expenses` writes `@[profit::10.00 USD]` |
 
 ## Quick Start
 
@@ -88,13 +88,13 @@ Numerals uses [mathjs](https://mathjs.org/) for calculations and adds Obsidian-f
 | --- | --- |
 | Units | `1ft + 12in` -> `2 ft` |
 | Conversions | `72 degF to degC` -> `22.222 degC` |
-| Currency | `$1,000 * 2` -> `2,000 USD` |
-| Rates | `$100/hr * 3 days` -> `7,200 USD` |
+| Currency | `$1,000 * 2` -> `$2,000.00` |
+| Rates | `$100/hr * 3 days` -> `$7,200.00` |
 | Functions | `sqrt(144)`, `sin(pi/2)`, `log(1000, 10)` |
 | Bases | `0xff + 0b100` -> `259` |
 | Fractions | `fraction(1/3) + fraction(1/4)` -> `7/12` |
 
-Currency symbols can be customized in settings.
+Currency results are shown with their currency symbol and conventional decimal places by default (`$2,000.00`, `¥1,234`, `£33.33`). Set **Currency result display** to *Currency code* if you prefer the ISO-code form (`2,000.00 USD`). Compound rates such as `$/hr` keep their existing formatting, and inserted results (`@[name::value]`) always use the ISO-code form. Currency symbols and their mapped codes can be customized in settings.
 
 ### Note-Wide Variables
 
@@ -197,8 +197,10 @@ Use `@[label]` to write a result back into the raw note as Dataview-style inline
 Numerals updates the source text to:
 
 ```markdown
-@[profit::1,550 USD]
+@[profit::1,550.00 USD]
 ```
+
+Inserted results always use the ISO currency-code form (with conventional decimal places) so stored values round-trip cleanly, even when currency results are shown with their symbol elsewhere.
 
 ### Auto-Complete
 
