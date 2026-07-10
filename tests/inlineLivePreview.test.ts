@@ -28,6 +28,7 @@ import {
 } from '../src/inline/inlineLivePreview';
 import { InlineNumeralsMode, NumeralsRenderStyle } from '../src/numerals.types';
 import { EditorSelection } from '@codemirror/state';
+import { renderMath } from 'obsidian';
 
 beforeAll(() => {
 	(globalThis as { activeDocument?: Document }).activeDocument = document;
@@ -159,6 +160,22 @@ describe('InlineNumeralsWidget', () => {
 			expect(el.querySelector('.numerals-inline-input')?.textContent).toBe('3ft + 2ft');
 			expect(el.querySelector('.numerals-inline-separator')?.textContent).toBe(' = ');
 			expect(el.querySelector('.numerals-inline-value')?.textContent).toBe('5 ft');
+		});
+
+		it('should fall back to plain text when MathJax rendering fails asynchronously', async () => {
+			// mathjaxLoop is async, so a renderMath failure is a promise
+			// rejection — the renderer must catch it and fall back to text.
+			(renderMath as jest.Mock).mockImplementationOnce(() => {
+				throw new Error('MathJax unavailable');
+			});
+			const widget = new InlineNumeralsWidget(
+				'36', InlineNumeralsMode.ResultOnly, '3ft in inches', ' = ', false,
+				[], NumeralsRenderStyle.TeX, 36, '3 ft in inches', []
+			);
+			const el = widget.toDOM();
+			await Promise.resolve();
+
+			expect(el.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('36');
 		});
 
 		it('should render equation TeX mode with MathJax input and value spans', async () => {

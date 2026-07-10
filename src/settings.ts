@@ -447,7 +447,8 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setName('Result-only trigger')
 			.setDesc(htmlToElements(
 				`Prefix for inline code that shows only the result.<br>`
-				+ `Example: <code>#: 3 + 2</code> renders as <b>5</b>`
+				+ `Example: <code>#: 3 + 2</code> renders as <b>5</b><br>`
+				+ `Must differ from the other trigger prefixes.`
 			))
 			.addText(text => text
 				.setPlaceholder('#:')
@@ -461,7 +462,8 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setName('Equation trigger')
 			.setDesc(htmlToElements(
 				`Prefix for inline code that shows input and result.<br>`
-				+ `Example: <code>#=: 3 + 2</code> renders as <b>3 + 2 = 5</b>`
+				+ `Example: <code>#=: 3 + 2</code> renders as <b>3 + 2 = 5</b><br>`
+				+ `Must differ from the other trigger prefixes.`
 			))
 			.addText(text => text
 				.setPlaceholder('#=:')
@@ -475,7 +477,8 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setName('TeX result trigger') // eslint-disable-line obsidianmd/ui/sentence-case
 			.setDesc(htmlToElements(
 				`Prefix for inline code that renders only the result with TeX (MathJax).<br>`
-				+ `Example: <code>#$: sqrt(2)/2</code> renders the result as typeset math`
+				+ `Example: <code>#$: sqrt(2)/2</code> renders the result as typeset math<br>`
+				+ `Must differ from the other trigger prefixes.`
 			))
 			.addText(text => text
 				.setPlaceholder('#$:')
@@ -489,7 +492,8 @@ export class NumeralsSettingTab extends PluginSettingTab {
 			.setName('TeX equation trigger') // eslint-disable-line obsidianmd/ui/sentence-case
 			.setDesc(htmlToElements(
 				`Prefix for inline code that renders the expression and result with TeX (MathJax).<br>`
-				+ `Example: <code>#=$: sqrt(2)/2</code> renders as typeset math like <b>√2⁄2 = 0.7071</b>`
+				+ `Example: <code>#=$: sqrt(2)/2</code> renders as typeset math like <b>√2⁄2 = 0.7071</b><br>`
+				+ `Must differ from the other trigger prefixes.`
 			))
 			.addText(text => text
 				.setPlaceholder('#=$:')

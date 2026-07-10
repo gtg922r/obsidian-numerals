@@ -46,7 +46,7 @@ import {
 	InlineTriggerSettings,
 } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
-import { parseInlineExpression } from './inlineParser';
+import { getActiveInlineTriggers, getInlineTriggers, parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 import { getDataviewApi } from '../dataview';
 import {
@@ -285,19 +285,9 @@ function createDecorationContext(
 
 	if (!settings.enableInlineNumerals) return null;
 
-	const triggers: InlineTriggerSettings = {
-		resultTrigger: settings.inlineResultTrigger,
-		equationTrigger: settings.inlineEquationTrigger,
-		texResultTrigger: settings.inlineTexResultTrigger,
-		texEquationTrigger: settings.inlineTexEquationTrigger,
-	};
+	const triggers = getInlineTriggers(settings);
 	// Guard against all triggers empty (would match every code span)
-	if (
-		!triggers.resultTrigger &&
-		!triggers.equationTrigger &&
-		!triggers.texResultTrigger &&
-		!triggers.texEquationTrigger
-	) return null;
+	if (getActiveInlineTriggers(settings).length === 0) return null;
 
 	// Lazy scope resolution — only built on first matching expression
 	let scope: NumeralsScope | null = null;

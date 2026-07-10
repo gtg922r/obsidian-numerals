@@ -7,6 +7,7 @@
  */
 
 import { InlineTriggerSettings } from './numerals.types';
+import { listInlineTriggers } from './inline/inlineParser';
 
 /**
  * Result of detecting an inline Numerals context on a line.
@@ -63,12 +64,7 @@ export function findInlineNumeralsContext(
 
 	// Build trigger candidates, filtering out empty triggers.
 	// Sort longest-first to handle prefix conflicts (e.g. '#=$:' before '#=:').
-	const triggers = [
-		triggerSettings.resultTrigger,
-		triggerSettings.equationTrigger,
-		triggerSettings.texResultTrigger,
-		triggerSettings.texEquationTrigger,
-	].filter(t => t.length > 0);
+	const triggers = listInlineTriggers(triggerSettings).filter(t => t.length > 0);
 	triggers.sort((a, b) => b.length - a.length);
 
 	if (triggers.length === 0) return null;

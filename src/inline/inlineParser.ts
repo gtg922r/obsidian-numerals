@@ -3,7 +3,43 @@ import {
 	InlineNumeralsExpression,
 	InlineTriggerSettings,
 	NumeralsRenderStyle,
+	NumeralsSettings,
 } from '../numerals.types';
+
+/**
+ * Collect the four inline trigger prefixes from plugin settings.
+ *
+ * Single source of truth for every consumer of the inline triggers
+ * (parser, post-processor, Live Preview, autocomplete suggestor), so a
+ * future trigger only needs to be added here.
+ */
+export function getInlineTriggers(settings: NumeralsSettings): InlineTriggerSettings {
+	return {
+		resultTrigger: settings.inlineResultTrigger,
+		equationTrigger: settings.inlineEquationTrigger,
+		texResultTrigger: settings.inlineTexResultTrigger,
+		texEquationTrigger: settings.inlineTexEquationTrigger,
+	};
+}
+
+/**
+ * List all trigger prefixes from an InlineTriggerSettings object.
+ */
+export function listInlineTriggers(triggers: InlineTriggerSettings): string[] {
+	return [
+		triggers.resultTrigger,
+		triggers.equationTrigger,
+		triggers.texResultTrigger,
+		triggers.texEquationTrigger,
+	];
+}
+
+/**
+ * The non-empty trigger prefixes from settings (empty string disables a trigger).
+ */
+export function getActiveInlineTriggers(settings: NumeralsSettings): string[] {
+	return listInlineTriggers(getInlineTriggers(settings)).filter(t => t.length > 0);
+}
 
 /**
  * Attempt to parse an inline code string as a Numerals expression.

@@ -1,7 +1,7 @@
 import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
 import { NumeralsSettings, NumeralsScope, mathjsFormat, StringReplaceMap, InlineNumeralsMode, InlineEvaluationResult, NumeralsRenderStyle } from '../numerals.types';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
-import { parseInlineExpression } from './inlineParser';
+import { getActiveInlineTriggers, getInlineTriggers, parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
 import { getDataviewApi } from '../dataview';
 import { renderInlineInputContent, renderInlineValueContent } from './inlineRenderer';
@@ -146,12 +146,7 @@ function processInlineCodeElement(
 ): InlineProcessingResult {
 	const text = codeEl.dataset.numeralsInlineSource ?? codeEl.innerText;
 
-	const parsed = parseInlineExpression(text, {
-		resultTrigger: settings.inlineResultTrigger,
-		equationTrigger: settings.inlineEquationTrigger,
-		texResultTrigger: settings.inlineTexResultTrigger,
-		texEquationTrigger: settings.inlineTexEquationTrigger,
-	});
+	const parsed = parseInlineExpression(text, getInlineTriggers(settings));
 
 	if (!parsed) return { referencedPaths: [] };
 
@@ -219,13 +214,7 @@ export function createInlineNumeralsPostProcessor(
 		const settings = getSettings();
 		if (!settings.enableInlineNumerals) return;
 
-		// Collect the non-empty triggers (empty string disables a trigger).
-		const activeTriggers = [
-			settings.inlineResultTrigger,
-			settings.inlineEquationTrigger,
-			settings.inlineTexResultTrigger,
-			settings.inlineTexEquationTrigger,
-		].filter(t => t.length > 0);
+		const activeTriggers = getActiveInlineTriggers(settings);
 
 		// Guard against all triggers empty (would match every <code> element)
 		if (activeTriggers.length === 0) return;
