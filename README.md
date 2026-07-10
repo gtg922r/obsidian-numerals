@@ -167,6 +167,8 @@ total = subtotal + tax =>
 
 The directive is block-scoped, hidden from the rendered output, and also applies to result-insertion values (`@[total]`). Inline Numerals are unaffected. If a block has multiple valid directives, the last one wins. Invalid directives (e.g. `@format bogus`, `@format fixed -1`) are left as ordinary input so the error stays visible.
 
+Place `@format` at the top of the block: like other directive lines, it behaves as a blank line for `@sum`/`@total` grouping, so putting it between summed lines resets the running group.
+
 For currency, `@format` precision takes precedence over the conventional minor units while the currency symbol/code display still applies — `@format fixed 4` with `$100 / 3` renders `$33.3333`:
 
 ````markdown

@@ -22,6 +22,7 @@ import {
 	getLocaleFormatter,
 	defaultCurrencyMap,
 } from '../src/rendering/displayUtils';
+import { resultToTeX } from '../src/rendering/texRendering';
 import { CurrencyResultDisplay, NumeralsDisplayContext, mathjsFormat } from '../src/numerals.types';
 import { makeDisplayContext } from './testHelpers';
 
@@ -276,6 +277,36 @@ describe('formatPureCurrencyTeX', () => {
 	it('keeps the TeX numeric part grouping-free under an explicit @format', () => {
 		const ctx = applyBlockFormat(codeContext(), { notation: 'fixed', precision: 2 });
 		expect(formatPureCurrencyTeX(value('1000000 USD'), ctx)).toBe('1000000.00~\\mathrm{USD}');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// resultToTeX under an explicit @format (non-currency TeX path)
+// ---------------------------------------------------------------------------
+describe('resultToTeX (explicit @format)', () => {
+	it('applies @format fixed precision to non-currency results', () => {
+		const ctx = applyBlockFormat(symbolContext(), { notation: 'fixed', precision: 2 });
+		expect(resultToTeX(value('10 / 3'), [], ctx)).toBe('3.33');
+	});
+
+	it('keeps exponential notation for @format sci results', () => {
+		const ctx = applyBlockFormat(symbolContext(), { notation: 'exponential', precision: 3 });
+		expect(resultToTeX(value('12345'), [], ctx)).toBe('1.23\\cdot10^{+4}');
+	});
+
+	it('keeps engineering notation for @format eng results', () => {
+		const ctx = applyBlockFormat(symbolContext(), { notation: 'engineering' });
+		expect(resultToTeX(value('12345'), [], ctx)).toBe('12.345\\cdot10^{+3}');
+	});
+
+	it('honors the directive for both currency and plain results in a mixed block', () => {
+		const ctx = applyBlockFormat(symbolContext(), { notation: 'fixed', precision: 2 });
+		expect(resultToTeX(value('100 USD / 3'), [], ctx)).toBe('\\dollar 33.33');
+		expect(resultToTeX(value('10 / 3'), [], ctx)).toBe('3.33');
+	});
+
+	it('keeps the default en-US no-grouping formatter without an explicit format', () => {
+		expect(resultToTeX(value('1234.5'), [], symbolContext())).toBe('1234.5');
 	});
 });
 

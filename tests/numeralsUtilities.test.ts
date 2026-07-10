@@ -466,6 +466,20 @@ apples = 2
 		expect(result.blockInfo.hidden_lines).toEqual([2]);
 		expect(result.blockInfo.formatDirective).toEqual({ notation: "fixed", precision: 2 });
 	});
+
+	it("does not strip a @format directive suffixed with an emitter marker", () => {
+		// `@format fixed 2 =>` is rejected by the detector; after the `=>`
+		// removal it must remain visible input (a mathjs error), not be
+		// silently blanked by directive stripping.
+		const sampleBlock = `@format fixed 2 =>
+10 / 3`;
+
+		const result = preProcessBlockForNumeralsDirectives(sampleBlock, undefined);
+
+		expect(result.processedSource).toEqual("@format fixed 2\n10 / 3");
+		expect(result.blockInfo.hidden_lines).toEqual([]);
+		expect(result.blockInfo.formatDirective).toBeUndefined();
+	});
 });
 
 /**
@@ -1223,6 +1237,14 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		const lines = el.querySelectorAll(".numerals-line");
 		expect(lines.length).toBe(1);
 		expect(lines[0].textContent).toContain(`10 / 3${resultSeparator}3.333`);
+	});
+
+	it("surfaces a @format directive suffixed with an emitter marker as a visible error", () => {
+		source = "@format fixed 2 =>\n10 / 3";
+		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, displayContext, preProcessors, mockApp);
+
+		expect(el.querySelector(".numerals-error-line")).not.toBeNull();
+		expect(el.textContent).toContain("@format fixed 2");
 	});
 
 	it('Simple math with rolling sum', () => {

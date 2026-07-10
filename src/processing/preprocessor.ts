@@ -1,33 +1,10 @@
 import { NumeralsFormatDirective, StringReplaceMap, numeralsBlockInfo } from '../numerals.types';
 
-/**
- * Alternation of accepted `@format` notation names (case-insensitive). Kept in
- * sync with {@link resolveFormatNotation} and reused to build the strip regex so
- * only names the parser accepts are removed from the evaluated source.
- */
-const FORMAT_NOTATION_NAMES = 'fixed|exponential|exp|sci|scientific|eng|engineering';
-
 /** Matches a valid `@format <name> [N]` line (name validated separately). */
 const FORMAT_DIRECTIVE_REGEX = /^\s*@format\s+([a-z]+)(?:\s+(\d+))?\s*$/i;
 
 /** Matches a valid `@decimalPlaces N` / `@decimalPlace N` line (N required). */
 const DECIMAL_PLACES_DIRECTIVE_REGEX = /^\s*@decimalPlaces?\s+(\d+)\s*$/i;
-
-/**
- * Strip regex for valid `@format` lines. Only the accepted notation names match,
- * so invalid variants (e.g. `@format bogus 2`) stay visible and error in mathjs.
- *
- * Whitespace uses `[^\S\n]` (any whitespace except newline) so a trailing
- * optional `N` cannot reach across the line break and swallow the next line's
- * leading number.
- */
-const FORMAT_DIRECTIVE_STRIP_REGEX = new RegExp(
-	`^[^\\S\\n]*@format[^\\S\\n]+(?:${FORMAT_NOTATION_NAMES})(?:[^\\S\\n]+\\d+)?[^\\S\\n]*$`,
-	'gim'
-);
-
-/** Strip regex for valid `@decimalPlaces` / `@decimalPlace` lines (N required). */
-const DECIMAL_PLACES_DIRECTIVE_STRIP_REGEX = /^[^\S\n]*@decimalPlaces?[^\S\n]+\d+[^\S\n]*$/gim;
 
 /**
  * Resolve a `@format` notation name to its mathjs notation, or `undefined` when
@@ -124,6 +101,7 @@ export function preProcessBlockForNumeralsDirectives(
 	const hidden_lines: number[] = [];
 	let shouldHideNonEmitterLines = false;
 	let formatDirective: NumeralsFormatDirective | undefined = undefined;
+	const formatDirectiveRows: number[] = [];
 
 	// Find emitter and result insertion lines before modifying source
 	for (let i = 0; i < rawRows.length; i++) {
@@ -151,12 +129,14 @@ export function preProcessBlockForNumeralsDirectives(
 		}
 
 		// Find @format / @decimalPlaces directives. Only valid directives are
-		// hidden and recorded (last valid one wins); invalid variants fall
-		// through as ordinary input so their failure stays visible.
+		// hidden, recorded (last valid one wins), and marked for row removal;
+		// invalid variants fall through as ordinary input so their failure
+		// stays visible.
 		const parsedDirective = parseFormatDirectiveLine(rawRows[i]);
 		if (parsedDirective) {
 			hidden_lines.push(i);
 			formatDirective = parsedDirective;
+			formatDirectiveRows.push(i);
 		}
 	}
 
@@ -175,11 +155,20 @@ export function preProcessBlockForNumeralsDirectives(
 	// Remove @hideRows directive
 	processedSource = processedSource.replace(/^\s*@hideRows/gim, "");
 
-	// Remove valid @format / @decimalPlaces directives. These strip regexes
-	// mirror the parser's accepted forms, so only lines recorded above are
-	// removed and invalid variants remain visible to error.
-	processedSource = processedSource.replace(FORMAT_DIRECTIVE_STRIP_REGEX, "");
-	processedSource = processedSource.replace(DECIMAL_PLACES_DIRECTIVE_STRIP_REGEX, "");
+	// Remove valid @format / @decimalPlaces directives by row index. Blanking
+	// exactly the rows the detector accepted (none of the replacements above
+	// add or remove lines) guarantees detector/stripper agreement by
+	// construction: invalid variants — including a directive suffixed with `=>`,
+	// which the `=>` removal above would otherwise disguise as a valid line —
+	// remain visible and surface a mathjs error. Rows become empty strings so
+	// line indices stay aligned for emitter/insertion/hidden bookkeeping.
+	if (formatDirectiveRows.length > 0) {
+		const processedRows = processedSource.split("\n");
+		for (const row of formatDirectiveRows) {
+			processedRows[row] = "";
+		}
+		processedSource = processedRows.join("\n");
+	}
 
 	// Apply any pre-processors (e.g. currency replacement, thousands separator replacement, etc.)
 	if (preProcessors && preProcessors.length > 0) {

@@ -35,6 +35,7 @@ The directive applies to the entire math block and is hidden from the rendered o
 - Numeric units, including currency units, keep their meaning; pure currency results still render with their symbol or ISO code according to the **Currency result display** setting, but the directive's precision overrides the currency's conventional minor units. For example, `@format fixed 4` with `$100 / 3` renders `$33.3333` in symbol mode, and `@format fixed 2` with `¥1000 / 3` renders `¥333.33` (overriding JPY's zero-decimal convention).
 - Result insertion (`@[name::value]`) uses the same block-level format when writing values back to the note. Inserted currency values keep the ISO-code form (e.g. `@format fixed 4` → `@[x::33.3333 USD]`) so stored values round-trip cleanly.
 - Blocks without this directive keep the existing user-selected number-format behavior.
+- Like other directive lines (e.g. `@createUnit`) and blank lines, a hidden `@format` row evaluates to nothing and therefore acts as a group boundary for `@sum` / `@total`. Placing the directive between summed lines resets the running group, so put `@format` at the top of the block (recommended) or outside any `@sum` group.
 
 ## Validation
 
