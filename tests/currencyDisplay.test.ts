@@ -14,6 +14,7 @@ jest.mock('obsidian', () => ({
 
 import * as math from 'mathjs';
 import {
+	applyBlockFormat,
 	formatNumeralsResult,
 	formatPureCurrencyTeX,
 	getPureCurrencyInfo,
@@ -265,5 +266,44 @@ describe('formatPureCurrencyTeX', () => {
 
 	it('returns null for non-currency values', () => {
 		expect(formatPureCurrencyTeX(value('3 ft'), symbolContext())).toBeNull();
+	});
+
+	it('respects an explicit @format precision on the currency TeX path', () => {
+		const ctx = applyBlockFormat(symbolContext(), { notation: 'fixed', precision: 4 });
+		expect(formatPureCurrencyTeX(value('100 GBP / 3'), ctx)).toBe('\\pound 33.3333');
+	});
+
+	it('keeps the TeX numeric part grouping-free under an explicit @format', () => {
+		const ctx = applyBlockFormat(codeContext(), { notation: 'fixed', precision: 2 });
+		expect(formatPureCurrencyTeX(value('1000000 USD'), ctx)).toBe('1000000.00~\\mathrm{USD}');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// applyBlockFormat
+// ---------------------------------------------------------------------------
+describe('applyBlockFormat', () => {
+	it('returns the context unchanged when no directive is given', () => {
+		const ctx = symbolContext(getLocaleFormatter());
+		expect(applyBlockFormat(ctx, undefined)).toBe(ctx);
+	});
+
+	it('sets numberFormat and hasExplicitFormat from the directive', () => {
+		const ctx = applyBlockFormat(symbolContext(), { notation: 'fixed', precision: 2 });
+		expect(ctx.numberFormat).toEqual({ notation: 'fixed', precision: 2 });
+		expect(ctx.hasExplicitFormat).toBe(true);
+	});
+
+	it('omits precision when the directive has none', () => {
+		const ctx = applyBlockFormat(symbolContext(), { notation: 'engineering' });
+		expect(ctx.numberFormat).toEqual({ notation: 'engineering' });
+		expect(ctx.numberFormat).not.toHaveProperty('precision');
+	});
+
+	it('preserves currency display and currencies from the base context', () => {
+		const base = codeContext();
+		const ctx = applyBlockFormat(base, { notation: 'exponential', precision: 3 });
+		expect(ctx.currencyDisplay).toBe(base.currencyDisplay);
+		expect(ctx.currencies).toBe(base.currencies);
 	});
 });

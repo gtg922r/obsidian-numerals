@@ -50,4 +50,5 @@ export {
 	formatPureCurrencyTeX,
 	getPureCurrencyInfo,
 	getCurrencyMinorUnits,
+	applyBlockFormat,
 } from './rendering/displayUtils';

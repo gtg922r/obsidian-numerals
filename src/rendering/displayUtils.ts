@@ -1,6 +1,6 @@
 import { finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
 import * as math from 'mathjs';
-import { CurrencyType, CurrencyResultDisplay, NumeralsDisplayContext, mathjsFormat } from '../numerals.types';
+import { CurrencyType, CurrencyResultDisplay, NumeralsDisplayContext, NumeralsFormatDirective, mathjsFormat } from '../numerals.types';
 
 const MAX_FIXED_FORMAT_LEADING_DECIMAL_ZEROES = 5;
 
@@ -270,6 +270,37 @@ export function getPureCurrencyInfo(
 }
 
 /**
+ * Apply a block-level `@format` directive to a display context.
+ *
+ * Returns the context unchanged when no directive is present. Otherwise returns
+ * a copy whose `numberFormat` is the directive's mathjs format options and whose
+ * `hasExplicitFormat` flag is set, so the directive takes precedence over both
+ * the currency-convention decimals and the global number-format setting (while
+ * currency symbol/code display still applies).
+ *
+ * @param displayContext - The base (global) display context.
+ * @param formatDirective - The parsed block directive, or `undefined`.
+ * @returns The resolved block-level display context.
+ */
+export function applyBlockFormat(
+	displayContext: NumeralsDisplayContext,
+	formatDirective: NumeralsFormatDirective | undefined
+): NumeralsDisplayContext {
+	if (formatDirective === undefined) {
+		return displayContext;
+	}
+
+	return {
+		...displayContext,
+		numberFormat: {
+			notation: formatDirective.notation,
+			...(formatDirective.precision !== undefined && { precision: formatDirective.precision }),
+		},
+		hasExplicitFormat: true,
+	};
+}
+
+/**
  * Format an evaluated result for display, restoring currency conventions.
  *
  * Non-currency values format exactly as before via `math.format`. Pure
@@ -315,12 +346,16 @@ export function formatPureCurrencyTeX(value: unknown, ctx: NumeralsDisplayContex
 		return null;
 	}
 
-	// The TeX path cannot carry grouping separators through parsing, so the
-	// numeric part is always formatted en-US without grouping.
-	const texCtx: NumeralsDisplayContext = {
-		...ctx,
-		numberFormat: getLocaleFormatter('en-US', { useGrouping: false }),
-	};
+	// The TeX path cannot carry grouping separators through parsing. An explicit
+	// `@format` directive already supplies a grouping-free object format
+	// (fixed/exponential/engineering), so it is kept as-is to preserve its
+	// precision; otherwise the numeric part is formatted en-US without grouping.
+	const texCtx: NumeralsDisplayContext = ctx.hasExplicitFormat
+		? ctx
+		: {
+			...ctx,
+			numberFormat: getLocaleFormatter('en-US', { useGrouping: false }),
+		};
 	const numeric = formatPureCurrencyNumeric(value, info, texCtx);
 
 	if (ctx.currencyDisplay === CurrencyResultDisplay.CurrencyCode) {

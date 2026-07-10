@@ -144,6 +144,38 @@ $25
 ```
 ````
 
+### Number Formatting Directives
+
+Add a `@format` directive to a math block to format every result in that block with a specific notation, overriding the global number-format setting:
+
+````markdown
+```math
+@format fixed 2
+subtotal = 19.995
+tax = subtotal * 8.25%
+total = subtotal + tax =>
+```
+````
+
+`@format <notation> [N]` accepts (case-insensitive):
+
+- `fixed` — plain decimal notation
+- `exponential` (aliases `exp`, `sci`, `scientific`) — scientific notation
+- `engineering` (alias `eng`) — exponent is a multiple of 3
+
+`N` is an optional non-negative number of significant/decimal digits (mathjs default precision when omitted). `@decimalPlaces N` (and `@decimalPlace N`) is a shorthand for `@format fixed N`, where `N` is required.
+
+The directive is block-scoped, hidden from the rendered output, and also applies to result-insertion values (`@[total]`). Inline Numerals are unaffected. If a block has multiple valid directives, the last one wins. Invalid directives (e.g. `@format bogus`, `@format fixed -1`) are left as ordinary input so the error stays visible.
+
+For currency, `@format` precision takes precedence over the conventional minor units while the currency symbol/code display still applies — `@format fixed 4` with `$100 / 3` renders `$33.3333`:
+
+````markdown
+```math
+@format fixed 4
+$100 / 3 =>
+```
+````
+
 ### Frontmatter and Dataview Metadata
 
 Numerals can read selected note properties from frontmatter:
