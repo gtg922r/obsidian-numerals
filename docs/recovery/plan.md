@@ -55,6 +55,10 @@ One disposable controller/subscription set per rendered occurrence; identical ca
 
 Insertion proposals contain editor identity, file, source revision and metadata/settings generation, exact expected span and replacement. Apply a single Editor.transaction only when all identities/generations and expected text still match. Replace directive spans, never whole captured lines. Discard stale proposals. No background vault writes. Preserve current canonical formatting; serialization migration is separate.
 
+Automatic insertion allows one complete-note batch per independently initiated editor input cycle. Reserve the allowance before the transaction; own writes, metadata/Dataview/dependency echoes, synchronized buffer echoes, selection, scrolling and controller recreation do not renew it. A proven independent user input or the explicit **Update stored results** command can begin another cycle. Undo/Redo never renew automatic writes, so undoing an insertion does not immediately reapply it. Ambiguous input causes still refresh mathematics but require the explicit action for a new write.
+
+The resulting full source is evaluated afresh. Stored output is the checked pre-write sample, so nondeterministic live output can differ; metadata-only changes may update live results while stored fields await another independent edit/action. Explain a differing stored value locally without repeated global notices. Do not reuse an older source generation or suppress native replay errors to conceal this distinction.
+
 ## Work packages
 
 | Package | Ownership | Outcome |

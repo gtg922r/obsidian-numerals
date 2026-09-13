@@ -14,7 +14,7 @@ All notable changes to this project will be documented in this file. The format 
 - Currency-standard decimal places by default and optional configured-symbol display for pure currency results, including derived currency values. Configured-symbol display is the default when no valid saved preference exists; saved code/symbol choices are preserved. (Closes #160)
 
 ### Changed
-- Record accepted isolated host extraction evidence and completed stable documentation review in the recovery work ledger.
+- Record accepted source evaluation, verified CI acceptance artifacts and stable/recovery documentation in the work ledger; define bounded automatic insertion and an explicit stored-result update action without changing source freshness or stable publication.
 - Pin the private standalone Markdown parser to `@lezer/markdown` 1.7.2 after accepted Obsidian 1.13.7 Linux extraction validation; bundle its common/highlight dependencies while preserving host CodeMirror boundaries.
 - Provide all settings through Obsidian 1.13 native searchable definitions. Currency changes use explicit Save/Cancel forms, preserve valid saved preferences, and validate complete settings with legacy migration and duplicate-trigger protection.
 - Pin Obsidian 1.13.1 typings and the 0.4.2 Obsidian linter; adopt native DOM helpers and keep their owning-document behavior.
