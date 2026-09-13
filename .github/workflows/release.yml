@@ -1,55 +1,81 @@
-name: Build And Release obsidian plugin
+name: BRAT prerelease
 
 on:
   push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-      - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
-
-env:
-  PLUGIN_NAME: numerals # Change this to the name of your plugin-id folder
+    tags: ["*"]
 
 permissions:
-  attestations: write
-  contents: write
-  id-token: write
-  artifact-metadata: write
+  contents: read
+
+# Serialize retries for a tag. An existing release fails the publish job.
+concurrency:
+  group: brat-prerelease-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  validate:
+    if: github.repository == 'gtg922r/obsidian-numerals'
+    uses: ./.github/workflows/ci.yml
+    with:
+      release_tag: ${{ github.ref_name }}
 
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22.x"
-      - name: Build
-        run: |
-          npm install
-          npm run build --if-present
-          node scripts/prepare-release-artifacts.mjs ${{ github.ref_name }}
-      - name: Attest release artifacts
-        uses: actions/attest@v4
-        with:
-          subject-path: |
-            release/${{ env.PLUGIN_NAME }}/main.js
-            release/${{ env.PLUGIN_NAME }}/manifest.json
-            release/${{ env.PLUGIN_NAME }}/styles.css
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      # This privileged job never checks out or executes project/PR code.
+      - name: Refuse to modify an existing release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/$GH_REPO/releases?per_page=100" --jq '.[].tag_name' > "$RUNNER_TEMP/release-tags.txt"
+          if grep -Fxq -- "$RELEASE_TAG" "$RUNNER_TEMP/release-tags.txt"; then
+            echo "Release already exists; use a new candidate version. No assets or release state will be replaced."
+            exit 1
+          fi
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: numerals-${{ github.sha }}
+          path: release/numerals
+      - name: Attest validated assets
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2, Node 24
+        with:
+          # Storage records apply to organization registries; this is a personal plugin repository.
+          create-storage-record: false
+          subject-path: |
+            release/numerals/main.js
+            release/numerals/manifest.json
+            release/numerals/styles.css
+      - name: Create BRAT prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        # The API creates atomically and returns an error if another publisher won
+        # the race after the earlier absence check. Never reuse an existing release.
+        run: |
+          set -euo pipefail
+          jq -n --arg tag "$RELEASE_TAG" '{tag_name: $tag, name: $tag, draft: false, prerelease: true, make_latest: "false", generate_release_notes: true}' > "$RUNNER_TEMP/prerelease.json"
+          gh api --method POST "repos/$GH_REPO/releases" --input "$RUNNER_TEMP/prerelease.json"
+      - name: Attach BRAT assets to the newly created prerelease
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3, Node 24
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           draft: false
           prerelease: true
-          body: |
-            # Numerals ${{ github.ref_name }}
-            -
+          make_latest: "false"
+          overwrite_files: false
+          fail_on_unmatched_files: true
           files: |
-            release/${{ env.PLUGIN_NAME }}/main.js
-            release/${{ env.PLUGIN_NAME }}/manifest.json
-            release/${{ env.PLUGIN_NAME }}/styles.css
+            release/numerals/main.js
+            release/numerals/manifest.json
+            release/numerals/styles.css

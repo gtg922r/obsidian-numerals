@@ -1,6 +1,7 @@
 import { execFileSync } from "child_process";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync } from "fs";
 import { join } from "path";
+import { readCandidate } from './release-policy.mjs';
 
 const version = process.argv[2];
 const pluginName = process.env.PLUGIN_NAME ?? "numerals";
@@ -18,7 +19,8 @@ if (!/^\d+\.\d+\.\d+$/.test(version)) {
 	process.exit(1);
 }
 
-const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
+// Validate all reviewed metadata before deleting or writing any artifact.
+const { manifest } = readCandidate(version);
 if (manifest.id !== pluginName) {
 	console.error(`Manifest id "${manifest.id}" does not match plugin name "${pluginName}".`);
 	process.exit(1);
@@ -34,8 +36,7 @@ for (const file of ["main.js", "styles.css"]) {
 rmSync(releaseRoot, { recursive: true, force: true });
 mkdirSync(pluginDir, { recursive: true });
 
-manifest.version = version;
-writeFileSync(join(pluginDir, "manifest.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
+copyFileSync('manifest.json', join(pluginDir, 'manifest.json'));
 copyFileSync("main.js", join(pluginDir, "main.js"));
 copyFileSync("styles.css", join(pluginDir, "styles.css"));
 

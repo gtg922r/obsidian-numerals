@@ -1,58 +1,28 @@
-import { readFileSync, writeFileSync } from "fs";
+import { writeFileSync } from 'node:fs';
+import { assertCandidateVersion, git, readCandidate } from './release-policy.mjs';
 
-function incrementVersion(currentVersion, type) {
-    const parts = currentVersion.split('.').map(Number);
-    
-    switch (type) {
-        case 'major':
-            parts[0]++;
-            parts[1] = 0;
-            parts[2] = 0;
-            break;
-        case 'minor':
-            parts[1]++;
-            parts[2] = 0;
-            break;
-        case 'patch':
-        default:
-            parts[2]++;
-            break;
+try {
+    const type = process.argv[2] ?? 'patch';
+    if (!['major', 'minor', 'patch'].includes(type) || process.argv.length > 3) {
+        throw new Error('Use version:patch, version:minor, or version:major.');
     }
-    
-    return parts.join('.');
+    const branch = git('branch', '--show-current');
+    if (!branch || ['master', 'main'].includes(branch)) {
+        throw new Error('Bump candidate metadata only on a recovery feature/integration branch.');
+    }
+    const { pkg, lock, manifest, version } = readCandidate();
+    const parts = assertCandidateVersion(version);
+    const index = { major: 0, minor: 1, patch: 2 }[type];
+    parts[index]++;
+    for (let i = index + 1; i < parts.length; i++) parts[i] = 0;
+    const next = parts.join('.');
+    assertCandidateVersion(next);
+    pkg.version = lock.version = lock.packages[''].version = manifest.version = next;
+    for (const [file, value, indent] of [['package.json', pkg, '\t'], ['package-lock.json', lock, '\t'], ['manifest.json', manifest, '\t']]) {
+        writeFileSync(file, `${JSON.stringify(value, null, indent)}\n`);
+    }
+    console.log(`Candidate ${version} → ${next}; package, lockfile and manifest synchronized. Commit for review before owner prerelease publication.`);
+} catch (error) {
+    console.error(`Version bump stopped: ${error.message}`);
+    process.exitCode = 1;
 }
-
-function updateVersion() {
-    const versionType = process.argv[2] || 'patch';
-    
-    if (!['major', 'minor', 'patch'].includes(versionType)) {
-        console.error('❌ Invalid version type. Use: major, minor, or patch');
-        process.exit(1);
-    }
-    
-    try {
-        console.log(`🔢 Incrementing ${versionType} version...`);
-        
-        // Read current package.json
-        const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
-        const currentVersion = packageJson.version;
-        
-        // Calculate new version
-        const newVersion = incrementVersion(currentVersion, versionType);
-        
-        console.log(`📦 Version: ${currentVersion} → ${newVersion}`);
-        
-        // Update package.json
-        packageJson.version = newVersion;
-        writeFileSync("package.json", JSON.stringify(packageJson, null, "\t"));
-        
-        console.log(`✅ Updated package.json to version ${newVersion}`);
-        console.log(`💡 Run 'npm run release:beta' or 'npm run release:production' to build and deploy`);
-        
-    } catch (error) {
-        console.error("❌ Version increment failed:", error.message);
-        process.exit(1);
-    }
-}
-
-updateVersion(); 

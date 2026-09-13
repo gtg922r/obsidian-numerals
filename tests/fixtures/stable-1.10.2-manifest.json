@@ -1,8 +1,8 @@
 {
 	"id": "numerals",
 	"name": "Numerals",
-	"version": "1.11.0",
-	"minAppVersion": "1.13.0",
+	"version": "1.10.2",
+	"minAppVersion": "0.16.0",
 	"description": "Turn any code block into an advanced calculator. Evaluates math expressions on each line of a code block, including units, currency, and optional TeX rendering.",
 	"author": "RyanC",
 	"authorUrl": "https://github.com/gtg922r",
