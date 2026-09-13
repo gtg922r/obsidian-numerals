@@ -1,0 +1,576 @@
+{
+  "identity": "numerals-recovery-fixture-NQ13A",
+  "casesSha256": "fbb224c760608883a222b02ef6e414b9d38221f042b3b7f7dc6dce9ae1c55a69",
+  "cases": [
+    {
+      "id": "001",
+      "path": "cases/001-ordinary-fence.md",
+      "sha256": "8c193e82ed7709794ef4d7ef4ce7485de71c0db4e9d969b6ac89733a645603ab",
+      "text": "```math\na=1\n```"
+    },
+    {
+      "id": "002",
+      "path": "cases/002-four-ticks-containing-shorter-fences.md",
+      "sha256": "0163edaf1b6a8ac35c5d2b5b5dd1de623d92cc12bc392c3665c7d1b52239a3b1",
+      "text": "````math\na=1\n```\nb=2\n````"
+    },
+    {
+      "id": "003",
+      "path": "cases/003-longer-closing-fence.md",
+      "sha256": "b579c700805a5b9ad320b6a60c5b96cc0cb64c0c716549d6689771320b83da26",
+      "text": "```math\n1+2\n`````"
+    },
+    {
+      "id": "004",
+      "path": "cases/004-tilde-fence.md",
+      "sha256": "7b91767a0c5a5f0509030acc2f49ea26b4f73351c4c13c49f2f681e857dd00f7",
+      "text": "~~~math-tex\n1+2\n~~~"
+    },
+    {
+      "id": "005",
+      "path": "cases/005-mismatched-fence.md",
+      "sha256": "1da1606666e666aac4da4cf3bf708a377792e841dbb647ac7d03d8da7444088b",
+      "text": "```math\n1+2\n~~~\n3+4\n```"
+    },
+    {
+      "id": "006",
+      "path": "cases/006-empty-fence.md",
+      "sha256": "e5ff8cf755c20328af158107f15c0f4f73f836f7334b8aed0f1cef43921116fb",
+      "text": "```math\n```"
+    },
+    {
+      "id": "007",
+      "path": "cases/007-blank-body.md",
+      "sha256": "71daa04be4cfa730436a3c6adab02597a58ac297da302115632aef6f78056b51",
+      "text": "```math\n\n```"
+    },
+    {
+      "id": "008",
+      "path": "cases/008-blank-rows.md",
+      "sha256": "5fea42dd6bd3f7e6054b4075921adf1101bd71db643bd4c00fd2530a4fe44ab0",
+      "text": "```math\n1\n\n2\n\n```"
+    },
+    {
+      "id": "009",
+      "path": "cases/009-indented-opener.md",
+      "sha256": "32005dcd48d27d43cba71a7d7d5cc35670f3eba92fe00fd0ca07360cf8935876",
+      "text": "  ```math\n  1\n    2\n  ```"
+    },
+    {
+      "id": "010",
+      "path": "cases/010-tab-indented-example.md",
+      "sha256": "f37a946042a9baa50a33cdb700c9cedc1ad83683c41036706723dbeb92e5ce75",
+      "text": "\t```math\n\t1\n\t```"
+    },
+    {
+      "id": "011",
+      "path": "cases/011-opaque-outer-fence.md",
+      "sha256": "9938c265a2b317bf519d15002935189aaf615ed0dfd29515b677a6092d00af5e",
+      "text": "````markdown\n```math\n1+2\n```\n`#:3`\n````"
+    },
+    {
+      "id": "012",
+      "path": "cases/012-unregistered-case.md",
+      "sha256": "449b7fce6f1a3b2025fc1d5e1b0f9590a4dc067fd969d05fd4920c082709e0d5",
+      "text": "```MATH\n1+2\n```"
+    },
+    {
+      "id": "013",
+      "path": "cases/013-quote-fence.md",
+      "sha256": "5466ed6b3f6374fdf4c970f27169ec41bbb293ddcad9c24c6d0ac046824d07c1",
+      "text": "> ```math\n> a=1\n> b=a+2\n> ```"
+    },
+    {
+      "id": "014",
+      "path": "cases/014-nested-quotes.md",
+      "sha256": "d2ecf1d0cb60def8deead584f6e7543941cdd3435cc413c52c563ff76e39908a",
+      "text": "> > ```math\n> > a=1\n> > b=a+2\n> > ```"
+    },
+    {
+      "id": "015",
+      "path": "cases/015-quote-list.md",
+      "sha256": "cb3277df5764e8e098aa3890ddbf144ffb6fb2166290570423dc0005f1aaf7ee",
+      "text": "> - ```math\n>   a=1\n>   b=2\n>   ```"
+    },
+    {
+      "id": "016",
+      "path": "cases/016-list-fence.md",
+      "sha256": "db63d75dbb11e9fc17d904c24f4324c2e6d630c141aa927fdfd3e4133a22b4d3",
+      "text": "- item\n\n  ```math\n  a=1\n  b=2\n  ```"
+    },
+    {
+      "id": "017",
+      "path": "cases/017-indented-list-marker.md",
+      "sha256": "e03a8952f46e436781ad3010cb9e72bb66eef466960caf118dc1eac5a2ee36b5",
+      "text": "  - ```math\n    1\n    ```"
+    },
+    {
+      "id": "018",
+      "path": "cases/018-nested-list.md",
+      "sha256": "1cfe020736ab36865f6aed8316de0e492f8af36470fe477ff926edcced952036",
+      "text": "- outer\n  - ```math\n    1\n    ```"
+    },
+    {
+      "id": "019",
+      "path": "cases/019-tab-list.md",
+      "sha256": "fe45fdb5ad8930f9311f3067f08d4df0675ad3bf383003c0f3b6b5250e615ba5",
+      "text": "-\t```math\n\t1\n\t```"
+    },
+    {
+      "id": "020",
+      "path": "cases/020-tab-quote.md",
+      "sha256": "d68505509cc6bf61babc09b638725bf2717e17d04641d9216852f0048ab5be29",
+      "text": ">\t```math\n>\t1\n>\t```"
+    },
+    {
+      "id": "021",
+      "path": "cases/021-opener-quote-tab-provides-virtual-fence-indent.md",
+      "sha256": "5e083ddef13b35f19e56b63ddb7f2106a1ed4180d94838af26d9d9991b468382",
+      "text": ">\t```math\n>   1\n>\t```"
+    },
+    {
+      "id": "022",
+      "path": "cases/022-body-quote-tab-retains-virtual-content-spaces.md",
+      "sha256": "ac9fed8f329effbfab1687bd9911ec6c45b760ebbf1f8936354b7986849eda09",
+      "text": "> ```math\n>\t1\n> ```"
+    },
+    {
+      "id": "023",
+      "path": "cases/023-nested-quote-consumes-virtual-list-indentation.md",
+      "sha256": "5fcac9e185cb57c0c1621b3235bf5c41a9c0c8773f9f4c7177a1d22530a5d905",
+      "text": "- > ```math\n\t> 1\n\t> ```"
+    },
+    {
+      "id": "024",
+      "path": "cases/024-inline-quote-tab-retains-virtual-content-spaces.md",
+      "sha256": "39a1681df51ca204f027f5cd05b65054453e6eb49e26b2d820572adcd85acd00",
+      "text": "> `#:1+\n>\t2`"
+    },
+    {
+      "id": "025",
+      "path": "cases/025-cr-line-endings.md",
+      "sha256": "f3eb23df04ae10ee9a46a42d38349eef449754b7310c32034960a7fa0a523a32",
+      "text": "```math\r1\r```"
+    },
+    {
+      "id": "026",
+      "path": "cases/026-ordered-list.md",
+      "sha256": "0014e80ecc868fdff9986ddde064841eb4c73a0875ba0a7db1344a7a4fc110ff",
+      "text": "123. ```math\n     1\n     2\n     ```"
+    },
+    {
+      "id": "027",
+      "path": "cases/027-collapsed-callout.md",
+      "sha256": "7c0d3eff756b2b9a88c123c56832f370ae1366562fbd4138550a810fce88ff5c",
+      "text": "> [!note]- Calculations\n> ```math\n> $x=1\n> ```\n> `#: $x+1`"
+    },
+    {
+      "id": "028",
+      "path": "cases/028-inline-code.md",
+      "sha256": "06611c2cf24163d4bcc6d242ed204f246089f06bfee490f55c0909ef1facc4eb",
+      "text": "one `#:1+2` two"
+    },
+    {
+      "id": "029",
+      "path": "cases/029-two-tick-inline.md",
+      "sha256": "3a4da8b5f8f4935edbbe88e381a410147db8ee9880348f38e7d820bb69004995",
+      "text": "one ``#: 1 + `literal` `` two"
+    },
+    {
+      "id": "030",
+      "path": "cases/030-three-tick-inline.md",
+      "sha256": "81a005372fa44f08f6b367ef71431b5ae41c29956f210371cdda35a82710d533",
+      "text": "one ```#:1+2``` two"
+    },
+    {
+      "id": "031",
+      "path": "cases/031-mismatched-inline.md",
+      "sha256": "55ac2ddf8e75334405aea4266fc5acd97b7e2092a36a63a313a714c670d4abeb",
+      "text": "one ``#:1+2` two"
+    },
+    {
+      "id": "032",
+      "path": "cases/032-escaped-opener.md",
+      "sha256": "7d8e8409acd57176f2dce2019debabae59b100f2bf1ef0d292ace607d642950a",
+      "text": "one \\`#:1+2` two"
+    },
+    {
+      "id": "033",
+      "path": "cases/033-one-paired-space.md",
+      "sha256": "45b9fe745addc9b4ac52fd136b555e53440a2ba982453b9a644b5bd4fb43d644",
+      "text": "` #:1+2 `"
+    },
+    {
+      "id": "034",
+      "path": "cases/034-two-paired-spaces.md",
+      "sha256": "6006c0f9a0fe37d28e96d3715021a32d707bc1d5de881f3c4d4d1b50519294fa",
+      "text": "`  #:1+2  `"
+    },
+    {
+      "id": "035",
+      "path": "cases/035-inline-newline.md",
+      "sha256": "33567ca263f714c7beb6f6fb9a19ef31c49d05a5b450f4d6202874054b41f51a",
+      "text": "`#:1 +\n2`"
+    },
+    {
+      "id": "036",
+      "path": "cases/036-quote-inline-newline.md",
+      "sha256": "e947f4a7b7cf22799bb599ba991c8cf10fd256c95f418fa3247bdd132b8015cb",
+      "text": "> `#:1 +\n> 2`"
+    },
+    {
+      "id": "037",
+      "path": "cases/037-lazy-quote-continuation.md",
+      "sha256": "041d183d33f09fc59359d4598367f0fb90ce9db3c4a88472165e1ae7e913d566",
+      "text": "> `#:1 +\n2`"
+    },
+    {
+      "id": "038",
+      "path": "cases/038-list-inline-newline.md",
+      "sha256": "68a851d25bf2c335bd5175654741108c982543cb42a6a6f267e8f19403ac70cf",
+      "text": "- `#:1 +\n  2`"
+    },
+    {
+      "id": "039",
+      "path": "cases/039-inline-crlf.md",
+      "sha256": "2c9b91c571e6b1587433a698cbccaedfbc65c1605baea6d25aa6afd909c015a7",
+      "text": "`#:1 +\r\n2`"
+    },
+    {
+      "id": "040",
+      "path": "cases/040-block-crlf.md",
+      "sha256": "9ae0273cc4c3b0e9dd141cdeddd5cf55dc290a40ac6be4f2eff2be76f16e6fac",
+      "text": "```math\r\na=1\r\n\r\nb=2\r\n```\r\n"
+    },
+    {
+      "id": "041",
+      "path": "cases/041-frontmatter.md",
+      "sha256": "3a6aa981f5706fc2f2c7806c61e0bd3a55dec08ddabad25349eb00cb807219d2",
+      "text": "---\ntitle: \"`#:99`\"\nmath: |\n  ```math\n  100\n  ```\n---\n`#:1`"
+    },
+    {
+      "id": "042",
+      "path": "cases/042-open-frontmatter.md",
+      "sha256": "2e9345f8203397d40f4ddfa3e45ca863399d1e069689b521979133883163d801",
+      "text": "---\ntitle: \"`#:99`\"\n`#:1`"
+    },
+    {
+      "id": "043",
+      "path": "cases/043-bom-frontmatter.md",
+      "sha256": "8be25b82974eebe3d4c4e02d8cc9e476d89b22c62cf752ce1e8cb2c68ced994d",
+      "text": "﻿---\ntitle: \"`#:99`\"\n---\n`#:1`"
+    },
+    {
+      "id": "044",
+      "path": "cases/044-inline-percent-comment.md",
+      "sha256": "c9658d43e167b27d75c7b58f4d8a8d79ea7fe79728e721d92d661fc3bb8ae7d4",
+      "text": "before %% `#:99` %% after `#:1`"
+    },
+    {
+      "id": "045",
+      "path": "cases/045-block-percent-comment.md",
+      "sha256": "6058be3779c29666585b76335d445530a0028af69717ee78d57950e597f82b42",
+      "text": "%%\n```math\n99\n```\n%%\n`#:1`"
+    },
+    {
+      "id": "046",
+      "path": "cases/046-percent-inside-code.md",
+      "sha256": "bc2f7c4d81f32bdb05e71e3c34800702b3d793cc23f89f142f65473870026279",
+      "text": "```math\n\"%%\"\n```\n`#: \"%%\"`"
+    },
+    {
+      "id": "047",
+      "path": "cases/047-unclosed-percent-comment.md",
+      "sha256": "256b0026d7a396dbca59ad81a04b0c68cd5ff5fa0f25ee8dfaac0c16e92342b2",
+      "text": "before %% `#:99`\n```math\n100\n```"
+    },
+    {
+      "id": "048",
+      "path": "cases/048-html-comment.md",
+      "sha256": "14c88a16c9c55d161be17d31be5aae906de416853fdd50c44165cb42fcda2de1",
+      "text": "<!-- `#:99` -->\n`#:1`"
+    },
+    {
+      "id": "049",
+      "path": "cases/049-html-block.md",
+      "sha256": "08575228bab76b7a015b3f83e8f837e3754b0e69f1abf6d01b8430ac8fc99d20",
+      "text": "<div>\n`#:99`\n</div>\n\n`#:1`"
+    },
+    {
+      "id": "050",
+      "path": "cases/050-html-inline-element.md",
+      "sha256": "3afefa8f73ef2cc7b25054854261cdf5d7f43dc8e774f7bf7ade69aba220ecea",
+      "text": "text <span>`#:99`</span> `#:1`"
+    },
+    {
+      "id": "051",
+      "path": "cases/051-html-nested-element.md",
+      "sha256": "74aa5f6125a54cc2daba093134c2dbdd448fadea1b28fa6b9b85c26792b4baa2",
+      "text": "text <span><span>`#:99`</span>`#:98`</span> `#:1`"
+    },
+    {
+      "id": "052",
+      "path": "cases/052-html-comment-cannot-close-its-outer-element.md",
+      "sha256": "4de0f72c99200993b1b244d0e7da6f66eff91f47e8438c7d632976a48dc911ff",
+      "text": "<div><!-- </div> -->\n`#:99`\n</div>\n`#:1`"
+    },
+    {
+      "id": "053",
+      "path": "cases/053-html-raw-code-element.md",
+      "sha256": "83eb40af92021afad911ff12aadf018ad5638857dc20f9516ee44d64821f9954",
+      "text": "text <code>#:99</code> `#:1`"
+    },
+    {
+      "id": "054",
+      "path": "cases/054-embed.md",
+      "sha256": "67e2585b90e77cb1b3506de3d11821d64464bb186a618393fa358fd60fc86a4f",
+      "text": "![[Other#^block]]\n`#:1`"
+    },
+    {
+      "id": "055",
+      "path": "cases/055-link-label.md",
+      "sha256": "83462725b80e08c20af728d8bde4cada3b2fe3fe01c29f8900119c638554e749",
+      "text": "[`#:1`](target)"
+    },
+    {
+      "id": "056",
+      "path": "cases/056-image-alt.md",
+      "sha256": "bdf3202cd38f3b53add97253afd5352bc5a06ed1b15abeb963e5114d6baf57f6",
+      "text": "![`#:1`](picture.png)"
+    },
+    {
+      "id": "057",
+      "path": "cases/057-wiki-alias.md",
+      "sha256": "463a9580fb847a27b355c46510fef6fdb29ad59319b42c4caecfabce34811791",
+      "text": "[[Other|`#:1`]]"
+    },
+    {
+      "id": "058",
+      "path": "cases/058-embed-alias.md",
+      "sha256": "9407c8b6a6ec367425158e8fb7ebf5235e749945546556fef923f31937863ceb",
+      "text": "![[Other|`#:1`]]"
+    },
+    {
+      "id": "059",
+      "path": "cases/059-footnote.md",
+      "sha256": "793c1da6edcb20fdec254ab1f2d059d2645fc894e0777f9fa6cef4cdd8c5408f",
+      "text": "text[^n]\n\n[^n]: `#:1`"
+    },
+    {
+      "id": "060",
+      "path": "cases/060-inline-footnote.md",
+      "sha256": "ee9571bf814dc1d1ca9257f5b58b593c5609959fdb342d7df8364c1a08b72fa1",
+      "text": "text ^[note `#:1`]"
+    },
+    {
+      "id": "061",
+      "path": "cases/061-table.md",
+      "sha256": "13d759f1f765c78429c00d4d32e20e0dac112f804fdc837cedb93543c1e03110",
+      "text": "| Calc |\n| --- |\n| `#:1` |"
+    },
+    {
+      "id": "062",
+      "path": "cases/062-inline-math.md",
+      "sha256": "58613af3c5f12eded5447f081c1fd75dfc276dd4d7c2c2a289df9c6ce1254dc1",
+      "text": "text $f(`#:99`)$ `#:1`"
+    },
+    {
+      "id": "063",
+      "path": "cases/063-single-dollar-math-cannot-cross-lf-paragraphs.md",
+      "sha256": "e3714082ee5fdca2baa284f21f35246a08ca4832cee8671d3e7453b2bd5e3b6c",
+      "text": "$x\n\n`#:1`\n\nz$"
+    },
+    {
+      "id": "064",
+      "path": "cases/064-single-dollar-math-cannot-cross-cr-paragraphs.md",
+      "sha256": "87e9ff3dbb07ec4b5bcaa82d0372ecb5cd957db3fc68b58ecc8d78a2a217d04a",
+      "text": "$x\r\r`#:1`\r\rz$"
+    },
+    {
+      "id": "065",
+      "path": "cases/065-single-dollar-math-cannot-cross-empty-quoted-paragraphs.md",
+      "sha256": "4f1340d4204275d26ef300ed565afe0aefd866cd16577c614a8cb0763c3565f0",
+      "text": "> $x\n>\n> `#:1`\n>\n> z$"
+    },
+    {
+      "id": "066",
+      "path": "cases/066-display-math.md",
+      "sha256": "f5ddadb7566a80ae2953e7239b8b8628df2f5a9e2689d2fe7e956682539665ee",
+      "text": "$$\n`#:99`\n$$\n`#:1`"
+    },
+    {
+      "id": "067",
+      "path": "cases/067-literal-entity.md",
+      "sha256": "2992a08b8816e2218e9ed484df5138751c4388814ccdc544ade1f044bb66a3de",
+      "text": "`#: \"&amp;\"`"
+    },
+    {
+      "id": "068",
+      "path": "cases/068-empty-expression.md",
+      "sha256": "40eab75e766d53cf98b61ea91d70b3788c45514cbc1f4e508a9c13e18981ccb3",
+      "text": "Value `#:`"
+    },
+    {
+      "id": "069",
+      "path": "cases/069-table-escaped-pipe-retained-pending-host-extraction.md",
+      "sha256": "42c1190fc48afdc4a0f4928ce0d38b5dbc289a316612a061121acf301cc4ab75",
+      "text": "| Calc |\n| --- |\n| `#: \"a\\|b\"` |"
+    },
+    {
+      "id": "070",
+      "path": "cases/070-info-extra.md",
+      "sha256": "45c6db8bdaf245cc4578d16a9edd2e8279c298c816a6d561c7ef99c339a23bef",
+      "text": "```math extra\n101\n```"
+    },
+    {
+      "id": "071",
+      "path": "cases/071-info-brace-attributes.md",
+      "sha256": "0a5ab25a4ce291266cb8750a4d155b3fd8d88572bfa212c9254ed431d5409083",
+      "text": "```math {#id .calc}\n102\n```"
+    },
+    {
+      "id": "072",
+      "path": "cases/072-info-tab-attributes.md",
+      "sha256": "eeb76e6d023531805711be452ec76ead90569914e596613ac6883f12fd8d1d30",
+      "text": "```math\textra\n103\n```"
+    },
+    {
+      "id": "073",
+      "path": "cases/073-info-trailing-whitespace.md",
+      "sha256": "7f8f56a81813c13a2f93b8ca1e1a3980f7339b9bd7c93bb093f3168625623197",
+      "text": "```math \t\n104\n```"
+    },
+    {
+      "id": "074",
+      "path": "cases/074-info-uppercase-variant.md",
+      "sha256": "5d86533d1cbd91aa29e6a4a283cf950ce7ef1ed8965f4a1c3fa649156e7a6dd8",
+      "text": "```MATH extra\n105\n```"
+    },
+    {
+      "id": "075",
+      "path": "cases/075-info-wrong-language-prefix.md",
+      "sha256": "96e8f7fe00b975887d3d26a53e35137419e8a3156b6530d66ae1d6a700aa6fa9",
+      "text": "```mathematics\n106\n```"
+    },
+    {
+      "id": "076",
+      "path": "cases/076-info-wrong-tex-case.md",
+      "sha256": "e27697b1e35bf456ac7f33b23f21f15b160487f0f47e4a800f133c5acd51c434",
+      "text": "```math-TEX\n107\n```"
+    },
+    {
+      "id": "077",
+      "path": "cases/077-unclosed-bare-fence.md",
+      "sha256": "98a80a1b0e40db92235ecf0846ff872f95a8d38b8c1aa3fb11cef3940c4f577e",
+      "text": "```math\n108"
+    },
+    {
+      "id": "078",
+      "path": "cases/078-unclosed-quote-container.md",
+      "sha256": "834fd5f2bce3768dcec82887c4f725f21027a989d5e683c32101b818809a16d1",
+      "text": "> ```math\n> 1+2\noutside `#:3`"
+    },
+    {
+      "id": "079",
+      "path": "cases/079-unclosed-list-container.md",
+      "sha256": "797f31d9909dcc0660d55bf940b740b3127ef227ce3889304ce2dbc99a6920e5",
+      "text": "- ```math\n  109\n\noutside `#:4`"
+    },
+    {
+      "id": "080",
+      "path": "cases/080-expanded-callout.md",
+      "sha256": "91803d4aba5eb33beb3bbba19646e15212ad52accd41877579c9c3f1eac7886c",
+      "text": "> [!note]+ Calculations\n> ```math\n> $x=1\n> ```\n> `#: $x+1`"
+    },
+    {
+      "id": "081",
+      "path": "cases/081-utf16-crlf-delimiters.md",
+      "sha256": "1aa10feeaa98ad75d1f9c883a11bd45b257107167842f89805d7bb0cdf1d208e",
+      "text": "😀\r\n````math\r\n$x=2\r\n`````\r\n``#: $x+1``"
+    },
+    {
+      "id": "082",
+      "path": "cases/082-footnote-before-body.md",
+      "sha256": "4f19778b9d9ff2ef3da879f864a0cefe9e58407542b76452da175e62f199c5d5",
+      "text": "[^n]: `#:1`\n\n    ```math\n    $x=2\n    ```\n    more `#:3`\n\nbody `#:4`"
+    },
+    {
+      "id": "083",
+      "path": "cases/083-repeated-occurrences.md",
+      "sha256": "16c7e1ed59c43a13580a55839bbdf0eaea92cb38311f2ccc5b88878fb3e4b932",
+      "text": "`#:1` and `#:1`\n\n```math\n1\n```\n\n```math\n1\n```"
+    },
+    {
+      "id": "084",
+      "path": "cases/084-whole-note-embed-twice.md",
+      "sha256": "61cb8118fd7d421285e1da4632a6dadff5ac3846238f739acde48eaa9f104338",
+      "text": "![[Other]]\n\n![[Other]]\n\n`#:5`"
+    },
+    {
+      "id": "085",
+      "path": "cases/085-heading-embed.md",
+      "sha256": "86ffc843d3716466982561dc515acc731aa8b348aab6a0d86dbd1bfefdb2c467",
+      "text": "![[Other#Embedded calculations]]\n\n`#:6`"
+    },
+    {
+      "id": "086",
+      "path": "cases/086-code-wins-percent-html-wiki-math.md",
+      "sha256": "4239e9f3c1963dda5c852c66224b815be8921b65feedb5c7a328ffffb24998f2",
+      "text": "`#: \"%% <!-- [[ $\"`\n`#:1`"
+    },
+    {
+      "id": "087",
+      "path": "cases/087-code-wins-html-tag.md",
+      "sha256": "b35cf9aa21286df3b9624a50a3e8aa1fabe8a4ec4413df3e5f4d03c6f16ff35b",
+      "text": "`#: \"<span>\"`\n`#:1`"
+    },
+    {
+      "id": "088",
+      "path": "cases/088-masked-image-percent.md",
+      "sha256": "eb026dd765bbd786926c1c2ae72df8c6ce972c92e2ecf0d3d3a4cd0f78afd9ed",
+      "text": "![%%](picture.png) `#:1`"
+    },
+    {
+      "id": "089",
+      "path": "cases/089-masked-link-target-percent.md",
+      "sha256": "7474f44830c87939f241b7325bb321c0cea7e238820219b65e5704f7967dd7d4",
+      "text": "[label](<%%>) `#:1`"
+    },
+    {
+      "id": "090",
+      "path": "cases/090-registered-math.md",
+      "sha256": "f51904d6015956d57a3483d816fe69d9cfd8820601e058af3aa578a8a73669e6",
+      "text": "~~~math\n1\n~~~"
+    },
+    {
+      "id": "091",
+      "path": "cases/091-registered-math.md",
+      "sha256": "6b237fe790461adebb1cf89d51e0e2d54bcb5ce03392fe45cf0d92c04a65dda7",
+      "text": "~~~Math\n1\n~~~"
+    },
+    {
+      "id": "092",
+      "path": "cases/092-registered-math-plain.md",
+      "sha256": "7cc645bf4b759d3e5c8823d0361eb107d42c396ee4eff07b39764ba45044a082",
+      "text": "~~~math-plain\n1\n~~~"
+    },
+    {
+      "id": "093",
+      "path": "cases/093-registered-math-tex.md",
+      "sha256": "99d981f713ee1f424374ae71bc5e7953b0b086092ffcef4f9a7ba36493ddb224",
+      "text": "~~~math-tex\n1\n~~~"
+    },
+    {
+      "id": "094",
+      "path": "cases/094-registered-math-tex.md",
+      "sha256": "b33dbd16e4f98018049f2e2e5dd73920551da0adb2f1de7d66fe50f86ca104e3",
+      "text": "~~~math-TeX\n1\n~~~"
+    },
+    {
+      "id": "095",
+      "path": "cases/095-registered-math-highlight.md",
+      "sha256": "8a3f9589b93db63c3e453185750a116dc62e0967ea09b04b2e675b65c19f0f45",
+      "text": "~~~math-highlight\n1\n~~~"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+name: Obsidian extraction fixtures
+
+on:
+  pull_request:
+    branches: [chore/recovery-1.11]
+    paths: ['host-tests/**', '.github/workflows/host-fixtures.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      HOST_TEST_COMMIT: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: host-tests
+      - run: npm test
+        working-directory: host-tests
+      - run: npm run capture -- --smoke
+        working-directory: host-tests
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: obsidian-smoke-${{ github.event.pull_request.head.sha }}
+          path: |
+            host-tests/evidence/capture.json
+            host-tests/evidence/sources.json
+            host-tests/evidence/provenance.json
+            host-tests/evidence/diagnostics.json
+            host-tests/evidence/sha256.json
+          if-no-files-found: error
+          retention-days: 7
+  complete:
+    needs: smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      HOST_TEST_COMMIT: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: host-tests
+      - run: npm test
+        working-directory: host-tests
+      - run: npm run capture
+        working-directory: host-tests
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: obsidian-complete-${{ github.event.pull_request.head.sha }}
+          path: |
+            host-tests/evidence/capture.json
+            host-tests/evidence/sources.json
+            host-tests/evidence/provenance.json
+            host-tests/evidence/diagnostics.json
+            host-tests/evidence/sha256.json
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,20 @@
+{
+  "version": "1.13.7",
+  "releaseId": 369267082,
+  "installer": {
+    "name": "Obsidian-1.13.7.AppImage",
+    "url": "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.13.7/Obsidian-1.13.7.AppImage",
+    "assetId": 511620567,
+    "size": 136902072,
+    "sha256": "e0d8e0a611624de8c9c7dcd8a9e648279fb0a0d552faa1312b7e4f3a5fa72663"
+  },
+  "app": {
+    "name": "obsidian-1.13.7.asar.gz",
+    "url": "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.13.7/obsidian-1.13.7.asar.gz",
+    "assetId": 511621220,
+    "size": 8773048,
+    "sha256": "69253e39aa0b980e3cf96e9e8a8a4bed6b6481ef7021cd762f67872662d8d25a",
+    "uncompressedSha256": "a52a7daf1e2460bae03de80f2816604bd16a56cd374fbe5ce8d1a9ef5604059d"
+  },
+  "launcher": { "version": "3.2.0", "integrity": "sha512-JSsGnXD+uMPy426xkV+st7iVhe1vyxKD3RsQTwiE3FZqGioC+NSnIzKZHqnlPN/AAy/ai94VuBVndc49jLcVlA==" }
+}
