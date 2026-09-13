@@ -1,3 +1,4 @@
+import type { FormattedResult } from '../formatting';
 import { scanExpression } from '../processing/expressionScanner';
 import { NumeralsSettings, numeralsBlockInfo, LineRenderData } from '../numerals.types';
 
@@ -128,7 +129,7 @@ export function prepareLineData(
 	index: number,
 	rawRows: string[],
 	inputs: string[],
-	results: unknown[],
+	results: (FormattedResult | undefined)[],
 	blockInfo: numeralsBlockInfo,
 	settings: NumeralsSettings
 ): LineRenderData {
@@ -157,7 +158,7 @@ export function prepareLineData(
 		index,
 		rawInput: inputWithoutComment,
 		processedInput: inputs[index] || "",
-		result,
+		formattedResult: result,
 		isEmpty,
 		isEmitter,
 		isHidden,

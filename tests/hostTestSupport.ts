@@ -13,7 +13,7 @@ export class TestEvents {
 }
 
 export function createTestHost() {
-	const cacheEvents = new TestEvents(), vaultEvents = new TestEvents();
+	const cacheEvents = new TestEvents(), vaultEvents = new TestEvents(), workspaceEvents = new TestEvents();
 	const files = new Map<string, { path: string }>();
 	const frontmatter = new Map<string, Record<string, unknown>>();
 	const app = {
@@ -22,17 +22,19 @@ export function createTestHost() {
 			getFileCache: (file: { path: string }) => ({ frontmatter: frontmatter.get(file.path) ?? {} }),
 			getFirstLinkpathDest: (name: string) => files.get(name.endsWith('.md') ? name : `${name}.md`) ?? null,
 		},
-		workspace: { iterateAllLeaves: jest.fn() },
+		workspace: { iterateAllLeaves: jest.fn(), on: workspaceEvents.on, offref: workspaceEvents.offref, onLayoutReady: (callback: () => void) => callback() },
 	};
-	return { app: app as unknown as App, cacheEvents, vaultEvents, files, frontmatter };
+	return { app: app as unknown as App, cacheEvents, vaultEvents, workspaceEvents, files, frontmatter };
 }
 
 export function installHostDom(): void {
+	Object.defineProperty(HTMLElement.prototype, 'toggleClass', {configurable: true, value(this: HTMLElement, name: string, enabled: boolean) { this.classList.toggle(name, enabled); }});
+	Object.defineProperty(HTMLElement.prototype, 'setText', {configurable: true, value(this: HTMLElement, text: string) { this.textContent = text; }});
 	Object.defineProperty(HTMLElement.prototype, 'empty', { configurable: true, value(this: HTMLElement) { this.textContent = ''; } });
 	Object.defineProperty(HTMLElement.prototype, 'addClass', { configurable: true, value(this: HTMLElement, ...classes: string[]) { this.classList.add(...classes); } });
-	Object.defineProperty(HTMLElement.prototype, 'createEl', { configurable: true, value(this: HTMLElement, tag: string, options?: { cls?: string; text?: string }) {
+	Object.defineProperty(HTMLElement.prototype, 'createEl', { configurable: true, value(this: HTMLElement, tag: string, options?: { cls?: string | string[]; text?: string }) {
 		const element = this.ownerDocument.createElement(tag);
-		if (options?.cls) element.className = options.cls;
+		if (options?.cls) element.className = Array.isArray(options.cls) ? options.cls.join(' ') : options.cls;
 		if (options?.text) element.textContent = options.text;
 		this.appendChild(element); return element;
 	} });

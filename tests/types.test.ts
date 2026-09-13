@@ -109,132 +109,17 @@ describe('Rendering Pipeline Types', () => {
 		});
 	});
 
-	describe('LineRenderData', () => {
-		it('should accept valid LineRenderData for normal line', () => {
-			const lineData: LineRenderData = {
-				index: 0,
-				rawInput: '2 + 2',
-				processedInput: '2 + 2',
-				result: 4,
-				isEmpty: false,
-				isEmitter: false,
-				isHidden: false,
-				comment: null,
-			};
-
-			expect(lineData.index).toBe(0);
-			expect(lineData.result).toBe(4);
-			expect(lineData.isEmpty).toBe(false);
-		});
-
-		it('should accept valid LineRenderData for empty line', () => {
-			const lineData: LineRenderData = {
-				index: 5,
-				rawInput: '',
-				processedInput: '',
-				result: undefined,
-				isEmpty: true,
-				isEmitter: false,
-				isHidden: false,
-				comment: null,
-			};
-
-			expect(lineData.isEmpty).toBe(true);
-			expect(lineData.result).toBeUndefined();
-		});
-
-		it('should accept valid LineRenderData with comment', () => {
-			const lineData: LineRenderData = {
-				index: 2,
-				rawInput: '2 + 2 # this is a comment',
-				processedInput: '2 + 2',
-				result: 4,
-				isEmpty: false,
-				isEmitter: false,
-				isHidden: false,
-				comment: 'this is a comment',
-			};
-
-			expect(lineData.comment).toBe('this is a comment');
-		});
-
-		it('should accept valid LineRenderData for emitter line', () => {
-			const lineData: LineRenderData = {
-				index: 3,
-				rawInput: 'result = 42 =>',
-				processedInput: 'result = 42',
-				result: 42,
-				isEmpty: false,
-				isEmitter: true,
-				isHidden: false,
-				comment: null,
-			};
-
-			expect(lineData.isEmitter).toBe(true);
-			expect(lineData.result).toBe(42);
-		});
-
-		it('should accept valid LineRenderData for hidden line', () => {
-			const lineData: LineRenderData = {
-				index: 4,
-				rawInput: 'intermediate = 10',
-				processedInput: 'intermediate = 10',
-				result: 10,
-				isEmpty: false,
-				isEmitter: false,
-				isHidden: true,
-				comment: null,
-			};
-
-			expect(lineData.isHidden).toBe(true);
-		});
-	});
-
-	describe('RenderContext', () => {
-		it('should accept valid RenderContext with Plain style', () => {
-			const context: RenderContext = {
-				renderStyle: NumeralsRenderStyle.Plain,
-				settings: DEFAULT_SETTINGS,
-				formatter,
-				formatOverrides: {},
-				preProcessors: [],
-			};
-
-			expect(context.renderStyle).toBe(NumeralsRenderStyle.Plain);
-			expect(context.settings).toBe(DEFAULT_SETTINGS);
-		});
-
-		it('should accept valid RenderContext with TeX style', () => {
-			const context: RenderContext = {
-				renderStyle: NumeralsRenderStyle.TeX,
-				settings: DEFAULT_SETTINGS,
-				formatter,
-				formatOverrides: { numberFormat: NumeralsNumberFormat.Fixed },
-				preProcessors: [],
-			};
-
-			expect(context.renderStyle).toBe(NumeralsRenderStyle.TeX);
-			expect(context.formatOverrides.numberFormat).toBe(NumeralsNumberFormat.Fixed);
-		});
-
-		it('should accept valid RenderContext with preProcessors', () => {
-			const preProcessors: StringReplaceMap[] = [
-				{ regex: /\$/g, replaceStr: 'USD' },
-				{ regex: /,(\d{3})/g, replaceStr: '$1' },
-			];
-
-			const context: RenderContext = {
-				renderStyle: NumeralsRenderStyle.SyntaxHighlight,
-				settings: DEFAULT_SETTINGS,
-				formatter,
-				formatOverrides: {},
-				preProcessors,
-			};
-
-			expect(context.preProcessors).toHaveLength(2);
-			expect(context.preProcessors[0].replaceStr).toBe('USD');
-		});
-	});
+	it('keeps renderer contracts data-only with an explicit projection lifetime', () => {
+  const data: LineRenderData = {index: 0, rawInput: '2 + 2', processedInput: '2 + 2',
+   formattedResult: {text: '4', tex: '4', canonical: '4'}, inputTeX: '2+2',
+   isEmpty: false, isEmitter: false, isHidden: false, comment: null};
+  const context: RenderContext = {renderStyle: NumeralsRenderStyle.Plain, settings: DEFAULT_SETTINGS, signal: new AbortController().signal};
+  expect(data.formattedResult?.text).toBe('4');
+  expect(context.signal.aborted).toBe(false);
+  // @ts-expect-error Raw evaluated objects are not accepted by renderer strategies.
+  const raw: LineRenderData = {...data, result: new Map()};
+  expect('result' in raw).toBe(true);
+ });
 
 	describe('StringReplaceMap', () => {
 		it('should accept valid StringReplaceMap', () => {

@@ -1,106 +1,17 @@
-import { LineRenderData, RenderContext } from '../numerals.types';
+import { type LineRenderData, type RenderContext } from '../numerals.types';
 import { BaseLineRenderer } from './BaseLineRenderer';
-import { mathjaxLoop } from '../rendering/displayUtils';
-import { expressionToTeX } from '../rendering/texRendering';
+import { renderOwnedMath } from '../rendering/mathLifecycle';
 
-/**
- * TeX renderer for Numerals blocks.
- *
- * Renders input and results using TeX notation with MathJax for display.
- * Provides mathematical typesetting with proper formatting for:
- * - Mathematical expressions
- * - Currency symbols
- * - Subscripts
- * - Sum/total directives
- */
 export class TeXRenderer extends BaseLineRenderer {
-	/**
-	 * Renders a line in TeX style with MathJax.
-	 *
-	 * - Empty lines show raw input with comment
-	 * - Non-empty lines convert input and result to TeX and render with MathJax
-	 *
-	 * @param container - The line container element
-	 * @param lineData - Prepared line data
-	 * @param context - Rendering context with settings and formatting
-	 */
-	renderLine(
-		container: HTMLElement,
-		lineData: LineRenderData,
-		context: RenderContext
-	): void {
-		const { inputElement, resultElement } = this.createElements(container);
-
-		if (lineData.isEmpty) {
-			// Empty line: show raw input (usually comment or blank)
-			const displayText = lineData.rawInput + (lineData.comment || '');
-			inputElement.setText(displayText);
-			resultElement.setText('\xa0');
-			this.handleEmptyLine(inputElement, resultElement);
-		} else {
-			// Non-empty line: render input and result as TeX
-			this.renderInputTeX(inputElement, lineData);
-			this.renderResultTeX(resultElement, lineData, context);
-
-			// Add comment if present
-			if (lineData.comment) {
-				this.renderInlineComment(inputElement, lineData.comment);
-			}
-		}
-	}
-
-	/**
-	 * Renders the input portion as TeX.
-	 *
-	 * Process:
-	 * 1. Parse input to TeX using mathjs
-	 * 2. Replace sum magic variable with @Sum directive
-	 * 3. Unescape subscripts (e.g., x\_1 → x_{1})
-	 * 4. Replace currency symbols with TeX commands
-	 * 5. Render with MathJax
-	 *
-	 * @param inputElement - The input container element
-	 * @param lineData - Prepared line data
-	 * @private
-	 */
-	private renderInputTeX(inputElement: HTMLElement, lineData: LineRenderData): void {
-		const inputTex = expressionToTeX(
-			lineData.processedInput,
-			lineData.rawInput + (lineData.comment || '')
-		);
-
-		// Render with MathJax
-		const inputTexElement = inputElement.createSpan({ cls: 'numerals-tex' });
-		void mathjaxLoop(inputTexElement, inputTex);
-	}
-
-	/**
-	 * Renders the result portion as TeX.
-	 *
-	 * Process:
-	 * 1. Format result to string with no grouping
-	 * 2. Apply preprocessors (currency replacement)
-	 * 3. Parse to TeX
-	 * 4. Replace currency symbols with TeX commands
-	 * 5. Render with MathJax
-	 *
-	 * @param resultElement - The result container element
-	 * @param lineData - Prepared line data
-	 * @param context - Rendering context with formatting options
-	 * @private
-	 */
-	private renderResultTeX(
-		resultElement: HTMLElement,
-		lineData: LineRenderData,
-		context: RenderContext
-	): void {
-		const texResult = context.formatter.format(
-			lineData.result,
-			context.formatOverrides
-		).tex;
-
-		// Render with MathJax
-		const resultTexElement = resultElement.createSpan({ cls: 'numerals-tex' });
-		void mathjaxLoop(resultTexElement, texResult);
-	}
+ renderLine(container: HTMLElement, line: LineRenderData, context: RenderContext): void {
+  const {inputElement, resultElement} = this.createElements(container);
+  if (line.isEmpty) {
+   inputElement.setText(line.rawInput + (line.comment ?? ''));
+   this.handleEmptyLine(inputElement, resultElement);
+  } else {
+   renderOwnedMath(inputElement.createSpan({cls: 'numerals-tex'}), line.inputTeX ?? '', context.signal);
+   renderOwnedMath(resultElement.createSpan({cls: 'numerals-tex'}), line.formattedResult?.tex ?? '', context.signal);
+   if (line.comment) this.renderInlineComment(inputElement, line.comment);
+  }
+ }
 }

@@ -5,7 +5,7 @@ import type { ReferenceDependency } from './processing/crossNoteResolver';
  * Shared Type Imports
  ****************************************************/
 
-import type { ResultFormatOverrides, ResultFormatter } from './formatting/types';
+import type { ResultFormatOverrides, FormattedResult } from './formatting/types';
 import type { InvalidFormatDirective } from './processing/formatDirectives';
 
 /****************************************************
@@ -191,19 +191,6 @@ export type mathjsFormat = Parameters<MathJsInstance['format']>[1];
 
 export class NumeralsScope extends Map<string, unknown>{}
 
-/**
- * Result of processing and rendering a Numerals block.
- * Returned by processAndRenderNumeralsBlockFromSource.
- */
-export interface NumeralsBlockResult {
-	/** The mathjs scope after evaluation (contains all defined variables) */
-	scope: NumeralsScope;
-	/** File paths referenced via [[note]].property syntax (for re-render tracking) */
-	referencedPaths: string[];
-	/** Includes unresolved notes/properties, with original expression spans. */
-	dependencies: ReferenceDependency[];
-}
-
 export type numeralsBlockInfo = {
 	emitter_lines: number[];
 	insertion_lines: number[];
@@ -261,8 +248,10 @@ export interface LineRenderData {
 	rawInput: string;
 	/** Processed input text (directives replaced, ready for display) */
 	processedInput: string;
-	/** Evaluated result for this line (undefined for empty/comment lines) */
-	result: unknown;
+	/** Snapshot-formatted data only; no runtime values enter strategies. */
+	formattedResult?: FormattedResult;
+	inputTeX?: string;
+	inputHTML?: string;
 	/** True if this line has no result (empty or comment only) */
 	isEmpty: boolean;
 	/** True if this line has the result annotation marker (=>) */
@@ -282,12 +271,8 @@ export interface RenderContext {
 	renderStyle: NumeralsRenderStyle;
 	/** User settings affecting display and formatting */
 	settings: NumeralsSettings;
-	/** Shared result formatter used by every output surface. */
-	formatter: ResultFormatter;
-	/** Display-only overrides applying to the whole block. */
-	formatOverrides: ResultFormatOverrides;
-	/** String replacements to apply (e.g., currency symbols) */
-	preProcessors: StringReplaceMap[];
+	/** Lifetime of this particular projection, invalidated on replacement/unload. */
+	signal: AbortSignal;
 }
 
 /**

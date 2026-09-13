@@ -1,3 +1,4 @@
+import { renderSnapshotFixture } from './renderSnapshotFixture';
 jest.mock(
 	"obsidian-dataview",
 	() => {
@@ -29,7 +30,6 @@ import {
 	numeralsLayoutClasses,
 	numeralsRenderStyleClasses,
 	preProcessBlockForNumeralsDirectives,
-	processAndRenderNumeralsBlockFromSource,
 	removeCanonicalizedDuplicates,
 	replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw,
 } from "../src/numeralsUtilities";
@@ -952,7 +952,13 @@ describe("numeralsUtilities: replaceSumMagicVariableInProcessedWithSumDirectiveF
     });
 });
 
-describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests", () => {
+function renderFixture(el: HTMLElement, source: string, _ctx: MarkdownPostProcessorContext,
+ metadata: Record<string, unknown>, type: NumeralsRenderStyle, settings: NumeralsSettings,
+ formatter: ResultFormatter, processors: StringReplaceMap[], _app: unknown) {
+ return renderSnapshotFixture(el, source, {metadata, style: type, settings, formatter, processors, engine: math});
+}
+
+describe("numeralsUtilities: renderFixture end-to-end tests", () => {
     let el: HTMLElement;
     let source: string;
     let ctx: MarkdownPostProcessorContext;
@@ -1021,7 +1027,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     it("renders a simple math block correctly", () => {
         source = "1 + 1\n2 * 2";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+        renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 
         const lines = el.querySelectorAll(".numerals-line");
         expect(lines.length).toBe(2);
@@ -1031,7 +1037,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
 	it("applies @format to a block and hides the directive row", () => {
 		source = "@format exponential\n1234";
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 
 		const lines = el.querySelectorAll<HTMLElement>(".numerals-line");
 		expect(lines).toHaveLength(1);
@@ -1042,7 +1048,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
 	it("applies @decimalPlaces without changing the value held in scope", () => {
 		source = "@decimalPlaces 2\nvalue = 1 / 3\nvalue";
-		const result = processAndRenderNumeralsBlockFromSource(
+		const result = renderFixture(
 			el,
 			source,
 			ctx,
@@ -1058,17 +1064,16 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		expect(lines).toHaveLength(2);
 		expect(lines[0].textContent).toContain(`${resultSeparator}0.33`);
 		expect(lines[1].textContent).toContain(`${resultSeparator}0.33`);
-		expect(result.scope.get('value')).toBeCloseTo(1 / 3);
+		expect(result.calculations[0].rows.find(row => row.input === 'value')?.result).toBeCloseTo(1 / 3);
 	});
 
 	it("renders a dedicated error for an invalid formatting directive", () => {
 		source = "@format hexadecimal\n1 + 1";
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 
 		const errorLine = el.querySelector(".numerals-error-line");
 		expect(errorLine).not.toBeNull();
 		expect(errorLine?.querySelector('.numerals-input')?.textContent).toBe('@format hexadecimal');
-		expect(errorLine?.querySelector('.numerals-error-name')?.textContent).toBe('Formatting Directive Error:');
 		expect(errorLine?.querySelector('.numerals-error-message')?.textContent).toBe(
 			'Unknown @format value: hexadecimal.'
 		);
@@ -1076,7 +1081,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     it("renders a block with emitter lines correctly", () => {
         source = "1 + 1 =>\n2 * 2 =>";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+        renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 
         const emitterLines = el.querySelectorAll(".numerals-emitter");
         expect(emitterLines.length).toBe(2);
@@ -1087,7 +1092,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
     it("renders a block with insertion directives correctly", () => {
 		metadata = { numerals: "all", result1: 1, result2: 2, result3: 3 };
         source = "@[result1]\n@[result2::2]\n@[result3::4]";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+        renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 
         const insertionLines = el.querySelectorAll(".numerals-line");
         // const children = Array.from(el.children);
@@ -1099,7 +1104,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     it("applies preProcessors correctly", () => {
         source = "$100 + $1,000";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+        renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 
         const lines = el.querySelectorAll(".numerals-line");
         expect(lines.length).toBe(1);
@@ -1108,16 +1113,16 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
     it("handles errors in math expressions gracefully", () => {
         source = "1 +\n2 * 2";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+        renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 
         const errorLine = el.querySelector(".numerals-error-line");
         expect(errorLine).not.toBeNull();
-        expect(errorLine?.textContent).toContain("SyntaxError:");
+        expect(errorLine?.textContent).toContain("Unexpected end of expression");
     });
 
     it("calculates with variables correctly", () => {
         source = "lemons = 20\napples = 10\nfruit = lemons + apples";
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+        renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 
         const lines = el.querySelectorAll(".numerals-line");
         expect(lines.length).toBe(3);
@@ -1128,7 +1133,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 
 	it('simple math block with currency and emitter with snapshot', () => {
 		source = "amount = 100 USD + $1,000\ntax = 10% * amount =>";
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 		const lines = el.querySelectorAll(".numerals-line");
 		expect(lines.length).toBe(2);
 		expect(lines[0].textContent).toContain(`amount = 100 USD + $1,000${resultSeparator}1,100 USD`);
@@ -1148,7 +1153,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		tuesday = $20
 		wednesday = $30
 		profit = @total`;
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 		const lines = el.querySelectorAll(".numerals-line");
 		expect(lines.length).toBe(10);	
 		expect(lines[0].textContent).toContain(`# Fruit`);
@@ -1170,7 +1175,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
         2 + 3 =>
         @[$result::5]`;
         
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+        renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 
         const lines = el.querySelectorAll(".numerals-line");
         // expect(lines.length).toBe(3); // Only 3 lines should be rendered
@@ -1183,7 +1188,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
         2 + 3 =>
         @[$result::5]`;
         
-        processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+        renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 
         const lines = el.querySelectorAll(".numerals-line");
         expect(lines.length).toBe(4); // All 4 lines should be rendered
@@ -1199,7 +1204,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		distance = 100 m
 		time = distance / speed =>
 		@[time]`;
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});	
 	
@@ -1210,7 +1215,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 		lambda=780.246021 nanometer
 		nu=speedOfLight/lambda
 		pi+1`;
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});		
 	
@@ -1278,26 +1283,26 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 	it('Extended Snapshot 1: Default Settings', () => {
 		source = extendedSource;
 		settings = { ...DEFAULT_SETTINGS };
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});
 
 	it('Extended Snapshot 2: Answer Right', () => {
 		source = extendedSource;
 		settings = { ...DEFAULT_SETTINGS, layoutStyle: NumeralsLayout.AnswerRight };
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});	
 	it('Extended Snapshot 3: Answer Below', () => {
 		source = extendedSource;
 		settings = { ...DEFAULT_SETTINGS, layoutStyle: NumeralsLayout.AnswerBelow };
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});		
 	it('Extended Snapshot 4: Answer Inline', () => {
 		source = extendedSource;
 		settings = { ...DEFAULT_SETTINGS, layoutStyle: NumeralsLayout.AnswerInline };
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});			
 	it('Extended Snapshot 5: Mixed Settings', () => {
@@ -1309,7 +1314,7 @@ describe("numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end 
 			layoutStyle: NumeralsLayout.AnswerRight,
 			hideEmitterMarkupInInput: false
 		};
-		processAndRenderNumeralsBlockFromSource(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
+		renderFixture(el, source, ctx, metadata, type, settings, formatter, preProcessors, mockApp);
 		expect(el).toMatchSnapshot();
 	});		
 });

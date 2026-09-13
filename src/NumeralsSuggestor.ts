@@ -1,5 +1,4 @@
 import NumeralsPlugin from "./main";
-import { getMetadataForFileAtPath, getScopeFromFrontmatter } from "./processing/scope";
 import { getMetadataForReferencedNote, filterAvailableProperties } from "./processing/crossNoteResolver";
 import {
     EditorSuggest,
@@ -11,8 +10,8 @@ import {
     setIcon,
  } from "obsidian";
 import { getMathJsSymbols } from "./mathjsUtilities";
-import { findInlineNumeralsContext } from "./inlineSuggestorUtils";
-import { getInlineTriggers } from "./inline/inlineParser";
+import { findSuggestionContext } from "./evaluation/sourceIndex";
+import type { SourceProjection } from "./evaluation/sourceProjection";
 
 const greekSymbols = [
     { trigger: 'alpha', symbol: 'α' },
@@ -82,18 +81,6 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	 */
 	private crossNoteContext: { noteName: string } | null = null;
 	
-	/**
-	 * Time of last suggestion list update
-	 * @type {number}
-	 * @private */
-	private lastSuggestionListUpdate = 0;
-
-	/**
-	 * List of possible suggestions based on current code block
-	 * @type {string[]}
-	 * @private */
-	private localSuggestionCache: string[] = [];
-
 	//empty constructor
 	constructor(plugin: NumeralsPlugin) {
 		super(plugin.app);
@@ -110,99 +97,35 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 	 * @param file - The current file being edited.
 	 * @returns An object with the start and end positions of the word and the word itself as the query, or null if the conditions are not met.
 	 */
-	onTrigger(cursor: EditorPosition, editor: Editor, file: TFile): EditorSuggestTriggerInfo | null {
-		const currentFileToCursor = editor.getRange({line: 0, ch: 0}, cursor);
-		const indexOfLastCodeBlockStart = currentFileToCursor.lastIndexOf('```');
-		// check if the next 4 characters after the last ``` are math or MATH
-		const isMathBlock = currentFileToCursor.slice(indexOfLastCodeBlockStart + 3, indexOfLastCodeBlockStart + 7).toLowerCase() === 'math';
-
-		if (isMathBlock) {
-			// Math code block context
-			this.triggerContext = 'block';
-
-			const currentLineToCursor = editor.getLine(cursor.line).slice(0, cursor.ch);
-
-			// Check for cross-note reference pattern: [[note]].
-			if (this.plugin.settings.enableCrossNoteReferences) {
-				const crossNoteMatch = currentLineToCursor.match(CROSS_NOTE_TRIGGER_REGEX);
-				if (crossNoteMatch) {
-					this.crossNoteContext = { noteName: crossNoteMatch[1] };
-					const partialProp = crossNoteMatch[2];
-					const propStart = cursor.ch - partialProp.length;
-					return {
-						start: { line: cursor.line, ch: propStart },
-						end: cursor,
-						query: partialProp,
-					};
-				}
-			}
-
-			this.crossNoteContext = null;
-
-			const currentLineLastWordStart = currentLineToCursor.search(/[:]?[$@\w\u0370-\u03FF]+$/);
-			if (currentLineLastWordStart === -1) {
-				return null;
-			}
-
-			return {
-				start: {line: cursor.line, ch: currentLineLastWordStart},
-				end: cursor,
-				query: currentLineToCursor.slice(currentLineLastWordStart)
-			};
-		}
-
-		// Not in a math block — check for inline Numerals code span
-		if (!this.plugin.settings.enableInlineNumerals || !this.plugin.settings.provideInlineSuggestions) {
-			return null;
-		}
-
-		const currentLine = editor.getLine(cursor.line);
-		const inlineCtx = findInlineNumeralsContext(
-			currentLine,
-			cursor.ch,
-			getInlineTriggers(this.plugin.settings),
-		);
-
-		if (!inlineCtx) {
-			return null;
-		}
-
-		this.triggerContext = 'inline';
-
-		const exprToCursor = inlineCtx.expressionUpToCursor;
-
-		// Check for cross-note reference pattern in inline context
-		if (this.plugin.settings.enableCrossNoteReferences) {
-			const crossNoteMatch = exprToCursor.match(CROSS_NOTE_TRIGGER_REGEX);
-			if (crossNoteMatch) {
-				this.crossNoteContext = { noteName: crossNoteMatch[1] };
-				const partialProp = crossNoteMatch[2];
-				const propStart = cursor.ch - partialProp.length;
-				return {
-					start: { line: cursor.line, ch: propStart },
-					end: cursor,
-					query: partialProp,
-				};
-			}
-		}
-
-		this.crossNoteContext = null;
-
-		// Find the last word in the expression up to cursor (same regex as block mode)
-		const lastWordStart = exprToCursor.search(/[:]?[$@\w\u0370-\u03FF]+$/);
-		if (lastWordStart === -1) {
-			return null;
-		}
-
-		// Convert expression-relative offset to line-relative column
-		const wordStartCh = inlineCtx.expressionStartCh + lastWordStart;
-
-		return {
-			start: {line: cursor.line, ch: wordStartCh},
-			end: cursor,
-			query: exprToCursor.slice(lastWordStart)
-		};
-	}
+ onTrigger(cursor: EditorPosition, editor: Editor, file: TFile): EditorSuggestTriggerInfo | null {
+  this.crossNoteContext = null;
+  if (!this.plugin.settings.provideSuggestions) return null;
+  const current = this.plugin.getEditorSnapshot(editor);
+  const offset = editor.posToOffset(cursor);
+  if (!current || current.index.source.path !== file.path || current.index.source.text !== editor.getValue()) return null;
+  const block = current.index.calculations.find(calculation => calculation.kind === 'block' &&
+   offset >= calculation.opener.end && offset <= (calculation.closer?.start ?? calculation.span.end));
+  let projection: SourceProjection | undefined;
+  if (block) { this.triggerContext = 'block'; projection = block.projection; }
+  else {
+   if (!this.plugin.settings.enableInlineNumerals || !this.plugin.settings.provideInlineSuggestions) return null;
+   const inline = findSuggestionContext(current.index, offset);
+   if (!inline) return null;
+   this.triggerContext = 'inline'; projection = inline.expression;
+  }
+  // A replacement token must be an unchanged single physical span. Empty property
+  // queries use the validated cursor point, not contiguousSourceSpan(empty).
+  const segment = projection.segments.find(segment => segment.kind === 'copy' &&
+   segment.source.start <= offset && segment.source.end >= offset);
+  if (!segment) return null;
+  const to = segment.target.start + offset - segment.source.start;
+  const prefix = projection.text.slice(0, to);
+  const crossNote = this.plugin.settings.enableCrossNoteReferences && prefix.match(CROSS_NOTE_TRIGGER_REGEX);
+  const word = crossNote ? crossNote[2] : prefix.match(/[:]?[$@\w\u0370-\u03FF]+$/)?.[0];
+  if (word === undefined || offset - word.length < segment.source.start) return null;
+  if (crossNote) this.crossNoteContext = {noteName: crossNote[1]};
+  return {start: editor.offsetToPos(offset - word.length), end: cursor, query: word};
+ }
 
 	getSuggestions(context: EditorSuggestContext): string[] | Promise<string[]> {
 		// Cross-note reference suggestions: suggest properties from the referenced note
@@ -210,47 +133,15 @@ export class NumeralsSuggestor extends EditorSuggest<string> {
 			return this.getCrossNoteSuggestions(context, this.crossNoteContext.noteName);
 		}
 
-		let localSymbols: string [] = [];	
-
-		// check if the last suggestion list update was less than 200ms ago
-		if (performance.now() - this.lastSuggestionListUpdate > 200) {
-			if (this.triggerContext === 'block') {
-				// Block context: scan the current code block for local variable definitions
-				const currentFileToStart = context.editor.getRange({line: 0, ch: 0}, context.start);
-				const indexOfLastCodeBlockStart = currentFileToStart.lastIndexOf('```');
-		
-				if (indexOfLastCodeBlockStart > -1) {
-					const lastCodeBlockStartToCursor = currentFileToStart.slice(indexOfLastCodeBlockStart);
-		
-					// Return all variable names in the last codeblock up to the cursor
-					const matches = lastCodeBlockStartToCursor.matchAll(/^\s*(\S*?)\s*=.*$/gm);
-					// create array from first capture group of matches and remove duplicates
-					localSymbols = [...new Set(Array.from(matches, (match) => 'v|' + match[1]))];
-				}
-			} else {
-				// Inline context: use page-level scope cache for note-global variables
-				const cachedScope = this.plugin.scopeCache.get(context.file.path);
-				if (cachedScope) {
-					const scopeSymbols = Array.from(cachedScope.keys()).map(symbol => 'v|' + symbol);
-					localSymbols = [...new Set(scopeSymbols)];
-				}
-			}
-
-			// combine frontmatter and dataview metadata, with dataview metadata taking precedence
-			const metadata = getMetadataForFileAtPath(context.file.path, this.app, this.plugin.scopeCache);
-
-			if (metadata) {
-				const { scope: frontmatterSymbols } = getScopeFromFrontmatter(metadata, undefined, this.plugin.settings.forceProcessAllFrontmatter, undefined, true);
-				// add frontmatter symbols to local symbols
-				const frontmatterSymbolsArray = Array.from(frontmatterSymbols.keys()).map(symbol => 'v|' + symbol);
-				localSymbols = [...new Set([...localSymbols, ...frontmatterSymbolsArray])];
-			}
-
-			this.localSuggestionCache = localSymbols;
-			this.lastSuggestionListUpdate = performance.now();
-		} else {
-			localSymbols = this.localSuggestionCache
-		}
+  const current = this.plugin.getEditorSnapshot(context.editor);
+  const snapshot = current?.state.status === 'ready' && current.index.source.text === context.editor.getValue()
+   ? current.state.snapshot : undefined;
+  const names = new Set<string>();
+  if (snapshot) {
+   for (const symbol of snapshot.metadataSymbols) names.add(symbol.name);
+   for (const symbol of snapshot.symbolsAt(context.editor.posToOffset(context.start))) names.add(symbol.name);
+  }
+  const localSymbols = [...names].map(name => 'v|' + name);
 
 		const query_lower = context.query.toLowerCase();
 

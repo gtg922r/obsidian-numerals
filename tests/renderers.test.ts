@@ -1,3 +1,4 @@
+import { inputPresentation } from '../src/host/presentation';
 /**
  * Unit tests for renderer implementations (Phase 3 refactoring).
  * Tests the Strategy Pattern implementation for different rendering styles.
@@ -38,6 +39,8 @@ import {
 } from '../src/numerals.types';
 import { expressionToTeX, resultToTeX } from '../src/rendering/texRendering';
 import { createNumberFormatProfile, createResultFormatter } from '../src/formatting';
+
+const formatter = createResultFormatter({profile: createNumberFormatProfile(NumeralsNumberFormat.System)});
 
 // Mock Obsidian DOM methods
 beforeAll(() => {
@@ -85,11 +88,7 @@ describe('Renderer Implementations', () => {
 		context = {
 			renderStyle: NumeralsRenderStyle.Plain,
 			settings: DEFAULT_SETTINGS,
-			formatter: createResultFormatter({
-				profile: createNumberFormatProfile(NumeralsNumberFormat.System),
-			}),
-			formatOverrides: {},
-			preProcessors: [],
+			signal: new AbortController().signal,
 		};
 	});
 
@@ -105,14 +104,16 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: '2 + 2',
 				processedInput: '2 + 2',
-				result: 4,
+				formattedResult: formatter.format(4),
 				isEmpty: false,
 				isEmitter: false,
 				isHidden: false,
 				comment: null,
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), renderer instanceof TeXRenderer ? NumeralsRenderStyle.TeX :
+     renderer instanceof SyntaxHighlightRenderer ? NumeralsRenderStyle.SyntaxHighlight : NumeralsRenderStyle.Plain, math) : {})}, context);
 
 			const input = container.querySelector('.numerals-input');
 			const result = container.querySelector('.numerals-result');
@@ -128,14 +129,16 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: '',
 				processedInput: '',
-				result: undefined,
+				formattedResult: undefined,
 				isEmpty: true,
 				isEmitter: false,
 				isHidden: false,
 				comment: null,
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), renderer instanceof TeXRenderer ? NumeralsRenderStyle.TeX :
+     renderer instanceof SyntaxHighlightRenderer ? NumeralsRenderStyle.SyntaxHighlight : NumeralsRenderStyle.Plain, math) : {})}, context);
 
 			const input = container.querySelector('.numerals-input');
 			const result = container.querySelector('.numerals-result');
@@ -149,14 +152,16 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: '2 + 2',
 				processedInput: '2 + 2',
-				result: 4,
+				formattedResult: formatter.format(4),
 				isEmpty: false,
 				isEmitter: false,
 				isHidden: false,
 				comment: '# sum',
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), renderer instanceof TeXRenderer ? NumeralsRenderStyle.TeX :
+     renderer instanceof SyntaxHighlightRenderer ? NumeralsRenderStyle.SyntaxHighlight : NumeralsRenderStyle.Plain, math) : {})}, context);
 
 			const comment = container.querySelector('.numerals-inline-comment');
 			expect(comment).not.toBeNull();
@@ -168,14 +173,16 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: 'total = @sum',
 				processedInput: 'total = __total',
-				result: 10,
+				formattedResult: formatter.format(10),
 				isEmpty: false,
 				isEmitter: false,
 				isHidden: false,
 				comment: null,
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), renderer instanceof TeXRenderer ? NumeralsRenderStyle.TeX :
+     renderer instanceof SyntaxHighlightRenderer ? NumeralsRenderStyle.SyntaxHighlight : NumeralsRenderStyle.Plain, math) : {})}, context);
 
 			const sumElement = container.querySelector('.numerals-sum');
 			expect(sumElement).not.toBeNull();
@@ -187,14 +194,16 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: 'result = @total',
 				processedInput: 'result = __total',
-				result: 20,
+				formattedResult: formatter.format(20),
 				isEmpty: false,
 				isEmitter: false,
 				isHidden: false,
 				comment: null,
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), renderer instanceof TeXRenderer ? NumeralsRenderStyle.TeX :
+     renderer instanceof SyntaxHighlightRenderer ? NumeralsRenderStyle.SyntaxHighlight : NumeralsRenderStyle.Plain, math) : {})}, context);
 
 			const totalElement = container.querySelector('.numerals-sum');
 			expect(totalElement).not.toBeNull();
@@ -214,14 +223,16 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: '2 + 2',
 				processedInput: '2 + 2',
-				result: 4,
+				formattedResult: formatter.format(4),
 				isEmpty: false,
 				isEmitter: false,
 				isHidden: false,
 				comment: null,
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), renderer instanceof TeXRenderer ? NumeralsRenderStyle.TeX :
+     renderer instanceof SyntaxHighlightRenderer ? NumeralsRenderStyle.SyntaxHighlight : NumeralsRenderStyle.Plain, math) : {})}, context);
 
 			const input = container.querySelector('.numerals-input');
 			const result = container.querySelector('.numerals-result');
@@ -236,14 +247,16 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: '',
 				processedInput: '',
-				result: undefined,
+				formattedResult: undefined,
 				isEmpty: true,
 				isEmitter: false,
 				isHidden: false,
 				comment: null,
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), renderer instanceof TeXRenderer ? NumeralsRenderStyle.TeX :
+     renderer instanceof SyntaxHighlightRenderer ? NumeralsRenderStyle.SyntaxHighlight : NumeralsRenderStyle.Plain, math) : {})}, context);
 
 			const input = container.querySelector('.numerals-input');
 			const result = container.querySelector('.numerals-result');
@@ -257,14 +270,16 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: '2 + 2',
 				processedInput: '2 + 2',
-				result: 4,
+				formattedResult: formatter.format(4),
 				isEmpty: false,
 				isEmitter: false,
 				isHidden: false,
 				comment: '# calculation',
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), renderer instanceof TeXRenderer ? NumeralsRenderStyle.TeX :
+     renderer instanceof SyntaxHighlightRenderer ? NumeralsRenderStyle.SyntaxHighlight : NumeralsRenderStyle.Plain, math) : {})}, context);
 
 			const comment = container.querySelector('.numerals-inline-comment');
 			expect(comment).not.toBeNull();
@@ -276,14 +291,16 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: 'Budget = 226000',
 				processedInput: 'Budget = 226000',
-				result: 226000,
+				formattedResult: formatter.format(226000),
 				isEmpty: false,
 				isEmitter: false,
 				isHidden: false,
 				comment: null,
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), renderer instanceof TeXRenderer ? NumeralsRenderStyle.TeX :
+     renderer instanceof SyntaxHighlightRenderer ? NumeralsRenderStyle.SyntaxHighlight : NumeralsRenderStyle.Plain, math) : {})}, context);
 
 			const input = container.querySelector('.numerals-input');
 			expect(input).not.toBeNull();
@@ -299,14 +316,16 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: 'x = 100000 + 200000',
 				processedInput: 'x = 100000 + 200000',
-				result: 300000,
+				formattedResult: formatter.format(300000),
 				isEmpty: false,
 				isEmitter: false,
 				isHidden: false,
 				comment: null,
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), renderer instanceof TeXRenderer ? NumeralsRenderStyle.TeX :
+     renderer instanceof SyntaxHighlightRenderer ? NumeralsRenderStyle.SyntaxHighlight : NumeralsRenderStyle.Plain, math) : {})}, context);
 
 			const input = container.querySelector('.numerals-input');
 			const inputHtml = input?.innerHTML || '';
@@ -340,14 +359,15 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: '2 + 2',
 				processedInput: '2 + 2',
-				result: 4,
+				formattedResult: formatter.format(4),
 				isEmpty: false,
 				isEmitter: false,
 				isHidden: false,
 				comment: null,
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), NumeralsRenderStyle.TeX, math) : {})}, context);
 			await Promise.resolve();
 
 			const input = container.querySelector('.numerals-input');
@@ -370,14 +390,15 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: '',
 				processedInput: '',
-				result: undefined,
+				formattedResult: undefined,
 				isEmpty: true,
 				isEmitter: false,
 				isHidden: false,
 				comment: null,
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), NumeralsRenderStyle.TeX, math) : {})}, context);
 
 			const input = container.querySelector('.numerals-input');
 			const result = container.querySelector('.numerals-result');
@@ -391,14 +412,15 @@ describe('Renderer Implementations', () => {
 				index: 0,
 				rawInput: 'x = 5',
 				processedInput: 'x = 5',
-				result: 5,
+				formattedResult: formatter.format(5),
 				isEmpty: false,
 				isEmitter: false,
 				isHidden: false,
 				comment: '# variable',
 			};
 
-			renderer.renderLine(container, lineData, context);
+			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
+    lineData.rawInput + (lineData.comment ?? ''), NumeralsRenderStyle.TeX, math) : {})}, context);
 
 			const comment = container.querySelector('.numerals-inline-comment');
 			expect(comment).not.toBeNull();

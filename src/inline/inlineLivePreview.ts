@@ -1,42 +1,14 @@
-import { ReferenceEvaluationError, ReferenceDependency } from '../processing/crossNoteResolver';
-/** Host lifecycle for visible inline decorations. G will replace this projection's
- * legacy evaluation calls with full-note snapshots; C owns subscriptions and disposal. */
-
-import {
-	EditorView,
-	ViewPlugin,
-	ViewUpdate,
-	Decoration,
-	DecorationSet,
-	WidgetType,
-} from '@codemirror/view';
-import { EditorSelection, EditorState, Range, StateEffect } from '@codemirror/state';
+import { EditorView, ViewPlugin, type ViewUpdate, Decoration, type DecorationSet, WidgetType } from '@codemirror/view';
+import { type EditorSelection, type EditorState, type Range, StateEffect, StateField } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
-import { App } from 'obsidian';
-import { editorInfoField, editorLivePreviewField } from 'obsidian';
-import {
-	NumeralsSettings,
-	NumeralsScope,
-	StringReplaceMap,
-	InlineNumeralsMode,
-	NumeralsRenderStyle,
-	InlineTriggerSettings,
-} from '../numerals.types';
-import type { FormattedResult, ResultFormatter } from '../formatting';
-import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
-import { getActiveInlineTriggers, getInlineTriggers, parseInlineExpression } from './inlineParser';
-import { evaluateInlineExpression } from './inlineEvaluator';
-import { affectsOccurrence, HostEventHub, HostEventSource, HostInvalidation } from '../host/events';
-import {
-	renderInlineInputContent,
-	renderInlineValueContent,
-} from './inlineRenderer';
+import { editorInfoField, editorLivePreviewField, type Editor, type TFile } from 'obsidian';
+import { NumeralsRenderStyle, InlineNumeralsMode } from '../numerals.types';
+import type { FormattedResult } from '../formatting';
+import { SourceRegistry, type SurfaceSource } from '../host/sourceRegistry';
+import { TrustedInputRoot } from '../host/trustedInput';
+import { inputPresentation } from '../host/presentation';
+import { renderInlinePresentation } from './inlineRenderer';
 
-/****************************************************
- * Formatting context helpers
- ****************************************************/
-
-/** CSS classes that correspond to Markdown formatting around inline code. */
 const FORMATTING_CLASS_MAP: Record<string, string> = {
 	strong: 'cm-strong',
 	em: 'cm-em',
@@ -62,28 +34,19 @@ export function getFormattingClasses(tokenProps: string | undefined): string[] {
 	return classes;
 }
 
-function isInlineCodeContentRange(
-	from: number,
-	to: number,
-	doc: { sliceString(from: number, to: number): string },
-): boolean {
-	return (
-		from > 0 &&
-		to > from &&
-		doc.sliceString(from - 1, from) === '`' &&
-		doc.sliceString(to, to + 1) === '`'
-	);
+/** CM stream token names encode their presentation classes with underscores.
+ * Grammar-based Markdown parsers instead expose the enclosing emphasis nodes. */
+function inheritedFormatting(state: EditorState, offset: number): string[] {
+ const classes = new Set<string>();
+ const enclosing: Record<string, string> = {StrongEmphasis: 'cm-strong', Emphasis: 'cm-em',
+  Strikethrough: 'cm-strikethrough', Highlight: 'cm-highlight'};
+ for (let node = syntaxTree(state).resolveInner(offset, 1); node; node = node.parent!) {
+  for (const name of getFormattingClasses(node.type.name.replace(/_/g, ' '))) classes.add(name);
+  if (enclosing[node.type.name]) classes.add(enclosing[node.type.name]);
+ }
+ return [...classes];
 }
 
-/****************************************************
- * Selection overlap helper
- ****************************************************/
-
-/**
- * Check whether any selection range overlaps with [from, to].
- * Used for the cursor guard — when the cursor is inside an inline
- * code span, we skip decoration so the user can edit the raw source.
- */
 export function selectionOverlapsRange(
 	selection: EditorSelection,
 	from: number,
@@ -97,437 +60,180 @@ export function selectionOverlapsRange(
 	return false;
 }
 
-/****************************************************
- * Widget
- ****************************************************/
 
-/**
- * A CM6 widget that renders the evaluated result of an inline Numerals expression.
- *
- * Supports three visual modes:
- * - **ResultOnly**: Displays only the computed result.
- * - **Equation**: Displays `expression <separator> result`.
- * - **Error**: Displays the raw expression with error styling.
- *
- * Optionally carries formatting CSS classes (bold, italic, etc.)
- * inherited from the surrounding Markdown context.
- */
 export class InlineNumeralsWidget extends WidgetType {
-	constructor(
-		private readonly formattedResult: FormattedResult,
-		private readonly mode: InlineNumeralsMode,
-		private readonly rawExpression: string,
-		private readonly separator: string,
-		private readonly isError: boolean,
-		private readonly formattingClasses: string[] = [],
-		private readonly renderStyle: NumeralsRenderStyle = NumeralsRenderStyle.Plain,
-		private readonly processedExpression: string = rawExpression,
-	) {
-		super();
-	}
-
-	/**
-	 * Equality check used by CM6 to avoid unnecessary DOM updates.
-	 * All fields must match for the widget to be considered unchanged.
-	 */
-	eq(other: InlineNumeralsWidget): boolean {
-		return (
-			this.formattedResult.text === other.formattedResult.text &&
-			this.formattedResult.tex === other.formattedResult.tex &&
-			this.formattedResult.canonical === other.formattedResult.canonical &&
-			this.mode === other.mode &&
-			this.rawExpression === other.rawExpression &&
-			this.separator === other.separator &&
-			this.isError === other.isError &&
-			this.renderStyle === other.renderStyle &&
-			// Raw mathjs objects never enter the widget. Visible equality is
-			// captured by the formatted result and processed expression.
-			this.processedExpression === other.processedExpression &&
-			this.formattingClasses.length === other.formattingClasses.length &&
-			this.formattingClasses.every((c, i) => c === other.formattingClasses[i])
-		);
-	}
-
-	toDOM(view?: EditorView): HTMLElement {
-		const ownerDocument = view?.dom.ownerDocument ?? activeDocument;
-		const ownerWindow = ownerDocument.win as Window & { createSpan: typeof createSpan };
-		const span = ownerWindow.createSpan();
-		span.classList.add('cm-inline-code', 'numerals-inline');
-
-		// TeX-rendered spans strip the code chrome so they read as native inline math
-		if (this.renderStyle === NumeralsRenderStyle.TeX) {
-			span.classList.add('numerals-inline-tex');
-		}
-
-		// Apply inherited formatting (bold, italic, etc.)
-		for (const cls of this.formattingClasses) {
-			span.classList.add(cls);
-		}
-
-		if (this.isError) {
-			span.classList.add('numerals-inline-error');
-			span.textContent = this.rawExpression;
-			return span;
-		}
-
-		if (this.mode === InlineNumeralsMode.Equation) {
-			span.classList.add('numerals-inline-equation');
-
-			const inputEl = ownerWindow.createSpan();
-			inputEl.className = 'numerals-inline-input';
-			renderInlineInputContent(
-				inputEl,
-				this.rawExpression,
-				this.processedExpression,
-				this.renderStyle
-			);
-
-			const sepEl = ownerWindow.createSpan();
-			sepEl.className = 'numerals-inline-separator';
-			sepEl.textContent = this.separator;
-
-			const valueEl = ownerWindow.createSpan();
-			valueEl.className = 'numerals-inline-value';
-			renderInlineValueContent(
-				valueEl,
-				this.formattedResult,
-				this.renderStyle
-			);
-
-			span.appendChild(inputEl);
-			span.appendChild(sepEl);
-			span.appendChild(valueEl);
-		} else {
-			// ResultOnly
-			span.classList.add('numerals-inline-result');
-
-			const valueEl = ownerWindow.createSpan();
-			valueEl.className = 'numerals-inline-value';
-			renderInlineValueContent(
-				valueEl,
-				this.formattedResult,
-				this.renderStyle
-			);
-
-			span.appendChild(valueEl);
-		}
-
-		return span;
-	}
+ private readonly lifetimes = new WeakMap<HTMLElement, {controller: AbortController; stop: () => void}>();
+ constructor(private readonly formattedResult: FormattedResult, private readonly mode: InlineNumeralsMode,
+  private readonly rawExpression: string, private readonly separator: string, private readonly isError: boolean,
+  private readonly formattingClasses: string[] = [], private readonly renderStyle = NumeralsRenderStyle.Plain,
+  private readonly inputTeX?: string, private readonly error = 'Unable to evaluate this calculation.',
+  private readonly generationSignal?: AbortSignal) { super(); }
+ eq(other: InlineNumeralsWidget): boolean {
+  return this.formattedResult.text === other.formattedResult.text && this.formattedResult.tex === other.formattedResult.tex &&
+   this.formattedResult.canonical === other.formattedResult.canonical && this.mode === other.mode &&
+   this.rawExpression === other.rawExpression && this.separator === other.separator && this.isError === other.isError &&
+   this.renderStyle === other.renderStyle && this.inputTeX === other.inputTeX && this.error === other.error &&
+   this.generationSignal === other.generationSignal &&
+   this.formattingClasses.join(' ') === other.formattingClasses.join(' ');
+ }
+ toDOM(view?: EditorView): HTMLElement {
+  const span = (view?.dom.ownerDocument ?? activeDocument).createElement('span');
+  span.classList.add('cm-inline-code', ...this.formattingClasses);
+  const controller = new AbortController(), abort = () => controller.abort();
+  if (this.generationSignal?.aborted) controller.abort();
+  else this.generationSignal?.addEventListener('abort', abort, {once: true});
+  this.lifetimes.set(span, {controller, stop: () => this.generationSignal?.removeEventListener('abort', abort)});
+  renderInlinePresentation(span, {formattedResult: this.formattedResult, mode: this.mode, rawExpression: this.rawExpression,
+   separator: this.separator, renderStyle: this.renderStyle, inputTeX: this.inputTeX,
+   error: this.isError ? this.error : undefined}, controller.signal);
+  return span;
+ }
+ destroy(dom: HTMLElement): void {
+  const lifetime = this.lifetimes.get(dom); lifetime?.controller.abort(); lifetime?.stop(); this.lifetimes.delete(dom);
+ }
 }
 
-/****************************************************
- * Shared context for decoration building
- ****************************************************/
+const isLivePreview = (state: EditorState) => state.field(editorLivePreviewField, false) === true;
 
-/**
- * Mutable reference to the previous inline evaluation result.
- * Used to thread `@prev` values through sequential decoration building.
- */
-interface PrevResultRef {
-	value: unknown;
+interface InlineProjection {
+ readonly document: EditorState['doc'];
+ readonly editor?: Editor;
+ readonly file?: TFile;
+ readonly path?: string;
+ readonly ranges: DecorationSet;
+ readonly signal: AbortSignal;
 }
+const refreshSnapshot = StateEffect.define<InlineProjection>();
 
-/** Context assembled once per decoration pass. */
-interface DecorationContext {
-	settings: NumeralsSettings;
-	triggers: InlineTriggerSettings;
-	formatter: ResultFormatter;
-	preProcessors: StringReplaceMap[];
-	getScope: () => NumeralsScope;
-	scopeCache: Map<string, NumeralsScope>;
-	filePath: string;
-	app: App;
-	referencedPaths: Set<string>;
-	dependencies: ReferenceDependency[];
-}
+/** Pure presentation carrier. Direct decorations may replace source line breaks;
+ * viewport-dependent ViewPlugin decorations may not. Keep unmasked full-note
+ * ranges so selection and mode transitions never need another evaluation. */
+const inlineProjection = StateField.define<{projection?: InlineProjection; decorations: DecorationSet}>({
+ create: () => ({decorations: Decoration.none}),
+ update(value, transaction) {
+  let projection = transaction.docChanged ? undefined : value.projection;
+  const state = transaction.state, info = state.field(editorInfoField, false);
+  const matches = (candidate: InlineProjection) => !candidate.signal.aborted && candidate.document === state.doc &&
+   candidate.editor === info?.editor && candidate.file === (info?.file ?? undefined) && candidate.path === info?.file?.path;
+  if (projection && !matches(projection)) projection = undefined;
+  // An old queued effect must not replace a newer valid projection, including
+  // empty/unmapped projections. Every publication carries the same identity guard.
+  for (const effect of transaction.effects) if (effect.is(refreshSnapshot) && matches(effect.value)) projection = effect.value;
+  return {projection, decorations: projection && isLivePreview(state)
+   ? projection.ranges.update({filter: (from, to) => !selectionOverlapsRange(state.selection, from, to)}) : Decoration.none};
+ },
+ provide: field => EditorView.decorations.from(field, value => value.decorations),
+});
 
-/**
- * Create the shared context used during a decoration pass.
- * Returns `null` if the feature is disabled or triggers are empty.
- */
-function createDecorationContext(
-	getSettings: () => NumeralsSettings,
-	getFormatter: () => ResultFormatter,
-	preProcessors: StringReplaceMap[],
-	scopeCache: Map<string, NumeralsScope>,
-	app: App,
-	filePath: string,
-): DecorationContext | null {
-	const settings = getSettings();
-
-	if (!settings.enableInlineNumerals) return null;
-
-	const triggers = getInlineTriggers(settings);
-	// Guard against all triggers empty (would match every code span)
-	if (getActiveInlineTriggers(settings).length === 0) return null;
-
-	// Lazy scope resolution — only built on first matching expression
-	let scope: NumeralsScope | null = null;
-	function getScope(): NumeralsScope {
-		if (scope !== null) return scope;
-
-		if (filePath) {
-			const metadata = getMetadataForFileAtPath(filePath, app, scopeCache);
-			const result = getScopeFromFrontmatter(
-				metadata,
-				undefined,
-				settings.forceProcessAllFrontmatter,
-				preProcessors,
-			);
-			scope = result.scope;
-		} else {
-			scope = new NumeralsScope();
-		}
-
-		return scope;
-	}
-
-	return {
-		settings,
-		triggers,
-		formatter: getFormatter(),
-		preProcessors,
-		getScope,
-		scopeCache,
-		filePath,
-		app,
-		referencedPaths: new Set<string>(),
-		dependencies: [],
-	};
-}
-
-/****************************************************
- * Single-node decoration builder
- ****************************************************/
-
-/**
- * Attempt to build a Decoration for a single inline-code syntax node.
- * Returns the decoration Range if the node matches a trigger and the
- * cursor is not inside, otherwise returns `null`.
- *
- * When the expression evaluates successfully, `prevResultRef.value` is
- * updated with the raw result so the next inline expression can use `@prev`.
- * On error, `prevResultRef.value` is set to `undefined`.
- */
-function tryBuildNodeDecoration(
-	nodeFrom: number,
-	nodeTo: number,
-	tokenProps: string | undefined,
-	doc: { sliceString(from: number, to: number): string },
-	selection: EditorSelection,
-	ctx: DecorationContext,
-	prevResultRef: PrevResultRef,
-): Range<Decoration> | null {
-	const text = doc.sliceString(nodeFrom, nodeTo);
-
-	const parsed = parseInlineExpression(text, ctx.triggers);
-	if (!parsed) return null;
-
-	// Span includes backtick delimiters (1 char each side)
-	const spanFrom = nodeFrom - 1;
-	const spanTo = nodeTo + 1;
-
-	// Cursor guard: reveal raw source when cursor overlaps
-	if (selectionOverlapsRange(selection, spanFrom, spanTo)) {
-		return null;
-	}
-
-	// Evaluate
-	let formattedResult: FormattedResult = { text: '', tex: '', canonical: '' };
-	let processedExpression = parsed.expression;
-	let isError = false;
-	try {
-		const scope = ctx.getScope();
-		const result = evaluateInlineExpression(
-			parsed.expression,
-			scope,
-			ctx.preProcessors,
-			prevResultRef.value,
-			ctx.app,
-			ctx.filePath,
-			ctx.settings,
-		);
-		formattedResult = ctx.formatter.format(result.raw);
-		processedExpression = result.processedExpression;
-		prevResultRef.value = result.raw;
-		ctx.dependencies.push(...result.dependencies);
-		for (const path of result.referencedPaths) {
-			ctx.referencedPaths.add(path);
-		}
-
-		// Propagate $-prefixed globals for note-wide visibility
-		if (result.globals.size > 0) {
-			for (const [key, value] of result.globals) {
-				// Update shared scope for same-pass inline→inline visibility
-				scope.set(key, value);
-			}
-			// Write to scopeCache for cross-block visibility
-			if (ctx.filePath) {
-				let pageScope = ctx.scopeCache.get(ctx.filePath);
-				if (!pageScope) {
-					pageScope = new NumeralsScope();
-					ctx.scopeCache.set(ctx.filePath, pageScope);
-				}
-				for (const [key, value] of result.globals) {
-					pageScope.set(key, value);
-				}
-			}
-		}
-	} catch (error: unknown) {
-		if (error instanceof ReferenceEvaluationError) {
-			ctx.dependencies.push(...error.dependencies);
-			for (const path of error.referencedPaths) ctx.referencedPaths.add(path);
-		}
-		formattedResult = { text: '', tex: '', canonical: '' };
-		processedExpression = parsed.expression;
-		isError = true;
-		prevResultRef.value = undefined;
-	}
-
-	const formattingClasses = getFormattingClasses(tokenProps);
-
-	const widget = new InlineNumeralsWidget(
-		formattedResult,
-		parsed.mode,
-		parsed.expression,
-		ctx.settings.inlineEquationSeparator,
-		isError,
-		formattingClasses,
-		parsed.renderStyle,
-		processedExpression,
-	);
-
-	return Decoration.replace({ widget }).range(spanFrom, spanTo);
-}
-
-/****************************************************
- * Full rebuild (visible ranges only)
- ****************************************************/
-
-/**
- * Build a complete `DecorationSet` by scanning all visible ranges.
- * Used on initial load and viewport changes.
- */
-function buildDecorations(
-	view: EditorView,
-	ctx: DecorationContext,
-): DecorationSet {
-	const decorations: Range<Decoration>[] = [];
-	const visited = new Set<string>();
-	const { state } = view;
-	const selection = state.selection;
-
-	// Fresh @prev chain for each full build — walks document order
-	const prevResultRef: PrevResultRef = { value: undefined };
-
-	for (const { from, to } of view.visibleRanges) {
-		syntaxTree(state).iterate({
-			from,
-			to,
-			enter(node) {
-				// Match inline-code content, skip formatting delimiters (backticks)
-				if (!isInlineCodeContentRange(node.from, node.to, state.doc)) {
-					return;
-				}
-
-				const key = `${node.from}:${node.to}`;
-				if (visited.has(key)) return;
-				visited.add(key);
-				const deco = tryBuildNodeDecoration(
-					node.from, node.to, undefined,
-					state.doc, selection, ctx,
-					prevResultRef,
-				);
-				if (deco) decorations.push(deco);
-			},
-		});
-	}
-
-	return Decoration.set(decorations, true);
-}
-
-
-/** Dedicated effect keeps host callbacks out of an active CodeMirror update. */
-const hostRefresh = StateEffect.define<HostInvalidation>();
-
-function livePreview(state: EditorState): boolean {
-	return state.field(editorLivePreviewField, false) === true;
-}
-function sourcePath(state: EditorState): string {
-	return state.field(editorInfoField, false)?.file?.path ?? '';
-}
-
-export function createInlineLivePreviewExtension(
-	getSettings: () => NumeralsSettings, getFormatter: () => ResultFormatter,
-	getPreProcessors: () => StringReplaceMap[], scopeCache: Map<string, NumeralsScope>, app: App,
-	hostEvents?: HostEventSource,
-) {
-	const events = hostEvents ?? new HostEventHub(app);
-	return ViewPlugin.fromClass(
-		class InlineNumeralsViewPlugin {
-			decorations: DecorationSet = Decoration.none;
-			private referencedPaths: string[] = [];
-			private dependencies: ReferenceDependency[] = [];
-			private unsubscribe: () => void;
-			private destroyed = false;
-			private pending: HostInvalidation | undefined;
-			private dirty = true;
-			private wasLive: boolean;
-			private path: string;
-
-			constructor(view: EditorView) {
-				this.wasLive = livePreview(view.state);
-				this.path = sourcePath(view.state);
-				// Source mode owns the same subscriptions as Live Preview.
-				this.unsubscribe = events.subscribe(event => {
-					if (event.kind === 'unload') { this.destroy(); return; }
-					if (this.destroyed || (!affectsOccurrence(event, sourcePath(view.state), this.dependencies, this.referencedPaths) && livePreview(view.state))) return;
-					this.dirty = true;
-					if (!livePreview(view.state)) return;
-					const queued = this.pending !== undefined;
-					this.pending = event;
-					if (queued) return;
-					void Promise.resolve().then(() => {
-						if (this.destroyed || !this.pending) return;
-						const reason = this.pending; this.pending = undefined;
-						view.dispatch({ effects: hostRefresh.of(reason) });
-					});
-				});
-				if (this.wasLive) this.rebuild(view);
-			}
-
-			update(update: ViewUpdate): void {
-				if (this.destroyed) return;
-				const visible = livePreview(update.state), path = sourcePath(update.state);
-				const modeChanged = visible !== this.wasLive;
-				const fileChanged = path !== this.path;
-				this.wasLive = visible; this.path = path;
-				if (update.docChanged || fileChanged || modeChanged) this.dirty = true;
-				if (!visible) { this.decorations = Decoration.none; return; }
-				if (this.dirty || update.docChanged || update.viewportChanged || update.selectionSet ||
-					update.transactions.some(transaction => transaction.effects.some(effect => effect.is(hostRefresh)))) {
-					this.rebuild(update.view);
-				}
-			}
-
-			private rebuild(view: EditorView): void {
-				this.dirty = false;
-				this.dependencies = []; this.referencedPaths = [];
-				const context = createDecorationContext(getSettings, getFormatter, getPreProcessors(), scopeCache, app, sourcePath(view.state));
-				if (!context) { this.decorations = Decoration.none; return; }
-				this.decorations = buildDecorations(view, context);
-				this.dependencies = context.dependencies;
-				this.referencedPaths = [...context.referencedPaths];
-			}
-
-			destroy(): void {
-				if (this.destroyed) return;
-				this.destroyed = true; this.pending = undefined;
-				this.unsubscribe();
-				this.decorations = Decoration.none;
-			}
-		},
-		{ decorations: plugin => plugin.decorations },
-	);
+/** The full note is evaluated independently of viewport and selection. This adapter only projects it. */
+export function createInlineLivePreviewExtension(registry: SourceRegistry) {
+ return ViewPlugin.fromClass(class {
+  get decorations(): DecorationSet { return this.destroyed ? Decoration.none : this.view.state.field(inlineProjection).decorations; }
+  private readonly input = new TrustedInputRoot();
+  private source?: SurfaceSource;
+  private sourceId?: string;
+  private stopSource = () => {};
+  private stopRegistry: () => void;
+  private destroyed = false;
+  private queued = false;
+  private lifetime = new AbortController();
+  private projectedState?: object;
+  constructor(private readonly view: EditorView) {
+   this.stopRegistry = registry.subscribe(() => { if (!registry.active) this.destroy(); else this.changed(); });
+   // Initialization may precede DOM attachment; layout reconciliation will prove it later.
+   this.bind(); this.schedule();
+  }
+  observe(event: Event): void { this.input.observe(event, this.view); }
+  update(update: ViewUpdate): void {
+   const root = this.input.consume(update);
+   const rebound = this.bind();
+   if (update.docChanged && this.source?.editor) registry.sourceChanged(this.source.editor, root && !rebound);
+   if (rebound || update.docChanged || update.viewportChanged ||
+    isLivePreview(update.startState) !== isLivePreview(update.state) ||
+    syntaxTree(update.startState) !== syntaxTree(update.state)) this.schedule();
+  }
+  private bind(): boolean {
+   const source = registry.fromCodeMirror(this.view, this.view.state.field(editorInfoField, false));
+   const sourceId = source && registry.coordinator.attachmentId(source.identity);
+   // A reused Editor may own a replacement session/TFile even at the same path.
+   // Full-source validity can disappear during ordinary edits or immediately
+   // after retargeting. The live attachment identity remains available in both cases.
+   if (source?.identity === this.source?.identity && source?.path === this.source?.path &&
+    sourceId === this.sourceId) return false;
+   this.stopSource(); this.input.clear(); this.source = source; this.sourceId = sourceId;
+   this.stopSource = source ? registry.coordinator.subscribe(source.identity, () => this.changed()) : () => {};
+   this.refreshLifetime();
+   return true;
+  }
+  private refreshLifetime(): void {
+   const state = this.source && registry.coordinator.current(this.source.identity)?.state;
+   if (state === this.projectedState) return;
+   this.projectedState = state; this.lifetime.abort(); this.lifetime = new AbortController();
+  }
+  private changed(): void { this.refreshLifetime(); this.schedule(); }
+  private schedule(): void {
+   if (this.destroyed || this.queued) return;
+   this.queued = true;
+   void Promise.resolve().then(() => {
+    this.queued = false;
+    if (!this.destroyed) {
+     this.bind();
+     const projection = this.project();
+     if (!this.destroyed) this.view.dispatch({effects: refreshSnapshot.of(projection)});
+    }
+   });
+  }
+  private project(): InlineProjection {
+   this.refreshLifetime();
+   const source = this.source, signal = this.lifetime.signal;
+   const state = this.view.state, info = state.field(editorInfoField, false);
+   const empty: InlineProjection = {document: state.doc, editor: info?.editor, file: info?.file ?? undefined,
+    path: info?.file?.path, ranges: Decoration.none, signal};
+   if (!source?.editor || !info?.file) return empty;
+   const current = registry.coordinator.current(source.identity);
+   if (!current || !current.settings.enableInlineNumerals || current.index.source.text !== state.doc.toString()) return empty;
+   const snapshot = current.state.status === 'ready' ? current.state.snapshot : undefined;
+   const runtime = snapshot && registry.coordinator.renderContext(source.identity, snapshot);
+   const decorations: Range<Decoration>[] = [];
+   for (const calculation of current.index.calculations) {
+    if (calculation.kind !== 'inline') continue;
+    const result = snapshot?.calculations.find(item => item.calculationId === calculation.id);
+    let error = result?.diagnostic?.message ?? (current.state.status === 'error' ? current.state.message :
+     !snapshot ? 'Updating calculation…' : !result ? snapshot.diagnostics[0]?.message ?? 'Calculation unavailable.' : undefined);
+    let formatted: FormattedResult = {text: '', tex: '', canonical: ''};
+    let inputTeX: string | undefined;
+    const style = calculation.renderStyle === 'tex' ? NumeralsRenderStyle.TeX : NumeralsRenderStyle.Plain;
+    if (snapshot && result && !error) {
+     const output = snapshot.format(calculation.id, 0);
+     if ('diagnostic' in output) error = output.diagnostic.message;
+     else formatted = output.value;
+     if (runtime && calculation.mode === 'equation') {
+      try { inputTeX = inputPresentation(result.rows[0]?.processedInput ?? '', calculation.expression.text, style, runtime.engine).inputTeX; }
+      catch (failure: unknown) { error = failure instanceof Error ? failure.message : String(failure); }
+     }
+    }
+    // Syntax metadata controls appearance only; all values/order come from the full-note snapshot.
+    const widget = new InlineNumeralsWidget(formatted, calculation.mode === 'equation' ? InlineNumeralsMode.Equation : InlineNumeralsMode.ResultOnly,
+     calculation.expression.text, current.settings.inlineEquationSeparator, Boolean(error), inheritedFormatting(state, calculation.opener.end),
+     style, inputTeX, error, signal);
+    decorations.push(Decoration.replace({widget}).range(calculation.span.start, calculation.span.end));
+   }
+   const latest = registry.coordinator.current(source.identity);
+   if (this.source !== source || this.view.state !== state || signal.aborted || latest?.state !== current.state ||
+    latest.index !== current.index || latest.settings !== current.settings ||
+    registry.fromCodeMirror(this.view, info)?.identity !== source.identity) return empty;
+   return {document: state.doc, editor: source.editor, file: info.file, path: source.path,
+    ranges: Decoration.set(decorations, true), signal};
+  }
+  destroy(): void {
+   if (this.destroyed) return;
+   this.destroyed = true; this.lifetime.abort(); this.input.clear(); this.stopSource(); this.stopRegistry();
+  }
+ }, {
+  provide: () => inlineProjection,
+  eventObservers: {
+   input(event) { this.observe(event); },
+   paste(event) { this.observe(event); },
+  },
+ });
 }
