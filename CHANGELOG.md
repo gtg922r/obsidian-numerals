@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. The format 
 ## [Unreleased]
 
 ### Added
+- Add a disposable Linux CI harness that records official Obsidian Reading callbacks and Live Preview trees for 95 byte-preserved synthetic extraction fixtures, with verified native activity from each primary note, callback origins, support-note hashes, pinned inputs and bounded cancellation.
 - Per-expression TeX rendering for Inline Numerals via the new `#$:` (result only) and `#$=:` (equation) trigger prefixes, which render with MathJax in both Live Preview and Reading mode. Both prefixes are configurable in settings. (Closes #161)
 - Block-level `@format` and `@decimalPlaces` directives for overriding result presentation without changing calculated values. (Closes #75, #140)
 - Currency-standard decimal places by default and optional configured-symbol display for pure currency results, including derived currency values. Configured-symbol display is the default when no valid saved preference exists; saved code/symbol choices are preserved. (Closes #160)

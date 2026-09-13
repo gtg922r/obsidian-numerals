@@ -1,0 +1,11 @@
+{
+  "name": "numerals-host-fixtures",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24 <25" },
+  "scripts": {
+    "test": "node --test contracts.test.mjs",
+    "capture": "node run.mjs"
+  },
+  "dependencies": { "obsidian-launcher": "3.2.0" }
+}

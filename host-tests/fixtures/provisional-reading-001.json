@@ -1,0 +1,74 @@
+{
+  "runId": "34776649635",
+  "captureSha256": "29136b1fc672ec58879e04437212a15404924ff7b48778ebff38437c629e7335",
+  "result": {
+    "id": "001",
+    "path": "cases/001-ordinary-fence.md",
+    "mode": "reading",
+    "sourceSha256": "8c193e82ed7709794ef4d7ef4ce7485de71c0db4e9d969b6ac89733a645603ab",
+    "events": [
+      {
+        "sequence": 8,
+        "surface": "reading",
+        "kind": "block-handler",
+        "language": "math",
+        "source": "a=1",
+        "sourcePath": "cases/001-ordinary-fence.md",
+        "docId": "context-3",
+        "section": {
+          "text": "```math\na=1\n```",
+          "lineStart": 0,
+          "lineEnd": 2
+        }
+      },
+      {
+        "sequence": 9,
+        "surface": "reading",
+        "kind": "view-open",
+        "sourcePath": "cases/001-ordinary-fence.md"
+      },
+      {
+        "sequence": 10,
+        "surface": "reading",
+        "kind": "section",
+        "sourcePath": "cases/001-ordinary-fence.md",
+        "docId": "context-4",
+        "section": {
+          "text": "```math\na=1\n```",
+          "lineStart": 0,
+          "lineEnd": 2
+        }
+      },
+      {
+        "sequence": 11,
+        "surface": "reading",
+        "kind": "raw-block-code",
+        "text": "a=1\n",
+        "sourcePath": "cases/001-ordinary-fence.md",
+        "docId": "context-4",
+        "section": {
+          "text": "```math\na=1\n```",
+          "lineStart": 0,
+          "lineEnd": 2
+        }
+      },
+      {
+        "sequence": 12,
+        "surface": "reading",
+        "kind": "block-handler",
+        "language": "math",
+        "source": "a=1",
+        "sourcePath": "cases/001-ordinary-fence.md",
+        "docId": "context-4",
+        "section": {
+          "text": "```math\na=1\n```",
+          "lineStart": 0,
+          "lineEnd": 2
+        }
+      }
+    ],
+    "opened": true,
+    "settled": true,
+    "actualMode": "preview"
+  }
+}
