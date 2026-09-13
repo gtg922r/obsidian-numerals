@@ -1,0 +1,2594 @@
+{
+  "schema": 1,
+  "status": "NOT_RUN",
+  "cases": [
+    {
+      "id": "LEX-01",
+      "area": "Scanner and typed references",
+      "owner": "D",
+      "title": "Call/array/index commas",
+      "steps": "Evaluate max(1,234), [1,234], max(1234,5), [[1,234],[3,456]] and an index into a sufficiently sized synthetic matrix. Repeat via opted-in metadata expressions.",
+      "expected": "234; two elements1 and234;1234;2x2 matrix. Calls/lists/indexes retain commas, including nested grouping.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "LEX-02",
+      "area": "Scanner and typed references",
+      "owner": "D",
+      "title": "Grouped literals outside collections",
+      "steps": "Evaluate 1,234.5 + 2; (1,234)*2; (1+2)(1,234); 3! (1,234).",
+      "expected": "1236.5;2468;3702;7404. Original input text remains visible.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "LEX-03",
+      "area": "Scanner and typed references",
+      "owner": "D/E",
+      "title": "Explicit currency prefix and native suffix",
+      "steps": "With $→USD, evaluate max($1,234.50,$2), [$1,234.50,$2], [1,234$], $1.2e3.",
+      "expected": "1234.50 USD and [1234.5USD,2USD]; suffix list is1 and234USD; scientific amount1200USD. Display may use symbols, insertion codes.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "LEX-04",
+      "area": "Scanner and typed references",
+      "owner": "D",
+      "title": "Malformed numeric candidates",
+      "steps": "Run each in separate block/inline:1,0001;1,23;1,,234;1,234.56.7;1,234e; then max(1,0001).",
+      "expected": "Malformed standalone candidates diagnose without partial stripping. Call retains delimiter and returns1; do not treat this valid call as malformed grouping.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "LEX-05",
+      "area": "Scanner and typed references",
+      "owner": "D",
+      "title": "Protected strings and comments",
+      "steps": "Evaluate literal strings containing @prev @sum @[x::2] => $1,234 [[missing]].x; evaluate 2 # @prev $1,234 [[missing]].x. Include escaped quotes and transpose.",
+      "expected": "Literal contents unchanged, no missing-reference dependency or insertion from strings/comments; commented expression returns2. Native transpose still works.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "LEX-06",
+      "area": "Scanner and typed references",
+      "owner": "D/E",
+      "title": "Identifiers/properties and Unicode mapping",
+      "steps": "Use $price=2; foo€=3; object {$:2}, obj.$; supplementary currency symbol U+1E2FF mapping; add a syntax error after a currency/reference token.",
+      "expected": "Identifiers/property keys are not currency rewrites; supplementary symbol accepted when configured. Diagnostic highlights full original UTF16 token/position.",
+      "fixtures": [
+        "081"
+      ],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "LEX-07",
+      "area": "Scanner and typed references",
+      "owner": "D/E",
+      "title": "Quoted/native currency forms",
+      "steps": "Evaluate unit(\"1$\"), unit(1,\"$\"), number(1 USD,\"$\"), 1 $, 1$ and 1 USD to $.",
+      "expected": "Quoted strings remain protected; supported native forms evaluate consistently through active aliases. Canonical insertion usesUSD.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "LEX-08",
+      "area": "Scanner and typed references",
+      "owner": "D/G",
+      "title": "Directives inside insertion wrappers",
+      "steps": "After a successful row, evaluate @[@prev] and @[@sum::3] wrappers; compare protected occurrences inside a literal string/comment.",
+      "expected": "Wrappers retain directive semantics and original insertion spans; displayed input keeps label. Protected strings/comments create no directive or write.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "REF-01",
+      "area": "Scanner and typed references",
+      "owner": "D",
+      "title": "Negative and complex values",
+      "steps": "Opted-in acceptance/reference-values has negative:-2, complex:\"2+3i\". Square each reference in block/inline and all render styles.",
+      "expected": "4 and -5+12i; source labels preserved, no text-injection precedence error.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "REF-02",
+      "area": "Scanner and typed references",
+      "owner": "D",
+      "title": "Typed scalar/matrix values",
+      "steps": "Use reference scenario Unit, BigNumber, Fraction, boolean, string and matrix expression; evaluate cm→mm, plus1/3, not flag, string, matrix*2.",
+      "expected": "20mm; exact Fraction path; false; string1+2 stays string;[2,468]. Compare BigNumber through exact equality/difference, not rounded screen text.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "REF-03",
+      "area": "Scanner and typed references",
+      "owner": "D/F",
+      "title": "Array metadata and opt-in",
+      "steps": "Reference list:[10,\"max(1,234)\"] and vector:\"[1,234]\"; toggle numerals selection/all/none and force-all; use $value with opt-in disabled.",
+      "expected": "Raw metadata array chooses last entry234; string expression yields two-element matrix. Ordinary metadata requires opt-in; dollar metadata remains available per contract.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "REF-04",
+      "area": "Scanner and typed references",
+      "owner": "C/F/G",
+      "title": "Native metadata freshness",
+      "steps": "Change referenced value-2→-3, remove property, restore it; test dependent block and inline in both modes without source edits to consumer.",
+      "expected": "4→9→visible unavailable diagnostic→9. Original dependency record survives errors; no stale result.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "REF-05",
+      "area": "Scanner and typed references",
+      "owner": "C/F/G",
+      "title": "Missing-note create/delete/rename",
+      "steps": "Reference absent synthetic note/property, create note, add property, rename to/from matching link path, delete and recreate. Include multiple references after first failure.",
+      "expected": "Every dependency can trigger recovery; resolved/unresolved states update; earlier successes preserved. No permanent unresolved cache.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "REF-06",
+      "area": "Scanner and typed references",
+      "owner": "D/F",
+      "title": "Read-only reference bindings",
+      "steps": "Attempt direct reference assignment, indexed assignment, function definition/parameter targeting reference, then re-read unchanged metadata.",
+      "expected": "Each prohibited write diagnoses; metadata and later reads unchanged. No internal reference names leak to suggestions/display.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "REF-07",
+      "area": "Scanner and typed references",
+      "owner": "D/F",
+      "title": "Captured reference tables",
+      "steps": "Define $f(x) using noteA.value2, then $g(x) using noteB.value5; evaluate $f(3)+$g(3); edit noteA value.",
+      "expected": "21 initially, then reflects fresh noteA value in new generation. f and g retain distinct defining reference tables.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "REF-08",
+      "area": "Scanner and typed references",
+      "owner": "C/F/G",
+      "title": "Dataview readiness/events",
+      "steps": "Start approved fixture with DV absent; activate approved DV after native rows work; update synthetic inline fields, delete/recreate, then source YAML.",
+      "expected": "Native path never waits forDV. Late readiness and distinct native(file,data,cache)/DV(type,file) events refresh relevant data; stale YAML overlay cannot restore deleted value.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "approved-dataview-fixture"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "ORD-01",
+      "area": "Whole-note evaluation",
+      "owner": "F/G",
+      "title": "Source order and no forward lookup",
+      "steps": "Use ordering scenario; inspect an earlier $late reference before its assignment and repeated $x assignments in later blocks/inline.",
+      "expected": "Earlier forward reference diagnoses; subsequent values follow latest preceding successful dollar assignment, irrespective of visible order.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "ORD-02",
+      "area": "Whole-note evaluation",
+      "owner": "F/G",
+      "title": "Definition deletion and failed replacement",
+      "steps": "Delete a successful global/function definition; separately replace it with a failing definition and recompute note.",
+      "expected": "No prior-generation value or closure survives. Earlier successful current-generation binding remains only if defined earlier in this new source.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "ORD-03",
+      "area": "Whole-note evaluation",
+      "owner": "F/G",
+      "title": "Closure locals and dynamic dollar values",
+      "steps": "Block:$rate=2;local=10;$f(x)=local+x*$rate. Later:$f(2); later block:local=100;$rate=3; later:$f(2).",
+      "expected": "14 then16; captured local remains10, dollar rate reads latest current-generation3.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "ORD-04",
+      "area": "Whole-note evaluation",
+      "owner": "F/G",
+      "title": "Ordinary block/inline locals",
+      "steps": "Assign local=7 in a block and local=9 in ordinary inline assignment; reference local outside each defining calculation.",
+      "expected": "Ordinary assignments do not leak across block/inline boundaries. Dollar-prefixed successful assignments may export forward.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "ORD-05",
+      "area": "Whole-note evaluation",
+      "owner": "F/G",
+      "title": "Successful rows and binding rollback",
+      "steps": "Block:$kept=7; failing row ($lost=9)+missing; later row$skipped=11. In later block read$kept,$lost,$skipped separately.",
+      "expected": "kept7 preserved; failing row publishes no lost; block remainder skipped. Existing earlier binding of same name preserved. Do not assert arbitrary engine/object side-effect rollback.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "ORD-06",
+      "area": "Whole-note evaluation",
+      "owner": "F/G",
+      "title": "Detached earlier results and native mutable closure identity",
+      "steps": "Evaluate collectionA=[1,2], recordA, mutate A[1]=9, readA. Use reviewed closure-identity regression under same generation.",
+      "expected": "Earlier display remains[1,2], later[9,2]; within-generation closure semantics preserved. New generation recreates values. Opaque captured mutation limitation documented.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "ORD-07",
+      "area": "Whole-note evaluation",
+      "owner": "F/G",
+      "title": "Inline previous chain and block boundaries",
+      "steps": "Inline2; separated later inline@prev+3; inline error; later@prev. Separately run block @prev/@sum around comments/blank rows and formatting directives.",
+      "expected": "Full-note inline previous chain yields5 then clears on error. Blocks retain existing comment/blank boundaries. Formatting directives do not evaluate or change scope.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "ORD-08",
+      "area": "Whole-note evaluation",
+      "owner": "F/G",
+      "title": "Offscreen/selected predecessor",
+      "steps": "Ordering scenario with160 ordinary paragraphs between definition and use; select preceding definition, scroll it out, then select whole earlier block.",
+      "expected": "Dependent result stays correct; selection only toggles source/widget visibility. Full-source ordering does not depend on viewport.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "ORD-09",
+      "area": "Whole-note evaluation",
+      "owner": "F/G",
+      "title": "Projection performs zero math",
+      "steps": "Capture actual evaluator counter and snapshot identity. Scroll, select, alter layout/number format/currency display only; then perform one source edit. Separately observe the fresh mathematical generation after an actual Numerals output transaction; do not mistake write-budget exhaustion for mathematical cache reuse.",
+      "expected": "Zero evaluations for selection/viewport/presentation; source edit recomputes affected note. Formatting retains raw precision and owning runtime. Every changed full source, including Numerals output insertion and Undo/Redo, evaluates afresh; no stored-output acknowledgement or generation exception is allowed.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Reliable actual-evaluator counter + generation log from root-reviewed observation seam; stable visible output alone is insufficient.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "ORD-10",
+      "area": "Whole-note evaluation",
+      "owner": "F/G",
+      "title": "Authoritative buffer metadata seed",
+      "steps": "Start source frontmatter numerals:all,seed:2 and $rate:2. Read both, assign a later$rate=3, then edit unsaved YAML seed2→4 and remove$rate while cache/DV retains older YAML.",
+      "expected": "Current captured frontmatter initializes scope once; latest preceding successful dollar assignment wins. Removed/changed YAML cannot be resurrected by stale metadata projection.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "HOST-01",
+      "area": "Host surfaces and lifecycle",
+      "owner": "C/G",
+      "title": "Identical occurrences and callbacks",
+      "steps": "Render repeated identical sibling math blocks and inline occurrences; force ordinary host rerender/revisit.",
+      "expected": "Every real occurrence renders once; duplicate callback reuses/replaces only same element; no parent/text dedup suppresses a sibling.",
+      "fixtures": [
+        "083"
+      ],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "HOST-02",
+      "area": "Host surfaces and lifecycle",
+      "owner": "C/G",
+      "title": "Reading/Live Preview/Source",
+      "steps": "Open directly in Source, edit dependency/settings there, transition via normal mode control toLP/Reading; repeat without document edit.",
+      "expected": "Subscriptions active inSource; noSource widgets; correct fresh widgets on effect-only mode transition.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Source",
+        "Live Preview",
+        "Reading"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "HOST-03",
+      "area": "Host surfaces and lifecycle",
+      "owner": "C/F/G",
+      "title": "Combined doc/viewport edit",
+      "steps": "At viewport edge insert/delete rows while scrolling; quickly replace a source block and change selection.",
+      "expected": "Correct occurrences and spans after combined changes; no old widget or missed new occurrence.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "HOST-04",
+      "area": "Host surfaces and lifecycle",
+      "owner": "C/F/G",
+      "title": "Embeds/heading/block sections",
+      "steps": "Embed target twice and heading section once; target has earlier dollar definition outside embedded section. Same-named dollar in host note.",
+      "expected": "Each embed evaluates whole target and projects correct section; target globals do not enter host. Both identical embeds remain.",
+      "fixtures": [
+        "054",
+        "058",
+        "084",
+        "085"
+      ],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "HOST-05",
+      "area": "Host surfaces and lifecycle",
+      "owner": "C/F/G",
+      "title": "Callouts/lists/footnotes",
+      "steps": "Expand/collapse quoted/list callout, inspect nested/virtual tab prefixes and footnote before body.",
+      "expected": "Correct source order/spans and independent occurrences; observed extraction matches recorder evidence or visible safe unsupported diagnostic.",
+      "fixtures": [
+        "013",
+        "014",
+        "015",
+        "019",
+        "020",
+        "021",
+        "022",
+        "023",
+        "024",
+        "027",
+        "059",
+        "060",
+        "080",
+        "082"
+      ],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": [],
+      "footnoteSubchecks": {
+        "authorization": "Owner requested targeted planning annotations after static 1.13.7 source inspection; execute only after reviewed G/H/helper and exact artifact handoff.",
+        "evidenceBoundary": "Inherit HOST-05 NOT_RUN. Existing 95-fixture captures omit signed data-line, data-footref, IDs and hrefs. Static predictions are not observed host evidence.",
+        "sourceReport": "FOOTNOTE-DOM-SOURCE-INSPECTION.md",
+        "checks": [
+          {
+            "id": "attribute-timing",
+            "fixtures": [
+              "059",
+              "060"
+            ],
+            "procedure": "With the reviewed final helper, observe actual signed data-line on the owning footnote LI, section bounds, IDs/data-footnote-id, reference data-footref and reciprocal hrefs before and after the native default-order processor. Include repeated references to one named definition.",
+            "expected": "Capture actual processor order and owner/context identity. Validate signed relative-line recovery against exact source bytes. Distinguish unsuffixed and raw-docId-suffixed attributes; repeated references share one body with distinct reference targets. Current predictions (-1 in 059/060) remain unobserved until that run."
+          },
+          {
+            "id": "definition-reference-order",
+            "source": "text[^b] then[^a]\n\n[^a]: `#:1`\n[^b]: `#:2`",
+            "procedure": "Observe named definitions declared A then B but first referenced B then A; compare relocated bodies and labels with original indexed source spans.",
+            "expected": "Each body binds to its own definition despite reference-based displayed numbering. Evaluation follows source order; the body number is not a source-span selector."
+          },
+          {
+            "id": "identical-expressions",
+            "source": "text[^b] then[^a] again[^b]\n\n[^a]: `#:1` and `#:1`\n[^b]: `#:1`",
+            "procedure": "Observe identical code across distinct named definitions and repeated code within one definition, with declaration/reference order differing.",
+            "expected": "Distinct calculation occurrences retain separate exact spans and identities. Repeated references do not duplicate a definition body; first text match cannot select an occurrence. Verify one-to-one eligible occurrence counts."
+          },
+          {
+            "id": "same-line-inline-notes",
+            "source": "text[^named] ^[first `#:1`] ^[second `#:1`]\n\n[^named]: named note",
+            "procedure": "Observe two inline footnotes containing identical code on one physical line, preceded by a named reference that consumes the shared number sequence.",
+            "expected": "Actual signed data-line alone yields the same starting line and is insufficient. Observed data-footref/shared ordinals must corroborate exact distinct inline spans; no guessed binding or write on ambiguity."
+          }
+        ]
+      }
+    },
+    {
+      "id": "HOST-06",
+      "area": "Host surfaces and lifecycle",
+      "owner": "C/G",
+      "title": "Split panes and popout navigation",
+      "steps": "Two buffers of same fixture note in split/popout; click result text, nestedSVG/icon and text-node target. Switch active pane/file before click.",
+      "expected": "Navigation uses owning document/window and correct occurrence; never selects/writes another same-path editor by foreground or path alone.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "root-approved-fixture-popout"
+      ],
+      "surfaces": [
+        "Split editor",
+        "Fixture popout",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "HOST-07",
+      "area": "Host surfaces and lifecycle",
+      "owner": "C/F/G",
+      "title": "Rapid/stale source and dependency races",
+      "steps": "Apply sourceA→B→C and metadata changes while previous async capture pending; include delete/recreate and switch files.",
+      "expected": "Only current ready snapshot renders; invalidation immediately removes insertion eligibility. Late results cannot overwrite current display. Fresh live results and exhausted automatic-write allowance are independent; delayed events do not rearm insertion.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "HOST-08",
+      "area": "Host surfaces and lifecycle",
+      "owner": "C/E/F/G",
+      "title": "Unload/dispose pending work",
+      "steps": "While approved stale-work seam has capture/render/save pending, unload fixture Numerals; close fixture view, then settle work and reenable. Include controller reattachment and originating-pane closure before a synchronized echo; observe retained exhausted insertion allowance.",
+      "expected": "No late activation/dispatch/write; one subscription/controller set after reload; no duplicate handling. Reattachment/closure does not turn a delayed echo into an independent input cycle.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "approved-observer-seam"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "HOST-09",
+      "area": "Host surfaces and lifecycle",
+      "owner": "C/G",
+      "title": "Visible renderer errors",
+      "steps": "Use root-approved fixture-scoped render failure injection or reviewed natural failing-render fixture.",
+      "expected": "Concise visible diagnostic, earlier successful math bindings retained; no catch-and-ignore empty output.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "approved-observer-seam"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "HOST-10",
+      "area": "Host surfaces and lifecycle",
+      "owner": "F/G",
+      "title": "Full extraction parity",
+      "steps": "Use all95 existing cases and root recorder output; reconcile each registered fence and inline occurrence, source span, LF/CRLF mapping and ambiguity.",
+      "expected": "Zero guessed host assertions. Matched supported syntax renders parity; unsupported/ambiguous identity cannot authorize insertion.",
+      "fixtures": [
+        "001",
+        "002",
+        "003",
+        "004",
+        "005",
+        "006",
+        "007",
+        "008",
+        "009",
+        "010",
+        "011",
+        "012",
+        "013",
+        "014",
+        "015",
+        "016",
+        "017",
+        "018",
+        "019",
+        "020",
+        "021",
+        "022",
+        "023",
+        "024",
+        "025",
+        "026",
+        "027",
+        "028",
+        "029",
+        "030",
+        "031",
+        "032",
+        "033",
+        "034",
+        "035",
+        "036",
+        "037",
+        "038",
+        "039",
+        "040",
+        "041",
+        "042",
+        "043",
+        "044",
+        "045",
+        "046",
+        "047",
+        "048",
+        "049",
+        "050",
+        "051",
+        "052",
+        "053",
+        "054",
+        "055",
+        "056",
+        "057",
+        "058",
+        "059",
+        "060",
+        "061",
+        "062",
+        "063",
+        "064",
+        "065",
+        "066",
+        "067",
+        "068",
+        "069",
+        "070",
+        "071",
+        "072",
+        "073",
+        "074",
+        "075",
+        "076",
+        "077",
+        "078",
+        "079",
+        "080",
+        "081",
+        "082",
+        "083",
+        "084",
+        "085",
+        "086",
+        "087",
+        "088",
+        "089",
+        "090",
+        "091",
+        "092",
+        "093",
+        "094",
+        "095"
+      ],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-01",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "Only directive span replaced",
+      "steps": "Begin with a proven native CDP input root or the explicit current-editor Update stored results action. Run insertion scenario with @[profit]=$2400-$850 and comment/string containing similar marker.",
+      "expected": "Only actual directive span becomes@[profit::1550.00 USD]; expression/comment/prefix bytes outside span untouched.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Full before/after bytes + UTF16 spans/expected/replacement + source/settings/dependency/runtime identity; one transaction/no-op evidence.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-02",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "One complete-note insertion batch per independent input cycle",
+      "steps": "Use multiple eligible wrappers, repeated blocks and an offscreen wrapper. Establish one native root with actual CDP typing/paste only when a trusted DOM event is linked to the same-view/state CM document change; otherwise use the explicit current-editor Update stored results action. Observe one complete batch, revisit/remount renderers and deliver delayed own/native/DV/dependency echoes. Repeat with deterministic matching output and ordinary native random(). Seeded deterministic proof belongs separately in G’s real-coordinator Node tests; no host seed setup is required.",
+      "expected": "All eligible on/offscreen wrappers are collected in one guarded Editor.transaction. Reserve the allowance before invocation; each input root is consumed once. Matching deterministic output produces zero transactions. After a random sample is stored, the changed full source is evaluated afresh and may show a different live sample; this never permits a second automatic write. A separate valid command invocation may write its current verified sample once, without extra sampling merely for the command. No metadata/DOM/pane echo replenishes the exhausted allowance. Native host random() is observed without seeding: record actual pre-write, stored and fresh post-write samples and verify numeric type/range without demanding a predetermined sample.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Actual trusted native input/action and linked editor/view/state change; complete-note wrapper/spans; transaction count and receipts; pre-write stored sample versus fresh post-write live result; no-op proof; delayed-echo event trace. Seeded deterministic proof belongs in G’s real-coordinator Node tests. Host samples must satisfy numeric/range/type checks and one bounded write without a predetermined value; missing faithful result/transaction evidence leaves that assertion PARTIAL.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-03",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "CRLF/emoji/fence/prefix preservation",
+      "steps": "Begin with a proven native CDP input root or the explicit current-editor Update stored results action. Insertion scenario uses emoji before spans,CRLF, four ticks,longer closing fence,quote/list prefixes,tabs and inline multi-backticks.",
+      "expected": "Exact source mapping replaces directive spans only; all surrounding bytes and line endings match original.",
+      "fixtures": [
+        "002",
+        "003",
+        "015",
+        "019",
+        "021",
+        "023",
+        "029",
+        "030",
+        "039",
+        "040",
+        "081"
+      ],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Full before/after bytes + UTF16 spans/expected/replacement + source/settings/dependency/runtime identity; one transaction/no-op evidence.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-04",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "Mismatched same-file buffer",
+      "steps": "Create proposal in editorA; apply through different editorB with same path/equal text, then differing text; switch A file before apply.",
+      "expected": "Reject every identity mismatch; both buffers remain unchanged. Path and revision number alone never authorize write. A synchronized same-path pane and caller-supplied input labels cannot create a new independent root.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "approved-observer-seam"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Full before/after bytes + UTF16 spans/expected/replacement + source/settings/dependency/runtime identity; one transaction/no-op evidence.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-05",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "Reused revision and changed span",
+      "steps": "Capture proposal; change source outside token while reusing revision in seam, change expected token text separately.",
+      "expected": "Full source and exact span checks each reject; zero bytes written. Neither a reused revision nor an untagged programmatic edit renews automatic insertion.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "approved-observer-seam"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Full before/after bytes + UTF16 spans/expected/replacement + source/settings/dependency/runtime identity; one transaction/no-op evidence.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-06",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "Stale metadata/settings/runtime/presentation",
+      "steps": "Capture a proposal; change native dependency, evaluation setting, currency mapping, format-only setting and live runtime-safety epoch in separate attempts. Then allow real metadata/DV refreshes after an exhausted insertion cycle; invoke Update stored results through the actual current-editor command UI.",
+      "expected": "Every stale proposal fails all unchanged source/editor/epoch/current-ready-snapshot guards. Metadata/dependency-only changes update live mathematics but may leave stored output unchanged until a new proven independent edit or explicit command. Command availability checking has no evaluation/rearm/write side effects; execution grants only one guarded current-editor batch and no delayed permit. Pending/stale/mismatched command targets cannot write.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "approved-observer-seam"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Full before/after bytes + UTF16 spans/expected/replacement + source/settings/dependency/runtime identity; one transaction/no-op evidence.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-07",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "Ambiguous occurrence and absent current state",
+      "steps": "Use ambiguous/null host section or no authoritative editor; invalidate before async recapture; unload view.",
+      "expected": "Read-only rendering may continue where safe; insertion disabled. No source-position guess or cachedRead-to-write.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "approved-observer-seam"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Full before/after bytes + UTF16 spans/expected/replacement + source/settings/dependency/runtime identity; one transaction/no-op evidence.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-08",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "Independent native insertion with unverifiedDV",
+      "steps": "Establish one proven native input root or explicit current-editor command. ApprovedDV projection cannot prove buffer freshness. Same note has native-only @[native]=2+3 and separateDV-dependent insertion row.",
+      "expected": "Native row can write5;DV-dependent row cannot write and gives guidance. Do not disable whole note merely becauseDV exists. Later real Dataview readiness/echoes may refresh live results but cannot renew that batch.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "approved-dataview-fixture"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Full before/after bytes + UTF16 spans/expected/replacement + source/settings/dependency/runtime identity; one transaction/no-op evidence.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-09",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "Canonical collection currency insertion",
+      "steps": "Begin with a proven native CDP input root or the explicit current-editor Update stored results action. Insert native Unit aliases in array/matrix/ResultSet/plain object, valued and valueless Unit, BigNumber currency; include ordinary physical units.",
+      "expected": "Codes replace currency aliases recursively; original precision/value flags/container syntax and unrelated unit formatting preserved. No display-symbol serialization.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Full before/after bytes + UTF16 spans/expected/replacement + source/settings/dependency/runtime identity; one transaction/no-op evidence.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-10",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "No write renewal from echoes, history or ambiguous input",
+      "steps": "After one valid automatic insertion, Undo and Redo using actual CDP keyboard actions; observe fresh mathematics without automatic reapplication. Exercise delayed native/DV/dependency echoes, controller reattachment, same-file synchronized panes, closing the originating pane before its sync echo, and a synthetic cross-note A→B→A feedback path. Separately send untagged programmatic document edits and caller-supplied userEvent annotations as negative controls. Attempt ambiguous IME/paste/completion/async changes; use the explicit current-editor command for a new batch where intent is unproved.",
+      "expected": "Undo/Redo refresh results but never renew automatic writes: Undo of Numerals output is not immediately undone by reinsertion. Own/metadata/DV/dependency/pane/DOM echoes cannot replenish; reattachment or pane closure does not forget exhaustion. Cross-note feedback stays bounded without another independent root. Untagged or spoof-labeled changes and ambiguous input refresh read-only. A real explicit command grants one batch for its proved current editor. No background vault.modify, delayed setLine or unsolicited note writes; original source/epoch/ready-snapshot guards remain mandatory.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "approved-observer-seam"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Native input/history/command event and actual CM transaction linkage; causal write receipts; every involved editor/file identity; stored/live/source timeline across delayed echoes, pane closure and A→B→A; candidate transaction counts and negative vault-write evidence. Unobservable deterministic schedules stay PARTIAL/UNAVAILABLE with separately labeled adapter tests.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-11",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "Reevaluate actual inserted nested matrices",
+      "steps": "Start the first eligible batch with actual qualifying CDP input or the explicit command. Use insertion-roundtrip scenario: allow the reviewed candidate to insert numeric nested matrices and nested string matrices. Save the actual emitted canonical token and full buffer bytes; do not substitute a manually authored token. Append a plain-prose sentinel through actual CDP typing and record the trusted event/state linkage outside the math block to force a new source generation, then revisit Reading/Live Preview and repeat evaluation.",
+      "expected": "The complete inserted nested matrix token is recognized, including every inner closing bracket and quoted element. Reevaluation preserves dimensions, element values/types and result; no premature token close, leftover bracket, parse error or repeated write growth. First insertion changes only verified spans; after the deliberate sentinel edit, repeated reevaluation leaves that entire buffer byte-identical. The independent sentinel edit may begin a new cycle, but matching deterministic canonical output remains a zero-transaction no-op. Ordinary reevaluation, Undo/Redo and echoes never replenish an exhausted cycle.",
+      "fixtures": [
+        "039",
+        "040",
+        "081"
+      ],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/first-insertion/intentional-edit/reevaluation buffers and hashes; exact emitted token; UTF16 spans and byte reconstruction; matrix shape/type/value observations and no-op transaction evidence.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "WRITE-12",
+      "area": "Transactional source insertion",
+      "owner": "G",
+      "title": "Reevaluate actual inserted strings with brackets and escapes",
+      "steps": "Start the first eligible batch with actual qualifying CDP input or the explicit command. Use insertion-roundtrip scenario strings containing ], escaped double quotes adjacent to ], and literal backslashes. Let the candidate emit each canonical insertion value, capture it verbatim, then force a new source generation with a plain-prose sentinel edit through actual CDP typing and recorded native event/state linkage and reevaluate the same inserted source in both surfaces.",
+      "expected": "The outer insertion terminator is found after the complete quoted string, respecting escapes; exact original string value is recovered. No quote/backslash loss, premature ] close, parse error or token growth. Only insertion spans change on first write; all prefixes, CRLF, emoji, expression bytes and comments outside spans remain exact. No further source write is needed after reevaluation. The independent sentinel edit may begin a new cycle, but matching deterministic canonical output remains a zero-transaction no-op. Ordinary reevaluation, Undo/Redo and echoes never replenish an exhausted cycle.",
+      "fixtures": [
+        "039",
+        "040",
+        "081"
+      ],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Exact generated string token and decoded expected value; all four buffer stages with hashes; external-byte proof, successful reevaluation and no-op transaction observation.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "SET-01",
+      "area": "Settings/currency/MathJax",
+      "owner": "E/G",
+      "title": "All five currency/TeX controls and search",
+      "steps": "Open native settings and global settings search for Currency precision, Currency display, Custom currency decimal places, TeX result trigger and TeX equation trigger. Change each; reopen.",
+      "expected": "All five present/searchable and persisted. Also preserve every existing setting; declarative UI works without legacy display fallback.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "SET-02",
+      "area": "Settings/currency/MathJax",
+      "owner": "E/G",
+      "title": "Mapping Save and Cancel",
+      "steps": "Open $/¥/custom mapping modal; type partial fields, cancel, reopen; then submit complete valid mapping.",
+      "expected": "Partial draft never persists. Cancel preserves active mapping/settings/results. One valid Save persists and activates atomically.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "SET-03",
+      "area": "Settings/currency/MathJax",
+      "owner": "E/G",
+      "title": "Invalid Save and repair",
+      "steps": "Try custom ₿→m,₿→sin,₿→pi,₿→mod and malformed symbol/code; load synthetic semantic-conflict seed then remove/repair.",
+      "expected": "Save rejects collisions/reserved names visibly; cold invalid saved config retained with diagnostic and evaluation blocked. Settings accessible; valid Save/Remove repairs.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "SET-04",
+      "area": "Settings/currency/MathJax",
+      "owner": "E/G",
+      "title": "Persistence failure and serialized saves",
+      "steps": "Using approved fixture-only persistence seam, reject one Save; then queue two distinct valid edits and unload while another pending.",
+      "expected": "FailedSave preserves settings/runtime/generations; next successful edit works. Queued edits apply to latest successful state; no activation after unload.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "approved-observer-seam"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "SET-05",
+      "area": "Settings/currency/MathJax",
+      "owner": "E/G",
+      "title": "Remap and Remove rebuild",
+      "steps": "Save ₿→BTC then change to ₿→XBT, remove custom, alter$USD→CAD and¥JPY→CNY; disable/enable fixture plugin.",
+      "expected": "New engine/scopes/results/proposals replace old generation; removed unconfigured aliases disappear now and after reload. Existing currency dimensions are not exchange rates.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "SET-06",
+      "area": "Settings/currency/MathJax",
+      "owner": "E/G",
+      "title": "Optional lowercase collision",
+      "steps": "Map custom currency toCUP with available symbol; evaluate configuredCUP and physicalcup.",
+      "expected": "CanonicalCUP works; physicalcup remains volume; omitted lowercase alias has guidance.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "SET-07",
+      "area": "Settings/currency/MathJax",
+      "owner": "E/G",
+      "title": "Precision and code/symbol presentation",
+      "steps": "Try USD/JPY, derived pure currency, custom digits0/2/20 and invalid-1/21/1.5, compound currency/hour, @decimalPlaces override and number-format policies.",
+      "expected": "Currency-standard default; pure symbols default when preference missing. ValidCode/Symbol retained. Compound rates follow existing code/number policy; formatting never rounds scope.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "SET-08",
+      "area": "Settings/currency/MathJax",
+      "owner": "E/G",
+      "title": "Input and result TeX with MathJax4",
+      "steps": "Use math-tex and inline#$:/#$=: with currency prefix/suffix/quoted units, negative/complex refs, subscript/Greek and supplementary symbol; remap while another occurrence retains old presentation.",
+      "expected": "Both input/result typeset in actually loadedMathJax4; exact reference labels; no global currency macros; captured engine handles retained input and Unit rendering.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "SET-09",
+      "area": "Settings/currency/MathJax",
+      "owner": "E/G",
+      "title": "Triggers and disabled modes",
+      "steps": "Configure overlapping# and#=; emptyTeX trigger; attempt duplicate nonempty trigger; toggle inline enable off/on with existing rendered occurrences.",
+      "expected": "Longest matching prefix preserved; empty disables mode; duplicate rejected; disabled source restored predictably and reenable fresh without duplicate controllers.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "SET-10",
+      "area": "Settings/currency/MathJax",
+      "owner": "E/G",
+      "title": "createUnit breadth and collisions",
+      "steps": "Evaluate representative matrix/complex/unit/function mathjs operations; declare unique syntheticUnit, repeat declaration, then remap currency and replay source.",
+      "expected": "Fullmathjs breadth retained; collisions visible/actionable, no override/catch-ignore or hidden@createUnit special behavior. Runtime replacement requires source replay;#175 remains open.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UX-01",
+      "area": "Suggestions/docs/error UX",
+      "owner": "H/G",
+      "title": "Suggestions honor settings immediately",
+      "steps": "Toggle block and inline suggestions independently; type current block locals, prior dollar globals and later dollar name.",
+      "expected": "Disabled mode gives no completion; enabled list uses same-generation source-position scope; no forward or deleted globals.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UX-02",
+      "area": "Suggestions/docs/error UX",
+      "owner": "H/G",
+      "title": "Incomplete/multiple-tick inline suggestions",
+      "steps": "Type unfinished single/double/triple-tick trigger; use two same-path buffers with different locals; switch quickly during throttle.",
+      "expected": "Suggestions locate actual source span and current buffer; no stale cross-buffer result; closing ticks respected.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UX-03",
+      "area": "Suggestions/docs/error UX",
+      "owner": "H/G",
+      "title": "Errors retain useful source",
+      "steps": "Use unknown symbol, missing metadata, currency conflict, invalid numeric grouping and createUnit collision across surfaces. Observe a nondeterministic or metadata-refreshed result whose canonical value differs from its stored sample, then a matching deterministic value.",
+      "expected": "Concise visible diagnostic and original input/reference label; no internal symbols or private technical state leaked; successful previous rows preserved. Show restrained occurrence-local guidance only for a current canonical/stored difference: “Stored result differs from the current result. Use Update stored results to write it once.” No matching-output warning or global notice loop.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UX-04",
+      "area": "Suggestions/docs/error UX",
+      "owner": "H/G",
+      "title": "Recovery documentation agrees",
+      "steps": "Read final README/settings docs/backlog against shipped artifact and test report.",
+      "expected": "Symbol default, source-order/closure semantics, delimiter rules, minimum1.13.0 and BRAT-only status accurate. #82/#175/later features not falsely marked delivered. Explain one automatic batch per independent full-editor input cycle, fresh post-write mathematics, stored/live random-sample differences, metadata-only refresh leaving stored output, history not rearming, and the current-editor Update stored results action.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Before/after synthetic source hashes; result/diagnostic observation in Reading and Live Preview; exact candidate and settings ID.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "DV-01",
+      "area": "Actual Dataview/BRAT integration",
+      "owner": "C/F/G/I",
+      "title": "Native before realDV",
+      "steps": "With noDV enabled, complete native frontmatter/reference/insertion controls; then leave Numerals views open while selected officialDV is enabled through authorized fixture UI.",
+      "expected": "Native never pending forDV; actual late readiness activatesDV-dependent results without restarting Numerals/app.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "verified-official-dataview-bytes"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Actual installedDV hashes/manifest and release versions; real index observation plus source edits/events; Numerals result and source-byte evidence. Fake events do not satisfy this case.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "DV-02",
+      "area": "Actual Dataview/BRAT integration",
+      "owner": "C/F/G/I",
+      "title": "Real inline-field index refresh",
+      "steps": "Edit opted-in acceptance/dv-insertion field8→9,delete,restore; observe actualDV table/index and Numerals consumers.",
+      "expected": "Both real index and Numerals reflect changes; missing field diagnostic repairs. No forged event pass. Live values can change while stored output waits for a new independent input or explicit Update stored results action.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "verified-official-dataview-bytes"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Actual installedDV hashes/manifest and release versions; real index observation plus source edits/events; Numerals result and source-byte evidence. Fake events do not satisfy this case.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "DV-03",
+      "area": "Actual Dataview/BRAT integration",
+      "owner": "C/F/G/I",
+      "title": "RealDV versus unsaved YAML",
+      "steps": "Edit/remove own YAML while realDV index still has preceding content; read source-derived metadata then settled real index.",
+      "expected": "Captured buffer YAML authoritative; staleDV cannot resurrect removed values. Record exact source/index observations and cannot infer provenance frommtime.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "verified-official-dataview-bytes"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Actual installedDV hashes/manifest and release versions; real index observation plus source edits/events; Numerals result and source-byte evidence. Fake events do not satisfy this case.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "DV-04",
+      "area": "Actual Dataview/BRAT integration",
+      "owner": "C/F/G/I",
+      "title": "Real missing-note and source transitions",
+      "steps": "Create/delete/rename synthetic referenced note,add missing field while realDV running; repeat with consumer initiallySource, thenLP/Reading.",
+      "expected": "Real update events repair all unresolved dependencies; correct typed native/DV event adapters and Source subscriptions.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "verified-official-dataview-bytes"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Actual installedDV hashes/manifest and release versions; real index observation plus source edits/events; Numerals result and source-byte evidence. Fake events do not satisfy this case.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "DV-05",
+      "area": "Actual Dataview/BRAT integration",
+      "owner": "C/F/G/I",
+      "title": "Mixed native/DV insertion and unload",
+      "steps": "Use independentnative and transitiveDV-dependent rows when real projection freshness is unverified; then disable/reenable fixtureDV and unload/reload Numerals.",
+      "expected": "Native insertion available; direct/transitiveDV-dependent writes blocked; cleanup/late readiness correct. No personal vault effects. Dataview disable/re-enable, readiness and delayed index echoes cannot replenish an exhausted automatic batch.",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "verified-official-dataview-bytes"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Actual installedDV hashes/manifest and release versions; real index observation plus source edits/events; Numerals result and source-byte evidence. Fake events do not satisfy this case.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "BRAT-01",
+      "area": "Actual Dataview/BRAT integration",
+      "owner": "I/root",
+      "title": "Actual fresh BRAT install",
+      "steps": "After owner publishes, use fixtureBRAT to add repository and exact candidate version from an empty Numerals fixture install state explicitly authorized byroot.",
+      "expected": "BRAT downloads/installs candidate; main/CSS exact source hashes; installed manifest separately verified; candidate loads and native/TeX smoke passes.",
+      "fixtures": [],
+      "prerequisites": [
+        "owner-published-prerelease",
+        "explicit-host-handoff",
+        "verified-official-brat-bytes"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Actual BRAT UI/download/install-or-update evidence; exact released and installed hashes; separate manifest serialization proof; loaded candidate and smoke results. Manual copies alone do not satisfy this case.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "BRAT-02",
+      "area": "Actual Dataview/BRAT integration",
+      "owner": "I/root",
+      "title": "Real stable-to-prerelease BRAT update",
+      "steps": "Begin verified stable1.10.2 with synthetic saved data; use actual BRAT add/update/reinstall path to obtain owner candidate and check relevant upgrade cases.",
+      "expected": "Candidate actually acquired viaBRAT; prior settings retained/migrated; no source note changes. Later prerelease-to-prerelease path conditional on new owner candidate, never force publication.",
+      "fixtures": [],
+      "prerequisites": [
+        "owner-published-prerelease",
+        "explicit-host-handoff",
+        "verified-official-brat-bytes"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Actual BRAT UI/download/install-or-update evidence; exact released and installed hashes; separate manifest serialization proof; loaded candidate and smoke results. Manual copies alone do not satisfy this case.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "BRAT-03",
+      "area": "Actual Dataview/BRAT integration",
+      "owner": "I/root",
+      "title": "Manifest transform and repeat check",
+      "steps": "Check installed bytes after actualBRAT operation, then recheck same tracked candidate with no newer version; record tracking and host lifecycle.",
+      "expected": "Release manifest hash exact; installed fields identical and bytes either exact or precisely verifiedBRAT JSON serialization. Main/CSS exact. Unexpected fields fail; repeated check no duplicate state/source write.",
+      "fixtures": [],
+      "prerequisites": [
+        "owner-published-prerelease",
+        "explicit-host-handoff",
+        "verified-official-brat-bytes"
+      ],
+      "surfaces": [
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Actual BRAT UI/download/install-or-update evidence; exact released and installed hashes; separate manifest serialization proof; loaded candidate and smoke results. Manual copies alone do not satisfy this case.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-01",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Fresh install",
+      "steps": "No data.json. Candidate first load establishes defaults without inheriting another fixture run.",
+      "expected": "{\"currencyDisplayMode\":\"symbol\",\"currencyPrecisionMode\":\"currency-standard\",\"customCurrencyDecimalPlaces\":2,\"inlineTexResultTrigger\":\"#$:\",\"inlineTexEquationTrigger\":\"#$=:\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-02",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Stable1.10.2 saved settings",
+      "steps": "First run verified published1.10.2 with synthetic old settings; replace only candidate artifacts while fixture plugin disabled, retain data.json. Old valid preferences preserved, missing five controls gain defaults.",
+      "expected": "{\"resultSeparator\":\" → \",\"layoutStyle\":\"AnswerBelow\",\"alternateRowColor\":false,\"defaultRenderStyle\":\"Plain\",\"hideLinesWithoutMarkupWhenEmitting\":true,\"hideEmitterMarkupInInput\":true,\"dollarSymbolCurrency\":{\"symbol\":\"$\",\"currency\":\"CAD\"},\"yenSymbolCurrency\":{\"symbol\":\"¥\",\"currency\":\"CNY\"},\"provideSuggestions\":false,\"suggestionsIncludeMathjsSymbols\":true,\"numberFormat\":\"Fixed\",\"forceProcessAllFrontmatter\":false,\"customCurrencySymbol\":null,\"enableGreekAutoComplete\":true,\"enableInlineNumerals\":true,\"inlineResultTrigger\":\"calc:\",\"inlineEquationTrigger\":\"eq:\",\"inlineEquationSeparator\":\" = \",\"provideInlineSuggestions\":false,\"enableCrossNoteReferences\":true,\"currencyDisplayMode\":\"symbol\",\"currencyPrecisionMode\":\"currency-standard\",\"customCurrencyDecimalPlaces\":2,\"inlineTexResultTrigger\":\"#$:\",\"inlineTexEquationTrigger\":\"#$=:\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "verified-stable-1.10.2-installed-first"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-03",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Saved Code preserved",
+      "steps": "Synthetic prior-preference/prerelease case; this key did not exist in stable1.10.2 source UI.",
+      "expected": "{\"currencyDisplayMode\":\"code\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-04",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Saved Symbol preserved",
+      "steps": "Synthetic prior-preference/prerelease case, not claimed as stable UI-generated.",
+      "expected": "{\"currencyDisplayMode\":\"symbol\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-05",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Invalid display/precision repaired",
+      "steps": "Candidate normalized values visible; verify cold load does not rewrite merely for missing fields.",
+      "expected": "{\"currencyDisplayMode\":\"symbol\",\"currencyPrecisionMode\":\"currency-standard\",\"customCurrencyDecimalPlaces\":2}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-06",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Legacy numeric layout",
+      "steps": "Also test layoutStyle0/1/2 and oldest renderStyle1/2/3 separately; modern string layout wins.",
+      "expected": "{\"layoutStyle\":\"AnswerInline\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-07",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Legacy nested mapping and Unicode",
+      "steps": "Fixed symbol restored; validcode retained; symbol metadata reconstructed, not trusted.",
+      "expected": "{\"dollarSymbolCurrency\":{\"symbol\":\"$\",\"currency\":\"CAD\"},\"customCurrencySymbol\":{\"symbol\":\"₿\",\"currency\":\"BTC\",\"unicode\":\"x20BF\",\"name\":\"custom\"}}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-08",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Semantic currency conflict remains repairable",
+      "steps": "Settings remain accessible; modal Cancel stays blocked, valid Save or explicit Remove repairs; no silent substitute mapping.",
+      "expected": "{\"configurationError\":true,\"evaluationBlocked\":true,\"preservedCurrencyCode\":\"m\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-09",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Duplicate saved trigger determinism",
+      "steps": "Longest prefix preserved; first saved duplicate wins in result/equation/TeX order; later duplicates disabled.",
+      "expected": "{\"inlineResultTrigger\":\"#\",\"inlineEquationTrigger\":\"#=\",\"inlineTexResultTrigger\":\"\",\"inlineTexEquationTrigger\":\"\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-10",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Saved trigger wins missing default",
+      "steps": "Separate minimal seed{inlineEquationTrigger:\"#:\"} must preserve saved equation and disable missing result default.",
+      "expected": "{\"inlineEquationTrigger\":\"#:\",\"inlineResultTrigger\":\"calc:\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "verified-stable-1.10.2-installed-first"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-11",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Malformed settings root",
+      "steps": "Repeat null,false,string andnumber roots; complete detached defaults, settings remain usable.",
+      "expected": "{\"currencyDisplayMode\":\"symbol\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-12",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Valid precision range and compatibility preferences",
+      "steps": "Valid saved values retained after reload. Custom precision control disabled under follow-number-format but value retained.",
+      "expected": "{\"currencyDisplayMode\":\"code\",\"currencyPrecisionMode\":\"follow-number-format\",\"customCurrencyDecimalPlaces\":20,\"inlineTexResultTrigger\":\"T:\",\"inlineTexEquationTrigger\":\"TE:\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    },
+    {
+      "id": "UP-13",
+      "area": "Upgrade settings",
+      "owner": "E/G",
+      "title": "Stable custom currency retained",
+      "steps": "Verified stable installed artifact reads syntheticold mapping; candidate rebuild preserves meaning and Symbol default.",
+      "expected": "{\"customCurrencySymbol\":{\"symbol\":\"₿\",\"currency\":\"BTC\",\"unicode\":\"x20BF\",\"name\":\"custom\"},\"currencyDisplayMode\":\"symbol\"}",
+      "fixtures": [],
+      "prerequisites": [
+        "final-reviewed-artifact",
+        "explicit-host-handoff",
+        "verified-stable-1.10.2-installed-first"
+      ],
+      "surfaces": [
+        "Settings",
+        "Settings search",
+        "Reading",
+        "Live Preview"
+      ],
+      "status": "NOT_RUN",
+      "evidenceRequired": "Settings seed ID; verified before/after plugin hashes; fixture-only persisted data hash; native settings screenshot; reload result.",
+      "observed": null,
+      "evidence": []
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "ordering",
+      "notes": [
+        {
+          "path": "acceptance/ordering.md",
+          "text": "```math\n$late+1\n```\n\n```math\n$x=2\n$rate=2\nlocal=10\n$f(x)=local+x*$rate\n```\n\n`#: $f(2)`\n\nSynthetic spacer 1\n\nSynthetic spacer 2\n\nSynthetic spacer 3\n\nSynthetic spacer 4\n\nSynthetic spacer 5\n\nSynthetic spacer 6\n\nSynthetic spacer 7\n\nSynthetic spacer 8\n\nSynthetic spacer 9\n\nSynthetic spacer 10\n\nSynthetic spacer 11\n\nSynthetic spacer 12\n\nSynthetic spacer 13\n\nSynthetic spacer 14\n\nSynthetic spacer 15\n\nSynthetic spacer 16\n\nSynthetic spacer 17\n\nSynthetic spacer 18\n\nSynthetic spacer 19\n\nSynthetic spacer 20\n\nSynthetic spacer 21\n\nSynthetic spacer 22\n\nSynthetic spacer 23\n\nSynthetic spacer 24\n\nSynthetic spacer 25\n\nSynthetic spacer 26\n\nSynthetic spacer 27\n\nSynthetic spacer 28\n\nSynthetic spacer 29\n\nSynthetic spacer 30\n\nSynthetic spacer 31\n\nSynthetic spacer 32\n\nSynthetic spacer 33\n\nSynthetic spacer 34\n\nSynthetic spacer 35\n\nSynthetic spacer 36\n\nSynthetic spacer 37\n\nSynthetic spacer 38\n\nSynthetic spacer 39\n\nSynthetic spacer 40\n\nSynthetic spacer 41\n\nSynthetic spacer 42\n\nSynthetic spacer 43\n\nSynthetic spacer 44\n\nSynthetic spacer 45\n\nSynthetic spacer 46\n\nSynthetic spacer 47\n\nSynthetic spacer 48\n\nSynthetic spacer 49\n\nSynthetic spacer 50\n\nSynthetic spacer 51\n\nSynthetic spacer 52\n\nSynthetic spacer 53\n\nSynthetic spacer 54\n\nSynthetic spacer 55\n\nSynthetic spacer 56\n\nSynthetic spacer 57\n\nSynthetic spacer 58\n\nSynthetic spacer 59\n\nSynthetic spacer 60\n\nSynthetic spacer 61\n\nSynthetic spacer 62\n\nSynthetic spacer 63\n\nSynthetic spacer 64\n\nSynthetic spacer 65\n\nSynthetic spacer 66\n\nSynthetic spacer 67\n\nSynthetic spacer 68\n\nSynthetic spacer 69\n\nSynthetic spacer 70\n\nSynthetic spacer 71\n\nSynthetic spacer 72\n\nSynthetic spacer 73\n\nSynthetic spacer 74\n\nSynthetic spacer 75\n\nSynthetic spacer 76\n\nSynthetic spacer 77\n\nSynthetic spacer 78\n\nSynthetic spacer 79\n\nSynthetic spacer 80\n\nSynthetic spacer 81\n\nSynthetic spacer 82\n\nSynthetic spacer 83\n\nSynthetic spacer 84\n\nSynthetic spacer 85\n\nSynthetic spacer 86\n\nSynthetic spacer 87\n\nSynthetic spacer 88\n\nSynthetic spacer 89\n\nSynthetic spacer 90\n\nSynthetic spacer 91\n\nSynthetic spacer 92\n\nSynthetic spacer 93\n\nSynthetic spacer 94\n\nSynthetic spacer 95\n\nSynthetic spacer 96\n\nSynthetic spacer 97\n\nSynthetic spacer 98\n\nSynthetic spacer 99\n\nSynthetic spacer 100\n\nSynthetic spacer 101\n\nSynthetic spacer 102\n\nSynthetic spacer 103\n\nSynthetic spacer 104\n\nSynthetic spacer 105\n\nSynthetic spacer 106\n\nSynthetic spacer 107\n\nSynthetic spacer 108\n\nSynthetic spacer 109\n\nSynthetic spacer 110\n\nSynthetic spacer 111\n\nSynthetic spacer 112\n\nSynthetic spacer 113\n\nSynthetic spacer 114\n\nSynthetic spacer 115\n\nSynthetic spacer 116\n\nSynthetic spacer 117\n\nSynthetic spacer 118\n\nSynthetic spacer 119\n\nSynthetic spacer 120\n\nSynthetic spacer 121\n\nSynthetic spacer 122\n\nSynthetic spacer 123\n\nSynthetic spacer 124\n\nSynthetic spacer 125\n\nSynthetic spacer 126\n\nSynthetic spacer 127\n\nSynthetic spacer 128\n\nSynthetic spacer 129\n\nSynthetic spacer 130\n\nSynthetic spacer 131\n\nSynthetic spacer 132\n\nSynthetic spacer 133\n\nSynthetic spacer 134\n\nSynthetic spacer 135\n\nSynthetic spacer 136\n\nSynthetic spacer 137\n\nSynthetic spacer 138\n\nSynthetic spacer 139\n\nSynthetic spacer 140\n\nSynthetic spacer 141\n\nSynthetic spacer 142\n\nSynthetic spacer 143\n\nSynthetic spacer 144\n\nSynthetic spacer 145\n\nSynthetic spacer 146\n\nSynthetic spacer 147\n\nSynthetic spacer 148\n\nSynthetic spacer 149\n\nSynthetic spacer 150\n\nSynthetic spacer 151\n\nSynthetic spacer 152\n\nSynthetic spacer 153\n\nSynthetic spacer 154\n\nSynthetic spacer 155\n\nSynthetic spacer 156\n\nSynthetic spacer 157\n\nSynthetic spacer 158\n\nSynthetic spacer 159\n\nSynthetic spacer 160\n\n```math\nlocal=100\n$rate=3\n$x=5\n```\n\n`#: $f(2)`\n\n`#: $x+1`\n\n```math\n$late=9\n```",
+          "sha256": "fc14094a634e7bd893bfae6b4b6ff99422a3ba527720343b1137b37e89748e45"
+        }
+      ],
+      "expected": "Forward late error;f14 before and16 afterrate change;lastx6; no dependence on viewport."
+    },
+    {
+      "id": "references",
+      "notes": [
+        {
+          "path": "acceptance/reference-values.md",
+          "text": "---\nnumerals: all\nnegative: -2\ncomplex: \"2 + 3i\"\ndistance: \"2 cm\"\nprecise: 'bignumber(\"1.234567890123456789\")'\nratio: \"fraction(1,3)\"\nflag: true\nwords: '\"1 + 2\"'\nvector: \"[1,234]\"\nlist: [10, \"max(1,234)\"]\n---\n",
+          "sha256": "2b136938a1adb5cb34987c01d461ebfd6a4689989a5b16f45d3dcd8243977267"
+        },
+        {
+          "path": "acceptance/references.md",
+          "text": "```math\n[[acceptance/reference-values]].negative ^ 2\n[[acceptance/reference-values]].complex ^ 2\n[[acceptance/reference-values]].distance to mm\n[[acceptance/reference-values]].vector * 2\n```\n\n`#=: [[acceptance/reference-values]].negative ^ 2`\n\n`#$=: [[acceptance/reference-values]].complex ^ 2`",
+          "sha256": "3bfed982a4bca47065e39eab686526b88a2ba3253f83bc92e77a462e794b062e"
+        }
+      ],
+      "expected": "4,-5+12i,20mm,[2,468]; label preserved. Use mutation steps from matrix."
+    },
+    {
+      "id": "rollback",
+      "notes": [
+        {
+          "path": "acceptance/rollback.md",
+          "text": "```math\n$kept=7\n($lost=9)+missing\n$skipped=11\n```\n\n```math\n$kept\n```\n\n```math\n$lost\n```\n\n```math\n$skipped\n```",
+          "sha256": "f0172ab8b3f25dc3c614bea2530767ba2ebc2d8f5c30be36e48abe90d6c5e862"
+        }
+      ],
+      "expected": "kept7;lost/skipped unavailable; successful row commits only."
+    },
+    {
+      "id": "prev",
+      "notes": [
+        {
+          "path": "acceptance/prev.md",
+          "text": "`#: 2`\n\nspacer\n\n`#: @prev+3`\n\n`#: missing`\n\n`#: @prev`\n\n```math\n1\n2\n@sum\n```\n\n```math\n3\n@decimalPlaces 2\n@prev+1\n```",
+          "sha256": "7a3753cf306e9fa7a38d7efd1434591426ffa5a6995a461860e1a6fe74f56011"
+        }
+      ],
+      "expected": "Inline2→5→error resets chain; formatting directive is evaluation-transparent."
+    },
+    {
+      "id": "insertion",
+      "notes": [
+        {
+          "path": "acceptance/insertion-crlf.md",
+          "text": "😀 before\r\n\r\n> - ````math\r\n>   @[profit] = $2400 - $850 # preserve me\r\n>   \"@[literal] $1,234\"\r\n>   `````\r\n\r\nafter  \r\n",
+          "sha256": "85e406dccdc8d2877dcfb038241028fd0bad442f60fbe4b9dc7c8b1ce64849cf"
+        }
+      ],
+      "expected": "Only@[profit] span becomes@[profit::1550.00 USD]; every external byte including prefixes and CRLF unchanged.",
+      "inputProcedure": "First batch requires actual qualifying CDP input or explicit current-editor Update stored results. Sentinel edits use CDP typing with trusted native event/state linkage, not a programmatic Editor.transaction mislabeled as user input. Matching canonical results are no-ops; own writes/history/echoes never replenish."
+    },
+    {
+      "id": "insertion-roundtrip",
+      "caseIds": [
+        "WRITE-11",
+        "WRITE-12"
+      ],
+      "notes": [
+        {
+          "path": "acceptance/insertion-roundtrip-crlf.md",
+          "text": "😀 before  \r\n\r\n> - ````math\r\n>   @[matrix] = [[1, 2], [3, 4]] # keep matrix comment\r\n>   @[stringMatrix] = [[\"a]b\", \"c\"], [\"d\", \"e]f\"]] # keep nested strings\r\n>   @[bracket] = \"a]b\" # keep bracket comment\r\n>   @[escaped] = \"before ] \\\"quoted]\\\" after\" # keep escaped quotes\r\n>   @[slash] = \"backslash \\\\ and ]\" # keep slash comment\r\n>   `````\r\n\r\nafter  \r\n",
+          "sha256": "95f431e99582fa15b5627b94ce1f4c6563b091868bda38791bfa534ac9e61488"
+        }
+      ],
+      "expected": {
+        "matrix": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "stringMatrix": [
+          [
+            "a]b",
+            "c"
+          ],
+          [
+            "d",
+            "e]f"
+          ]
+        ],
+        "bracket": "a]b",
+        "escaped": "before ] \"quoted]\" after",
+        "slash": "backslash \\ and ]"
+      },
+      "procedure": "Capture actual canonical output from the reviewed installed candidate, not a handcrafted expected serialization. Preserve emitted token text and full byte snapshots; force fresh evaluation by appending a recorded ordinary-prose sentinel, then require value/type parity and a byte-identical no-op result. No candidate or host execution during packet preparation.",
+      "inputProcedure": "First batch requires actual qualifying CDP input or explicit current-editor Update stored results. Sentinel edits use CDP typing with trusted native event/state linkage, not a programmatic Editor.transaction mislabeled as user input. Matching canonical results are no-ops; own writes/history/echoes never replenish."
+    },
+    {
+      "id": "currency",
+      "notes": [
+        {
+          "path": "acceptance/currency.md",
+          "text": "```math\n$12.5\n¥12.5\n$12.5 / 2 hr\nunit(\"1$\")\nunit(1,\"$\")\n```\n\n```math-tex\n$12.5\n```\n\n`#$: $12.5`\n\n`#$=: $12.5/2`",
+          "sha256": "0a5892122f04ba8dd6c63b0adc5a7e0403eb62e3c623fc8234a6c3b8f34f8a31"
+        }
+      ],
+      "expected": "Pure currency modes/precision; compound existing policy; input/resultMathJax; canonical insertion tested separately."
+    },
+    {
+      "id": "dv-insertion",
+      "notes": [
+        {
+          "path": "acceptance/dv-insertion.md",
+          "text": "---\nnumerals: all\n---\n\nSynthetic Dataview field\n\n[dvValue:: 8]\n\n```math\n@[native] = 2+3\n```\n\n```math\n@[dependent] = dvValue+1\n```",
+          "sha256": "55e2ab5ac8d4a3b34b4e8b275c6288611a773613f7bd1b6285cd282be493f4fd"
+        }
+      ],
+      "expected": "After approvedDV capture setup, native insertion5 allowed; unverifiedDV dependent insertion remains blocked. Confirm finalF/G capture contract before staging."
+    },
+    {
+      "id": "insertion-cycle",
+      "caseIds": [
+        "WRITE-02",
+        "WRITE-06",
+        "WRITE-10",
+        "HOST-08",
+        "UX-03"
+      ],
+      "status": "STAGED_DATA_ONLY",
+      "notes": [
+        {
+          "path": "acceptance/insertion-batch.md",
+          "text": "```math\n@[first] = 2+3\n@[second] = 7*8\n```\n\nSynthetic insertion spacer 1\n\nSynthetic insertion spacer 2\n\nSynthetic insertion spacer 3\n\nSynthetic insertion spacer 4\n\nSynthetic insertion spacer 5\n\nSynthetic insertion spacer 6\n\nSynthetic insertion spacer 7\n\nSynthetic insertion spacer 8\n\nSynthetic insertion spacer 9\n\nSynthetic insertion spacer 10\n\nSynthetic insertion spacer 11\n\nSynthetic insertion spacer 12\n\nSynthetic insertion spacer 13\n\nSynthetic insertion spacer 14\n\nSynthetic insertion spacer 15\n\nSynthetic insertion spacer 16\n\nSynthetic insertion spacer 17\n\nSynthetic insertion spacer 18\n\nSynthetic insertion spacer 19\n\nSynthetic insertion spacer 20\n\nSynthetic insertion spacer 21\n\nSynthetic insertion spacer 22\n\nSynthetic insertion spacer 23\n\nSynthetic insertion spacer 24\n\nSynthetic insertion spacer 25\n\nSynthetic insertion spacer 26\n\nSynthetic insertion spacer 27\n\nSynthetic insertion spacer 28\n\nSynthetic insertion spacer 29\n\nSynthetic insertion spacer 30\n\nSynthetic insertion spacer 31\n\nSynthetic insertion spacer 32\n\nSynthetic insertion spacer 33\n\nSynthetic insertion spacer 34\n\nSynthetic insertion spacer 35\n\nSynthetic insertion spacer 36\n\nSynthetic insertion spacer 37\n\nSynthetic insertion spacer 38\n\nSynthetic insertion spacer 39\n\nSynthetic insertion spacer 40\n\nSynthetic insertion spacer 41\n\nSynthetic insertion spacer 42\n\nSynthetic insertion spacer 43\n\nSynthetic insertion spacer 44\n\nSynthetic insertion spacer 45\n\nSynthetic insertion spacer 46\n\nSynthetic insertion spacer 47\n\nSynthetic insertion spacer 48\n\nSynthetic insertion spacer 49\n\nSynthetic insertion spacer 50\n\nSynthetic insertion spacer 51\n\nSynthetic insertion spacer 52\n\nSynthetic insertion spacer 53\n\nSynthetic insertion spacer 54\n\nSynthetic insertion spacer 55\n\nSynthetic insertion spacer 56\n\nSynthetic insertion spacer 57\n\nSynthetic insertion spacer 58\n\nSynthetic insertion spacer 59\n\nSynthetic insertion spacer 60\n\nSynthetic insertion spacer 61\n\nSynthetic insertion spacer 62\n\nSynthetic insertion spacer 63\n\nSynthetic insertion spacer 64\n\nSynthetic insertion spacer 65\n\nSynthetic insertion spacer 66\n\nSynthetic insertion spacer 67\n\nSynthetic insertion spacer 68\n\nSynthetic insertion spacer 69\n\nSynthetic insertion spacer 70\n\nSynthetic insertion spacer 71\n\nSynthetic insertion spacer 72\n\nSynthetic insertion spacer 73\n\nSynthetic insertion spacer 74\n\nSynthetic insertion spacer 75\n\nSynthetic insertion spacer 76\n\nSynthetic insertion spacer 77\n\nSynthetic insertion spacer 78\n\nSynthetic insertion spacer 79\n\nSynthetic insertion spacer 80\n\nSynthetic insertion spacer 81\n\nSynthetic insertion spacer 82\n\nSynthetic insertion spacer 83\n\nSynthetic insertion spacer 84\n\nSynthetic insertion spacer 85\n\nSynthetic insertion spacer 86\n\nSynthetic insertion spacer 87\n\nSynthetic insertion spacer 88\n\nSynthetic insertion spacer 89\n\nSynthetic insertion spacer 90\n\nSynthetic insertion spacer 91\n\nSynthetic insertion spacer 92\n\nSynthetic insertion spacer 93\n\nSynthetic insertion spacer 94\n\nSynthetic insertion spacer 95\n\nSynthetic insertion spacer 96\n\nSynthetic insertion spacer 97\n\nSynthetic insertion spacer 98\n\nSynthetic insertion spacer 99\n\nSynthetic insertion spacer 100\n\nSynthetic insertion spacer 101\n\nSynthetic insertion spacer 102\n\nSynthetic insertion spacer 103\n\nSynthetic insertion spacer 104\n\nSynthetic insertion spacer 105\n\nSynthetic insertion spacer 106\n\nSynthetic insertion spacer 107\n\nSynthetic insertion spacer 108\n\nSynthetic insertion spacer 109\n\nSynthetic insertion spacer 110\n\nSynthetic insertion spacer 111\n\nSynthetic insertion spacer 112\n\nSynthetic insertion spacer 113\n\nSynthetic insertion spacer 114\n\nSynthetic insertion spacer 115\n\nSynthetic insertion spacer 116\n\nSynthetic insertion spacer 117\n\nSynthetic insertion spacer 118\n\nSynthetic insertion spacer 119\n\nSynthetic insertion spacer 120\n\nSynthetic insertion spacer 121\n\nSynthetic insertion spacer 122\n\nSynthetic insertion spacer 123\n\nSynthetic insertion spacer 124\n\nSynthetic insertion spacer 125\n\nSynthetic insertion spacer 126\n\nSynthetic insertion spacer 127\n\nSynthetic insertion spacer 128\n\nSynthetic insertion spacer 129\n\nSynthetic insertion spacer 130\n\nSynthetic insertion spacer 131\n\nSynthetic insertion spacer 132\n\nSynthetic insertion spacer 133\n\nSynthetic insertion spacer 134\n\nSynthetic insertion spacer 135\n\nSynthetic insertion spacer 136\n\nSynthetic insertion spacer 137\n\nSynthetic insertion spacer 138\n\nSynthetic insertion spacer 139\n\nSynthetic insertion spacer 140\n\nSynthetic insertion spacer 141\n\nSynthetic insertion spacer 142\n\nSynthetic insertion spacer 143\n\nSynthetic insertion spacer 144\n\nSynthetic insertion spacer 145\n\nSynthetic insertion spacer 146\n\nSynthetic insertion spacer 147\n\nSynthetic insertion spacer 148\n\nSynthetic insertion spacer 149\n\nSynthetic insertion spacer 150\n\nSynthetic insertion spacer 151\n\nSynthetic insertion spacer 152\n\nSynthetic insertion spacer 153\n\nSynthetic insertion spacer 154\n\nSynthetic insertion spacer 155\n\nSynthetic insertion spacer 156\n\nSynthetic insertion spacer 157\n\nSynthetic insertion spacer 158\n\nSynthetic insertion spacer 159\n\nSynthetic insertion spacer 160\n\n```math\n@[offscreen] = 9+1\n```",
+          "sha256": "cc26453c559455038a6dc5baffd3113ac8be393ac21bddbb122eb3157a2f6d3d"
+        },
+        {
+          "path": "acceptance/insertion-random.md",
+          "text": "```math\n@[sample] = random()\n```",
+          "sha256": "255de0403b659b03a029c2937052a176123f11d01a194718c38ac9a7d08dfa44"
+        }
+      ],
+      "expected": {
+        "deterministicValues": {
+          "first": 5,
+          "second": 56,
+          "offscreen": 10
+        },
+        "batch": "All eligible note-wide wrappers in one transaction; matching output zero transactions.",
+        "random": "Store verified pre-write sample once, evaluate changed full source afresh, preserve potentially different live sample without a second automatic write.",
+        "history": "Undo/Redo refresh mathematics without automatic reapplication.",
+        "echoes": "No renewal from native/DV/dependency/sync/DOM/controller reattachment, including pane closure before echo and A→B→A feedback.",
+        "command": "One guarded current-ready-snapshot batch per explicit current-editor action; no evaluation/rearm on command checking and no permit retained for later work."
+      },
+      "procedure": "Follow INSERTION-CYCLE-ACCEPTANCE.md. No execution or fixture deployment during preparation.",
+      "randomEvidencePolicy": "Use ordinary native random() in the unmodified installed host; record actual pre-write displayed value, verified stored sample, fresh post-write displayed value and transaction trace. Assert numeric type/range and one bounded write without a predetermined sample. Seeded deterministic proof belongs in G’s real-coordinator Node tests. Missing faithful result/transaction observation is PARTIAL, not a reason to add a seed API. Never patch/replace the engine, add product debug APIs or use a configuration expression that changes runtime eligibility."
+    },
+    {
+      "id": "footnote-definition-reference-order",
+      "caseIds": [
+        "HOST-05"
+      ],
+      "notes": [
+        {
+          "path": "acceptance/footnote-definition-reference-order.md",
+          "text": "text[^b] then[^a]\n\n[^a]: `#:1`\n[^b]: `#:2`",
+          "sha256": "f2879be1411792f2d91c58983fbac73b92546f62cd5fa915e6e9f6d42ef408df"
+        }
+      ],
+      "expected": "Each body binds to its own definition despite reference-based displayed numbering. Evaluation follows source order; the body number is not a source-span selector."
+    },
+    {
+      "id": "footnote-identical-expressions",
+      "caseIds": [
+        "HOST-05"
+      ],
+      "notes": [
+        {
+          "path": "acceptance/footnote-identical-expressions.md",
+          "text": "text[^b] then[^a] again[^b]\n\n[^a]: `#:1` and `#:1`\n[^b]: `#:1`",
+          "sha256": "743224e1bd6e85b82a23011e5d05b1835dce79ba9bed98543c20b923c1c3e3de"
+        }
+      ],
+      "expected": "Distinct calculation occurrences retain separate exact spans and identities. Repeated references do not duplicate a definition body; first text match cannot select an occurrence. Verify one-to-one eligible occurrence counts."
+    },
+    {
+      "id": "footnote-same-line-inline-notes",
+      "caseIds": [
+        "HOST-05"
+      ],
+      "notes": [
+        {
+          "path": "acceptance/footnote-same-line-inline-notes.md",
+          "text": "text[^named] ^[first `#:1`] ^[second `#:1`]\n\n[^named]: named note",
+          "sha256": "cde818fd580215b66bfc2dbb804967ac7b4dce36f56fdb1c8866ab2411236d64"
+        }
+      ],
+      "expected": "Actual signed data-line alone yields the same starting line and is insufficient. Observed data-footref/shared ordinals must corroborate exact distinct inline spans; no guessed binding or write on ambiguity."
+    }
+  ],
+  "upgrades": [
+    {
+      "id": "UP-01",
+      "title": "Fresh install",
+      "kind": "fresh",
+      "seed": null,
+      "expected": {
+        "currencyDisplayMode": "symbol",
+        "currencyPrecisionMode": "currency-standard",
+        "customCurrencyDecimalPlaces": 2,
+        "inlineTexResultTrigger": "#$:",
+        "inlineTexEquationTrigger": "#$=:"
+      },
+      "procedure": "No data.json. Candidate first load establishes defaults without inheriting another fixture run.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-02",
+      "title": "Stable1.10.2 saved settings",
+      "kind": "stable-schema",
+      "seed": {
+        "resultSeparator": " → ",
+        "layoutStyle": "AnswerBelow",
+        "alternateRowColor": false,
+        "defaultRenderStyle": "Plain",
+        "hideLinesWithoutMarkupWhenEmitting": true,
+        "hideEmitterMarkupInInput": true,
+        "dollarSymbolCurrency": {
+          "symbol": "$",
+          "currency": "CAD"
+        },
+        "yenSymbolCurrency": {
+          "symbol": "¥",
+          "currency": "CNY"
+        },
+        "provideSuggestions": false,
+        "suggestionsIncludeMathjsSymbols": true,
+        "numberFormat": "Fixed",
+        "forceProcessAllFrontmatter": false,
+        "customCurrencySymbol": null,
+        "enableGreekAutoComplete": true,
+        "enableInlineNumerals": true,
+        "inlineResultTrigger": "calc:",
+        "inlineEquationTrigger": "eq:",
+        "inlineEquationSeparator": " = ",
+        "provideInlineSuggestions": false,
+        "enableCrossNoteReferences": true
+      },
+      "expected": {
+        "resultSeparator": " → ",
+        "layoutStyle": "AnswerBelow",
+        "alternateRowColor": false,
+        "defaultRenderStyle": "Plain",
+        "hideLinesWithoutMarkupWhenEmitting": true,
+        "hideEmitterMarkupInInput": true,
+        "dollarSymbolCurrency": {
+          "symbol": "$",
+          "currency": "CAD"
+        },
+        "yenSymbolCurrency": {
+          "symbol": "¥",
+          "currency": "CNY"
+        },
+        "provideSuggestions": false,
+        "suggestionsIncludeMathjsSymbols": true,
+        "numberFormat": "Fixed",
+        "forceProcessAllFrontmatter": false,
+        "customCurrencySymbol": null,
+        "enableGreekAutoComplete": true,
+        "enableInlineNumerals": true,
+        "inlineResultTrigger": "calc:",
+        "inlineEquationTrigger": "eq:",
+        "inlineEquationSeparator": " = ",
+        "provideInlineSuggestions": false,
+        "enableCrossNoteReferences": true,
+        "currencyDisplayMode": "symbol",
+        "currencyPrecisionMode": "currency-standard",
+        "customCurrencyDecimalPlaces": 2,
+        "inlineTexResultTrigger": "#$:",
+        "inlineTexEquationTrigger": "#$=:"
+      },
+      "procedure": "First run verified published1.10.2 with synthetic old settings; replace only candidate artifacts while fixture plugin disabled, retain data.json. Old valid preferences preserved, missing five controls gain defaults.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-03",
+      "title": "Saved Code preserved",
+      "kind": "compatibility",
+      "seed": {
+        "resultSeparator": " → ",
+        "layoutStyle": "AnswerBelow",
+        "alternateRowColor": false,
+        "defaultRenderStyle": "Plain",
+        "hideLinesWithoutMarkupWhenEmitting": true,
+        "hideEmitterMarkupInInput": true,
+        "dollarSymbolCurrency": {
+          "symbol": "$",
+          "currency": "CAD"
+        },
+        "yenSymbolCurrency": {
+          "symbol": "¥",
+          "currency": "CNY"
+        },
+        "provideSuggestions": false,
+        "suggestionsIncludeMathjsSymbols": true,
+        "numberFormat": "Fixed",
+        "forceProcessAllFrontmatter": false,
+        "customCurrencySymbol": null,
+        "enableGreekAutoComplete": true,
+        "enableInlineNumerals": true,
+        "inlineResultTrigger": "calc:",
+        "inlineEquationTrigger": "eq:",
+        "inlineEquationSeparator": " = ",
+        "provideInlineSuggestions": false,
+        "enableCrossNoteReferences": true,
+        "currencyDisplayMode": "code"
+      },
+      "expected": {
+        "currencyDisplayMode": "code"
+      },
+      "procedure": "Synthetic prior-preference/prerelease case; this key did not exist in stable1.10.2 source UI.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-04",
+      "title": "Saved Symbol preserved",
+      "kind": "compatibility",
+      "seed": {
+        "resultSeparator": " → ",
+        "layoutStyle": "AnswerBelow",
+        "alternateRowColor": false,
+        "defaultRenderStyle": "Plain",
+        "hideLinesWithoutMarkupWhenEmitting": true,
+        "hideEmitterMarkupInInput": true,
+        "dollarSymbolCurrency": {
+          "symbol": "$",
+          "currency": "CAD"
+        },
+        "yenSymbolCurrency": {
+          "symbol": "¥",
+          "currency": "CNY"
+        },
+        "provideSuggestions": false,
+        "suggestionsIncludeMathjsSymbols": true,
+        "numberFormat": "Fixed",
+        "forceProcessAllFrontmatter": false,
+        "customCurrencySymbol": null,
+        "enableGreekAutoComplete": true,
+        "enableInlineNumerals": true,
+        "inlineResultTrigger": "calc:",
+        "inlineEquationTrigger": "eq:",
+        "inlineEquationSeparator": " = ",
+        "provideInlineSuggestions": false,
+        "enableCrossNoteReferences": true,
+        "currencyDisplayMode": "symbol"
+      },
+      "expected": {
+        "currencyDisplayMode": "symbol"
+      },
+      "procedure": "Synthetic prior-preference/prerelease case, not claimed as stable UI-generated.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-05",
+      "title": "Invalid display/precision repaired",
+      "kind": "corrupt-settings",
+      "seed": {
+        "currencyDisplayMode": "CODE",
+        "currencyPrecisionMode": "wrong",
+        "customCurrencyDecimalPlaces": 21
+      },
+      "expected": {
+        "currencyDisplayMode": "symbol",
+        "currencyPrecisionMode": "currency-standard",
+        "customCurrencyDecimalPlaces": 2
+      },
+      "procedure": "Candidate normalized values visible; verify cold load does not rewrite merely for missing fields.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-06",
+      "title": "Legacy numeric layout",
+      "kind": "legacy-schema",
+      "seed": {
+        "layoutStyle": 3
+      },
+      "expected": {
+        "layoutStyle": "AnswerInline"
+      },
+      "procedure": "Also test layoutStyle0/1/2 and oldest renderStyle1/2/3 separately; modern string layout wins.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-07",
+      "title": "Legacy nested mapping and Unicode",
+      "kind": "legacy-schema",
+      "seed": {
+        "dollarSymbolCurrency": {
+          "currency": "CAD"
+        },
+        "customCurrencySymbol": {
+          "symbol": "₿",
+          "currency": "BTC",
+          "unicode": "unsafe",
+          "name": "unsafe"
+        }
+      },
+      "expected": {
+        "dollarSymbolCurrency": {
+          "symbol": "$",
+          "currency": "CAD"
+        },
+        "customCurrencySymbol": {
+          "symbol": "₿",
+          "currency": "BTC",
+          "unicode": "x20BF",
+          "name": "custom"
+        }
+      },
+      "procedure": "Fixed symbol restored; validcode retained; symbol metadata reconstructed, not trusted.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-08",
+      "title": "Semantic currency conflict remains repairable",
+      "kind": "corrupt-settings",
+      "seed": {
+        "customCurrencySymbol": {
+          "symbol": "₿",
+          "currency": "m",
+          "unicode": "x20BF",
+          "name": "custom"
+        }
+      },
+      "expected": {
+        "configurationError": true,
+        "evaluationBlocked": true,
+        "preservedCurrencyCode": "m"
+      },
+      "procedure": "Settings remain accessible; modal Cancel stays blocked, valid Save or explicit Remove repairs; no silent substitute mapping.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-09",
+      "title": "Duplicate saved trigger determinism",
+      "kind": "compatibility",
+      "seed": {
+        "inlineResultTrigger": "#",
+        "inlineEquationTrigger": "#=",
+        "inlineTexResultTrigger": "",
+        "inlineTexEquationTrigger": "#="
+      },
+      "expected": {
+        "inlineResultTrigger": "#",
+        "inlineEquationTrigger": "#=",
+        "inlineTexResultTrigger": "",
+        "inlineTexEquationTrigger": ""
+      },
+      "procedure": "Longest prefix preserved; first saved duplicate wins in result/equation/TeX order; later duplicates disabled.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-10",
+      "title": "Saved trigger wins missing default",
+      "kind": "stable-schema",
+      "seed": {
+        "resultSeparator": " → ",
+        "layoutStyle": "AnswerBelow",
+        "alternateRowColor": false,
+        "defaultRenderStyle": "Plain",
+        "hideLinesWithoutMarkupWhenEmitting": true,
+        "hideEmitterMarkupInInput": true,
+        "dollarSymbolCurrency": {
+          "symbol": "$",
+          "currency": "CAD"
+        },
+        "yenSymbolCurrency": {
+          "symbol": "¥",
+          "currency": "CNY"
+        },
+        "provideSuggestions": false,
+        "suggestionsIncludeMathjsSymbols": true,
+        "numberFormat": "Fixed",
+        "forceProcessAllFrontmatter": false,
+        "customCurrencySymbol": null,
+        "enableGreekAutoComplete": true,
+        "enableInlineNumerals": true,
+        "inlineResultTrigger": "calc:",
+        "inlineEquationTrigger": "#:",
+        "inlineEquationSeparator": " = ",
+        "provideInlineSuggestions": false,
+        "enableCrossNoteReferences": true
+      },
+      "expected": {
+        "inlineEquationTrigger": "#:",
+        "inlineResultTrigger": "calc:"
+      },
+      "procedure": "Separate minimal seed{inlineEquationTrigger:\"#:\"} must preserve saved equation and disable missing result default.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-11",
+      "title": "Malformed settings root",
+      "kind": "corrupt-settings",
+      "seed": [],
+      "expected": {
+        "currencyDisplayMode": "symbol"
+      },
+      "procedure": "Repeat null,false,string andnumber roots; complete detached defaults, settings remain usable.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-12",
+      "title": "Valid precision range and compatibility preferences",
+      "kind": "compatibility",
+      "seed": {
+        "currencyDisplayMode": "code",
+        "currencyPrecisionMode": "follow-number-format",
+        "customCurrencyDecimalPlaces": 20,
+        "inlineTexResultTrigger": "T:",
+        "inlineTexEquationTrigger": "TE:"
+      },
+      "expected": {
+        "currencyDisplayMode": "code",
+        "currencyPrecisionMode": "follow-number-format",
+        "customCurrencyDecimalPlaces": 20,
+        "inlineTexResultTrigger": "T:",
+        "inlineTexEquationTrigger": "TE:"
+      },
+      "procedure": "Valid saved values retained after reload. Custom precision control disabled under follow-number-format but value retained.",
+      "status": "NOT_RUN",
+      "evidence": []
+    },
+    {
+      "id": "UP-13",
+      "title": "Stable custom currency retained",
+      "kind": "stable-schema",
+      "seed": {
+        "resultSeparator": " → ",
+        "layoutStyle": "AnswerBelow",
+        "alternateRowColor": false,
+        "defaultRenderStyle": "Plain",
+        "hideLinesWithoutMarkupWhenEmitting": true,
+        "hideEmitterMarkupInInput": true,
+        "dollarSymbolCurrency": {
+          "symbol": "$",
+          "currency": "CAD"
+        },
+        "yenSymbolCurrency": {
+          "symbol": "¥",
+          "currency": "CNY"
+        },
+        "provideSuggestions": false,
+        "suggestionsIncludeMathjsSymbols": true,
+        "numberFormat": "Fixed",
+        "forceProcessAllFrontmatter": false,
+        "customCurrencySymbol": {
+          "symbol": "₿",
+          "currency": "BTC",
+          "unicode": "x20BF",
+          "name": "custom"
+        },
+        "enableGreekAutoComplete": true,
+        "enableInlineNumerals": true,
+        "inlineResultTrigger": "calc:",
+        "inlineEquationTrigger": "eq:",
+        "inlineEquationSeparator": " = ",
+        "provideInlineSuggestions": false,
+        "enableCrossNoteReferences": true
+      },
+      "expected": {
+        "customCurrencySymbol": {
+          "symbol": "₿",
+          "currency": "BTC",
+          "unicode": "x20BF",
+          "name": "custom"
+        },
+        "currencyDisplayMode": "symbol"
+      },
+      "procedure": "Verified stable installed artifact reads syntheticold mapping; candidate rebuild preserves meaning and Symbol default.",
+      "status": "NOT_RUN",
+      "evidence": []
+    }
+  ]
+}
