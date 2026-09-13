@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. The format 
 ## [Unreleased]
 
 ### Added
+- Upload the three checked candidate files from ordinary recovery CI as a separate acceptance artifact named by the actual tested commit, without requiring a tag or publishing a release.
 - Add an unpublished recovery usage guide covering source order, variable scope, metadata freshness, grouping, formatting and safe insertion. Keep the README stable guide distinct and document recovery-specific checks and release boundaries.
 - Add a disposable Linux CI harness that records official Obsidian Reading callbacks and Live Preview trees for 95 byte-preserved synthetic extraction fixtures, with verified native activity from each primary note, callback origins, support-note hashes, pinned inputs and bounded cancellation.
 - Add a host-independent whole-note source index, ordered evaluation service, and detached result snapshots for the recovery surface integration. Metadata seeds, reference dependencies, insertion provenance, and suggestion symbols share one captured generation.
