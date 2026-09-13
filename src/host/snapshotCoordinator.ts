@@ -216,27 +216,38 @@ export class SnapshotCoordinator {
 	/** Explicit invocation grants only this batch; it never leaves permission for a future event. */
 	insert(identity: object, explicit: boolean): boolean {
 		const session = this.sessions.get(identity);
-		if (!session || (!explicit && !session.allowAutomatic)) return false;
-		const batch = this.batch(identity);
-		if (!batch) return false;
-		const editor = session.owner.editor!;
-		// Revalidate AFTER formatting every proposal, immediately before one transaction.
-		if (!this.ready(session, batch.snapshot) || !batch.valid(session.configuration.runtime.engine)) return false;
+		if (!session?.owner.editor || session.state.status !== 'ready' || (!explicit && !session.allowAutomatic)) return false;
+		const attemptedState = session.state, notifyExhaustion = session.allowAutomatic;
+		// A ready attempt spends this cycle even if output already matches, every
+		// proposal is ineligible, or a final guard fails. Pending capture spends none.
 		session.allowAutomatic = false;
-		let receipts = this.echoes.get(session.file);
-		if (!receipts) { receipts = new Set(); this.echoes.set(session.file, receipts); }
-		receipts.add(echoKey(batch.after));
-		this.ownWrites.set(editor, {before: session.text, after: batch.after});
 		try {
-			editor.transaction({changes: batch.changes.map(change => ({
-				from: editor.offsetToPos(change.start), to: editor.offsetToPos(change.end), text: change.replacement,
-			}))}, 'numerals-insertion');
-		} catch (error: unknown) {
-			this.fail(session, error);
-			return false;
+			const batch = this.batch(identity);
+			if (!batch) return false;
+			const editor = session.owner.editor;
+			// Revalidate AFTER formatting every proposal, immediately before one transaction.
+			if (!this.ready(session, batch.snapshot) || !batch.valid(session.configuration.runtime.engine)) return false;
+			let receipts = this.echoes.get(session.file);
+			if (!receipts) { receipts = new Set(); this.echoes.set(session.file, receipts); }
+			receipts.add(echoKey(batch.after));
+			this.ownWrites.set(editor, {before: session.text, after: batch.after});
+			try {
+				editor.transaction({changes: batch.changes.map(change => ({
+					from: editor.offsetToPos(change.start), to: editor.offsetToPos(change.end), text: change.replacement,
+				}))}, 'numerals-insertion');
+			} catch (error: unknown) {
+				this.fail(session, error);
+				return false;
+			}
+			if (this.live(session)) this.sourceChanged(identity, false);
+			return true;
+		} finally {
+			// A no-op has no source publication of its own. Notify once outside the
+			// attempt; a newer source/state already publishes its current permission.
+			if (notifyExhaustion) void Promise.resolve().then(() => {
+				if (this.live(session) && session.state === attemptedState && !session.allowAutomatic) this.publish(session);
+			});
 		}
-		if (this.live(session)) this.sourceChanged(identity, false);
-		return true;
 	}
 
 	detach(identity: object): void {

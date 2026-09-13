@@ -35,6 +35,7 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Exhaust automatic insertion permission after a ready no-op or ineligible attempt, so later reference repair or formatting changes cannot spend an earlier input cycle; publish the exhausted state without reevaluating math.
 - Resolve captured cross-note metadata in one private batch with actual dependency provenance, independent typed copies, and preserved raw nested-property/array semantics; avoid repeated sampling, missing-reference side effects and stale-cache authority.
 - Copy declarative metadata through own data properties throughout arrays, plain objects and native Matrix/ResultSet contents, preventing provider accessors or iterators from executing during capture while preserving shared and cyclic values.
 - Keep repeated/partial Reading callbacks, raw HTML code and conservative footnote bindings tied to indexed source occurrences; reject table-cell, embed and stale/detached editor capabilities while sharing proved detached callback mathematics.

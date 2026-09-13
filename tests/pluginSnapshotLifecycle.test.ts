@@ -4,7 +4,7 @@ import { createTestHost, installHostDom } from './hostTestSupport';
 import { flushSnapshots as flush } from './hostSnapshotTestSupport';
 import { sourceLineAt, sourceLineStarts } from '../src/evaluation/sourceIndex';
 import * as evaluation from '../src/evaluation/evaluateNote';
-import { NumeralsRenderStyle } from '../src/numerals.types';
+import { NumeralsRenderStyle, NumeralsNumberFormat } from '../src/numerals.types';
 import type { InlinePostProcessor } from '../src/inline/inlinePostProcessor';
 import { customCurrency } from '../src/settings/normalization';
 
@@ -14,10 +14,13 @@ beforeAll(installHostDom);
 const cleanups: (() => void)[] = [];
 afterEach(() => { for (const cleanup of cleanups.splice(0)) cleanup(); jest.restoreAllMocks(); });
 
-async function fixture(initial: string, saved?: unknown) {
+async function fixture(initial: string, saved?: unknown, targetSources: Record<string, string> = {}) {
  const host = createTestHost(), file = Object.assign(new TFile(), {path: 'source.md'});
  host.files.set(file.path, file); let text = initial;
  const buffers = new Map([[file.path, initial]]), read = jest.fn(async (target: TFile) => buffers.get(target.path) ?? '');
+ for (const [path, source] of Object.entries(targetSources)) {
+  host.files.set(path, Object.assign(new TFile(), {path})); buffers.set(path, source);
+ }
  Object.assign(host.app.vault, {read});
  const transaction = jest.fn((input: {changes: {from: {line: number; ch: number}; to: {line: number; ch: number}; text: string}[]}) => {
   const starts = sourceLineStarts(text);
@@ -104,4 +107,40 @@ it('keeps inline currency expressions and owned TeX preparation on the retained 
  const tex = paragraph.createEl('code', {text: '#$=: $2 * 3'}); host.processor(paragraph, host.context(4)); await flush();
  expect(plain.textContent).toContain('44.03'); expect(tex.querySelector('.numerals-inline-input .numerals-tex')).not.toBeNull();
  expect(tex.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toContain('6');
+});
+
+it.each(['matching', 'unavailable', 'missing'])('a ready %s result cannot spend its old input allowance after reference repair', async initial => {
+ const text = '```math\n@[x::2] = [[Target]].price\n```';
+ const host = await fixture(text, undefined, initial === 'missing' ? {} : {
+  'Target.md': initial === 'matching' ? '---\nnumerals: all\nprice: 2\n---' : '---\nprice: 2\n---',
+ });
+ await flush(); expect(host.transaction).not.toHaveBeenCalled();
+ expect(host.plugin.getEditorSnapshot(host.editor)?.insertionExhausted).toBe(true);
+ const target = host.files.get('Target.md') ?? Object.assign(new TFile(), {path: 'Target.md'});
+ host.files.set(target.path, target); host.buffers.set(target.path, '---\nnumerals: all\nprice: 3\n---');
+ if (initial === 'missing') host.vaultEvents.fire('create', target);
+ else host.cacheEvents.fire('changed', target, '', {});
+ await flush(); expect(host.text()).toBe(text); expect(host.transaction).not.toHaveBeenCalled();
+ const state = host.plugin.getEditorSnapshot(host.editor)?.state;
+ if (state?.status !== 'ready') throw new Error('Expected repaired snapshot');
+ expect(state.snapshot.format(state.snapshot.calculations[0].calculationId, 0)).toMatchObject({value: {canonical: '3'}});
+ const command = jest.mocked(host.plugin.addCommand).mock.calls.map(([entry]) => entry).find(entry => entry.id === 'update-stored-results')!;
+ expect(command.editorCheckCallback!(true, host.editor, host.view)).toBe(true);
+ expect(host.transaction).not.toHaveBeenCalled();
+ expect(command.editorCheckCallback!(false, host.editor, host.view)).toBe(true); await flush();
+ expect(host.transaction).toHaveBeenCalledTimes(1); expect(host.text()).toContain('@[x::3]');
+ host.buffers.set(target.path, '---\nnumerals: all\nprice: 4\n---'); host.cacheEvents.fire('changed', target, '', {});
+ await flush(); expect(host.transaction).toHaveBeenCalledTimes(1);
+});
+
+it('a matching stored value stays unchanged when presentation formatting changes', async () => {
+ const evaluate = jest.spyOn(evaluation, 'evaluateNote');
+ const host = await fixture('```math\n@[x::1.235] = 1.23456\n```'); await flush();
+ expect(host.transaction).not.toHaveBeenCalled(); const before = evaluate.mock.calls.length;
+ await host.plugin.updateSettings({numberFormat: NumeralsNumberFormat.Fixed}); await flush();
+ expect(evaluate).toHaveBeenCalledTimes(before); expect(host.transaction).not.toHaveBeenCalled();
+ const state = host.plugin.getEditorSnapshot(host.editor)?.state;
+ if (state?.status !== 'ready') throw new Error('Expected formatted snapshot');
+ expect(state.snapshot.format(state.snapshot.calculations[0].calculationId, 0)).toMatchObject({value: {canonical: '1.23456'}});
+ expect(host.text()).toContain('@[x::1.235]');
 });

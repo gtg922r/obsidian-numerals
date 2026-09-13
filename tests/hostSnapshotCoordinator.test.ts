@@ -282,7 +282,7 @@ it.each(['public-first', 'cm-first', 'programmatic'] as const)('handles %s event
  coordinator.attach(host.owner); await flush();
  expect(host.engine.Unit.isValuelessUnit('retiredOrderUnit')).toBe(false);
  expect(evaluate).toHaveBeenCalledTimes(1); expect(evaluate.mock.calls[0][0].generation.sourceText).toBe(host.text());
- expect(coordinator.current(host.editor)?.insertionExhausted).toBe(order === 'programmatic');
+ expect(coordinator.current(host.editor)?.insertionExhausted).toBe(true); // the ready no-directive attempt spends its cycle
  expect(host.transaction).not.toHaveBeenCalled(); coordinator.dispose();
 });
 
@@ -322,4 +322,39 @@ it('bounds two-note dependency feedback without renewing either stored-result ba
  for (const path of ['A.md', 'B.md', 'A.md', 'B.md']) {coordinator.inputsChanged({kind: 'metadata', path}); await flush();}
  expect(a.transaction).toHaveBeenCalledTimes(1); expect(b.transaction).toHaveBeenCalledTimes(1);
  coordinator.dispose();
+});
+
+it.each(['@[x::2] = [[Target]].price', '@[x::0] = [[Target]].price'])('spends the initial ready cycle for %s even before its value becomes eligible', async expression => {
+ const host = fixture('```math\n' + expression + '\n```'); host.coordinator.dispose();
+ let value = 2, verified = expression.includes('::2]');
+ const coordinator = new SnapshotCoordinator({configuration: host.configuration, capture: index => ({parseYaml,
+  references: index.calculations.flatMap(calculation => parseCrossNoteReferences(calculation.projection.text).map(reference => ({
+   calculationId: calculation.id, ...reference, runtime: host.engine,
+   result: {status: 'resolved' as const, value, referencedPath: 'Target.md'},
+   provenance: {unverified: verified ? [] : ['unverified target field'], ambiguous: false},
+  }))),
+ })});
+ coordinator.attach(host.owner);
+ const observed: boolean[] = [];
+ coordinator.subscribe(host.editor, () => {const current = coordinator.current(host.editor); if (current?.state.status === 'ready') observed.push(current.insertionExhausted);});
+ await flush(); expect(host.transaction).not.toHaveBeenCalled(); expect(observed.at(-1)).toBe(true);
+ expect(observed).toHaveLength(2); // ready, then one no-op exhaustion notification
+ value = 3; verified = true; coordinator.inputsChanged({kind: 'metadata', path: 'Target.md'});
+ await flush(); expect(host.transaction).not.toHaveBeenCalled(); expect(coordinator.canInsert(host.editor)).toBe(true);
+ host.setText(host.text() + '\nindependent input'); coordinator.sourceChanged(host.editor, true); await flush();
+ expect(host.transaction).toHaveBeenCalledTimes(1); expect(host.text()).toContain('@[x::3]');
+ value = 4; coordinator.inputsChanged({kind: 'metadata', path: 'Target.md'}); await flush();
+ expect(host.transaction).toHaveBeenCalledTimes(1); coordinator.dispose();
+});
+
+it('an unsuccessful explicit ready attempt spends permission before the queued automatic attempt', async () => {
+ const host = fixture('```math\n@[x::2] = 2\n```');
+ const attempts: boolean[] = [];
+ host.coordinator.subscribe(host.editor, () => {
+  const current = host.coordinator.current(host.editor);
+  if (current?.state.status === 'ready' && !current.insertionExhausted) attempts.push(host.coordinator.insert(host.editor, true));
+ });
+ await flush(); expect(attempts).toEqual([false]); expect(host.transaction).not.toHaveBeenCalled();
+ expect(host.coordinator.current(host.editor)?.insertionExhausted).toBe(true);
+ host.coordinator.inputsChanged(); await flush(); expect(attempts).toEqual([false]); host.coordinator.dispose();
 });

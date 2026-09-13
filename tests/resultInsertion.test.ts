@@ -24,6 +24,7 @@ it('no-ops matching output and notes without insertion directives', async () => 
  for (const source of ['@[value::4] = 4', 'value = 4', '# @[value]']) {
   const host = fixture('```math\n' + source + '\n```'); await flush();
   expect(host.transaction).not.toHaveBeenCalled(); expect(host.coordinator.canInsert(host.editor)).toBe(false);
+  expect(host.coordinator.current(host.editor)?.insertionExhausted).toBe(true);
   expect(host.coordinator.insert(host.editor, true)).toBe(false); host.coordinator.dispose();
  }
 });
