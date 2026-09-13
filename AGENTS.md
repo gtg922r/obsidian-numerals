@@ -1,5 +1,12 @@
 # Obsidian community plugin
 
+## Active recovery boundary
+
+- Read `docs/recovery/plan.md` and `docs/recovery/ledger.md` before recovery work.
+- Recovery PRs target `chore/recovery-1.11`. Only the owner merges or publishes.
+- Publishing is limited to BRAT prereleases. Never promote a stable release or modify master's stable manifest/version mappings. Stable remains 1.10.2.
+- Preserve mathjs and `src/formatting/`; follow the source-order and source-safety contracts in the recovery plan.
+
 ## Project overview
 
 - Target: Obsidian Community Plugin (TypeScript → bundled JavaScript).

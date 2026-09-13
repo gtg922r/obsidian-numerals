@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Changed
+- Recorded the recovery implementation contract, work ledger, and BRAT-only publication boundary.
+
 ### Added
 - Per-expression TeX rendering for Inline Numerals via the new `#$:` (result only) and `#$=:` (equation) trigger prefixes, which render with MathJax in both Live Preview and Reading mode. Both prefixes are configurable in settings. (Closes #161)
 - Block-level `@format` and `@decimalPlaces` directives for overriding result presentation without changing calculated values. (Closes #75, #140)
