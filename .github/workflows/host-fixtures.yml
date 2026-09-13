@@ -35,6 +35,7 @@ jobs:
           path: |
             host-tests/evidence/capture.json
             host-tests/evidence/sources.json
+            host-tests/evidence/support-sources.json
             host-tests/evidence/provenance.json
             host-tests/evidence/diagnostics.json
             host-tests/evidence/sha256.json
@@ -67,6 +68,7 @@ jobs:
           path: |
             host-tests/evidence/capture.json
             host-tests/evidence/sources.json
+            host-tests/evidence/support-sources.json
             host-tests/evidence/provenance.json
             host-tests/evidence/diagnostics.json
             host-tests/evidence/sha256.json

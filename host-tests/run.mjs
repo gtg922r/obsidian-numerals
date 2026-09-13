@@ -13,6 +13,8 @@ const directory = path.dirname(fileURLToPath(import.meta.url));
 const inputs = JSON.parse(await fs.readFile(path.join(directory,'inputs.json')));
 const sourceBytes = await fs.readFile(path.join(directory,'fixtures/sources.json'));
 const catalog = JSON.parse(sourceBytes); C.catalogCheck(catalog);
+const supportBytes = await fs.readFile(path.join(directory,'fixtures/support-sources.json'));
+const support = JSON.parse(supportBytes); C.supportCheck(support);
 const ids = process.argv.includes('--smoke') ? ['001','003','011','028'] : catalog.cases.map(c => c.id);
 const output = path.join(directory, 'evidence');
 await fs.mkdir(output); // Refuse stale evidence from a previous run.
@@ -103,12 +105,11 @@ try {
   stage = 'synthetic-profile';
   const root = path.join(scratch,C.VAULT_NAME); await fs.mkdir(root);
   for (const fixture of catalog.cases) { const dest = path.join(root,fixture.path); await fs.mkdir(path.dirname(dest),{recursive:true}); await fs.writeFile(dest,fixture.text); C.sourceCheck(root,fixture); }
-  await fs.writeFile(path.join(root,'Other.md'),'# Embedded calculations\n\n`#:201`\n\n```math\n202\n```\n^block\n');
-  await fs.writeFile(path.join(root,'target.md'),'Synthetic local link target.\n');
-  await fs.writeFile(path.join(root,'control.md'),'```math\n314159\n```\n\n`#:271828`');
-  const config = {expectedRoot:await fs.realpath(root),nonce:crypto.randomBytes(32).toString('hex'),catalogHash:C.hash(sourceBytes)};
+  for (const source of support.sources) { await fs.writeFile(path.join(root,source.path),source.text); C.sourceCheck(root,source); }
+  const config = {expectedRoot:await fs.realpath(root),nonce:crypto.randomBytes(32).toString('hex'),catalogHash:C.hash(sourceBytes),supportHash:C.hash(supportBytes)};
   await fs.writeFile(path.join(root,'.fixture-marker.json'),JSON.stringify({identity:C.IDENTITY,nonce:config.nonce}));
-  await fs.writeFile(path.join(root,'.fixture-sources.json'),sourceBytes); C.guard(root,config);
+  await fs.writeFile(path.join(root,'.fixture-sources.json'),sourceBytes);
+  await fs.writeFile(path.join(root,'.fixture-support.json'),supportBytes); C.guard(root,config);
   const recorderBytes = await fs.readFile(path.join(directory,'recorder.cjs'),'utf8');
   const contractsBytes = await fs.readFile(path.join(directory,'contracts.cjs'),'utf8');
   const main = `const FIXTURE_CONFIG=${JSON.stringify(config)};\nconst CONTRACTS=(()=>{const module={exports:{}};\n${contractsBytes}\nreturn module.exports;})();\n${recorderBytes}`;
@@ -128,7 +129,7 @@ try {
   const appSettingsPath = path.join(profile,'obsidian.json');
   const appSettings = JSON.parse(await fs.readFile(appSettingsPath)); appSettings.cli = false;
   await fs.writeFile(appSettingsPath,JSON.stringify(appSettings));
-  Object.assign(provenance,{recorderSourceSha256:C.hash(recorderBytes),contractsSha256:C.hash(contractsBytes),materializedRecorderSha256:C.hash(main)});
+  Object.assign(provenance,{recorderSourceSha256:C.hash(recorderBytes),contractsSha256:C.hash(contractsBytes),materializedRecorderSha256:C.hash(main),supportCatalogSha256:C.SUPPORT_HASH,supportFileSha256:C.hash(supportBytes)});
   stage = 'launch-display';
   xvfb = launch('Xvfb',[':91','-screen','0','1280x1024x24','-nolisten','tcp']);
   await until(async () => fs.access('/tmp/.X11-unix/X91').then(()=>true,()=>false),10000);
@@ -158,9 +159,10 @@ try {
   const capture = JSON.parse(await fs.readFile(path.join(root,'.fixture-capture.json')));
   await fs.writeFile(path.join(output,'capture.json'),JSON.stringify(capture,null,2)+'\n');
   await fs.writeFile(path.join(output,'sources.json'),sourceBytes);
+  await fs.writeFile(path.join(output,'support-sources.json'),supportBytes);
   C.check(result.status === 'complete', 'recorder did not complete');
   stage = 'validate';
-  C.captureCheck(capture,catalog,ids);
+  C.captureCheck(capture,catalog,ids,support);
   diagnostics.status = 'complete';
 } catch (error) {
   diagnostics.failure = C.failure(error,stage);
