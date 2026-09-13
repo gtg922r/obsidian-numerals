@@ -42,7 +42,7 @@ export function expressionToTeX(
 	tex = tex.replace(/(\\_\\_|__)prev\b/g, '@prev');
 	tex = unescapeSubscripts(tex);
 	tex = texCurrencyReplacement(tex);
-	for (const [symbol, label] of labels) tex = tex.split(symbol).join(label);
+	if (labels.size) tex = tex.replace(new RegExp(`\\b(?:${[...labels.keys()].join('|')})\\b`, 'g'), symbol => labels.get(symbol)!);
 	return tex;
 }
 

@@ -56,14 +56,23 @@ export function replaceStringsInTextFromMap(text: string, processors: StringRepl
 }
 
 export function replaceExpressionDirectives(mapped: MappedSource, block: boolean): MappedSource {
+	if (block) {
+		const edits: SourceEdit[] = [];
+		for (const token of scanExpression(mapped.source)) {
+			if (token.kind === 'insertion') {
+				edits.push({ ...token, text: /^@[\t ]*\[([^\]:]+)(::[^\]]*)?\]/.exec(token.text)![1] });
+			} else if (token.kind === 'emitter') {
+				edits.push({ ...token, start: mapped.source.slice(0, token.start).replace(/[\t ]+$/, '').length, text: '' });
+			}
+		}
+		mapped = applySourceEdits(mapped, edits);
+	}
+	// Unwrapping may expose an eligible @prev/@sum/@total. Rescan the mapped source
+	// so literals stay protected and each translation retains the original insertion span.
 	const edits: SourceEdit[] = [];
 	for (const token of scanExpression(mapped.source)) {
 		if (token.kind === 'directive' && (block || token.text.toLowerCase() === '@prev')) {
 			edits.push({ ...token, text: token.text.toLowerCase() === '@prev' ? '__prev' : '__total' });
-		} else if (block && token.kind === 'insertion') {
-			edits.push({ ...token, text: /^@[\t ]*\[([^\]:]+)(::[^\]]*)?\]/.exec(token.text)![1] });
-		} else if (block && token.kind === 'emitter') {
-			edits.push({ ...token, start: mapped.source.slice(0, token.start).replace(/[\t ]+$/, '').length, text: '' });
 		}
 	}
 	return applySourceEdits(mapped, edits);

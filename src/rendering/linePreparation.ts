@@ -1,6 +1,4 @@
 import { scanExpression } from '../processing/expressionScanner';
-import { replaceExpressionDirectives } from '../processing/preprocessor';
-import { originalSource } from '../processing/expressionScanner';
 import { NumeralsSettings, numeralsBlockInfo, LineRenderData } from '../numerals.types';
 
 /**
@@ -86,7 +84,7 @@ export function cleanRawInput(rawInput: string, settings: NumeralsSettings): str
 	let cleaned = rawInput;
 	for (const token of tokens.slice().reverse()) {
 		if (token.kind === 'insertion') {
-			const replacement = replaceExpressionDirectives(originalSource(token.text), true).source;
+			const replacement = /^@[\t ]*\[([^\]:]+)(::[^\]]*)?\]/.exec(token.text)![1];
 			cleaned = cleaned.slice(0, token.start) + replacement + cleaned.slice(token.end);
 		} else if (token.kind === 'emitter' && settings.hideEmitterMarkupInInput) {
 			cleaned = cleaned.slice(0, token.start).replace(/[\t ]+$/, '') + token.text.replace(/^=>[\t ]*(\$\{.*?\})?/, '');

@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Preserve grouped literals after implicit multiplication and compose insertion wrappers with previous/sum directives; keep reference display labels intact with many references and magic-variable text in note/property names.
 - Preserve mathjs argument, array, and index commas while normalizing complete grouped numbers only outside delimiter contexts; protect strings and comments through currency and directive preprocessing.
 - Bind cross-note properties as cloned typed values, fixing negative-value powers and preserving complex numbers, units, matrices, and precision. Reject reference assignments and cross-note function exports, retain original labels/diagnostics, and expose unresolved dependencies for refresh adapters.
 - Inline TeX triggers now use MathJax's inline mode in Reading mode and Live Preview instead of rendering as centered display math.

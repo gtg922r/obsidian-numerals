@@ -100,15 +100,17 @@ export class SyntaxHighlightRenderer extends BaseLineRenderer {
 			displaySource = displaySource.slice(0, ref.start) + symbol + displaySource.slice(ref.end);
 		}
 		const inputHtml = math.parse(displaySource).toHTML({ handler: (node: math.MathNode) => {
-			if (math.isSymbolNode(node) && labels.has(node.name)) return labels.get(node.name);
+			if (math.isSymbolNode(node) && labels.has(node.name)) return node.name;
 			return SyntaxHighlightRenderer.toHtmlOptions.handler(node);
 		} });
 
 		// Replace magic sum variable with directive from raw input
-		const processedHtml = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(
+		let processedHtml = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(
 			inputHtml,
 			lineData.rawInput + (lineData.comment || '')
 		);
+
+		if (labels.size) processedHtml = processedHtml.replace(new RegExp(`\\b(?:${[...labels.keys()].join('|')})\\b`, 'g'), symbol => labels.get(symbol)!);
 
 		// Convert HTML string to sanitized DOM elements
 		const inputElements = htmlToElements(processedHtml);

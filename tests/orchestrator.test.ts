@@ -303,3 +303,17 @@ describe('integrated reference rendering', () => {
 		expect(container.textContent).not.toMatch(/__numerals_ref|NumeralsReferenceLabel/);
 	});
 });
+
+
+test('syntax highlighting preserves magic-variable text inside reference labels', () => {
+	const container = createMockElement();
+	const source = '[[n]].__total + [[__total]].x';
+	const app = { metadataCache: {
+		getFirstLinkpathDest: () => ({ path: 'n.md' }),
+		getFileCache: () => ({ frontmatter: { numerals: 'all', __total: 2, x: 3 } }),
+	} } as unknown as App;
+	const formatter = createResultFormatter({ profile: createNumberFormatProfile(NumeralsNumberFormat.Fixed) });
+	processAndRenderNumeralsBlockFromSource(container, source, { sourcePath: 'source.md' } as MarkdownPostProcessorContext, {}, NumeralsRenderStyle.SyntaxHighlight, DEFAULT_SETTINGS, formatter, [], app);
+	expect(container.querySelector('.numerals-input')?.textContent).toBe('[[n]].__total+[[__total]].x');
+	expect(container.querySelector('.numerals-result')?.textContent).toContain('5');
+});

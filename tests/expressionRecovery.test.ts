@@ -40,6 +40,8 @@ function plain(value: unknown): unknown { return math.isMatrix(value) ? value.to
 describe('shared lexical input contract through all evaluation routes', () => {
 	test.each([
 		['max(1,234)', 234],
+		['[max][1](1,234)', 234],
+		['max?.(1,234)', 234],
 		['[1,234]', [1, 234]],
 		['[[1,234],[3,456]]', [[1, 234], [3, 456]]],
 		['[1,234][2]', 234],
@@ -47,6 +49,12 @@ describe('shared lexical input contract through all evaluation routes', () => {
 		['1,234 + 2', 1236],
 		['(1,234) + 2', 1236],
 		['2 * (1,234)', 2468],
+		['(1+2)(1,234)', 3702],
+		['3! (1,234)', 7404],
+		['max(1,2)(1,234)', 2468],
+		['[2](1,234)', [2468]],
+		['true(1,234)', 1234],
+		["3' (1,234)", 3702],
 		['1,234,567.89', 1234567.89],
 		['1,234e-2', 12.34],
 		['max(1,0001)', 1],
@@ -66,7 +74,7 @@ describe('shared lexical input contract through all evaluation routes', () => {
 		expect(evaluateMetadataValue(source, processors).error).toBeDefined();
 	});
 
-	test.each(['max((1,234),5)', 'max(1 + (2,345),6)', '[1 + (2,345)]', 'A[1,234]'])('does not normalize within nested delimiter context: %s', source => {
+	test.each(['max((1,234),5)', 'max(1 + (2,345),6)', '[1 + (2,345)]', 'A[1,234]', 'A[1](1,234)', '[max][1](1,234)', 'a.max(1,234)', 'a?.(1,234)', '(a)?.(1,234)'])('does not normalize within nested delimiter context: %s', source => {
 		expect(normalizeExpression(originalSource(source), processors).source).toBe(source);
 	});
 
@@ -288,4 +296,38 @@ test('bound Map deletion and clearing have explicit immutable-reference semantic
 	expect(() => scoped.delete('internal')).toThrow(/Cannot delete/);
 	expect(() => scoped.clear()).toThrow(/Cannot clear/); expect(scoped.get('internal')).toBe(2);
 	const ordinary = createReferenceScope(outer, new Map()); ordinary.set('x', 2); ordinary.clear(); expect(outer.size).toBe(0);
+});
+
+
+test('TeX restores more than ten labels without prefix collisions', () => {
+	const source = Array.from({ length: 12 }, (_, index) => `[[note${index}]].value`).join(' + ');
+	const tex = expressionToTeX(source);
+	for (let index = 0; index < 12; index++) expect(tex.split(`[[note${index}]].value`)).toHaveLength(2);
+	expect(tex).not.toMatch(/NumeralsReferenceLabel/);
+});
+
+
+describe('insertion and magic directive composition', () => {
+	test.each([
+		['4\n@[@prev]', [4, 4], [1]],
+		['1\n2\n@[@sum::3]', [1, 2, 3], [2]],
+		['1\n2\n@[@total]', [1, 2, 3], [2]],
+	])('unwraps then translates %s without losing source metadata', (source, expected, insertionLines) => {
+		const result = block(source);
+		expect(result.errorMsg).toBeNull(); expect(result.results).toEqual(expected);
+		expect(result.processed.rawRows).toEqual(source.split('\n'));
+		expect(cleanRawInput(source.split('\n').slice(-1)[0], DEFAULT_SETTINGS)).toBe(source.includes('@prev') ? '@prev' : source.includes('@sum') ? '@sum' : '@total');
+		expect(result.processed.blockInfo.insertion_lines).toEqual(insertionLines);
+		const generated = result.processed.processedSource;
+		const start = generated.lastIndexOf('__');
+		expect(mapSourceSpan(result.processed.sourceMap, { start, end: generated.length })).toEqual({ start: source.lastIndexOf('@['), end: source.length });
+	});
+
+	test('composed passes still protect literal strings/comments and quoted insertion values', () => {
+		const source = '"@[@prev] @sum"\n# @[@total]\n@["@prev"]';
+		const processed = preProcessBlockForNumeralsDirectives(source, processors);
+		expect(processed.processedSource).toBe('"@[@prev] @sum"\n# @[@total]\n"@prev"');
+		expect(processed.blockInfo.insertion_lines).toEqual([2]);
+		expect(block(source).results).toEqual(['@[@prev] @sum', undefined, '@prev']);
+	});
 });

@@ -5,10 +5,10 @@ Mathjs remains the parser and evaluator. `expressionScanner.ts` supplies a narro
 ## Input rules
 
 - Commas in calls, arrays, indexes, and objects remain mathjs delimiters, including in grouping parentheses nested within them. Use ungrouped numbers in those contexts: `max(1234, 5)`, `[1234, 5]`, `A[1, 234]`.
-- Complete grouped literals normalize at top level or in ordinary grouping parentheses: `1,234.5 + 2`, `(1,234) * 2`. A grouped integer has 1–3 leading digits (no leading zero), followed by three-digit groups. A decimal fraction and a complete exponent are supported.
+- Complete grouped literals normalize at top level or in ordinary grouping parentheses: `1,234.5 + 2`, `(1,234) * 2`, `(1+2)(1,234)`, `3! (1,234)`. Parentheses after symbols/index accessors remain calls; parentheses after computed results and postfix operators use mathjs implicit multiplication. A grouped integer has 1–3 leading digits (no leading zero), followed by three-digit groups. A decimal fraction and a complete exponent are supported.
 - An explicit configured currency prefix identifies one amount even inside a list/call: `max($1,234.50, $2)`. `StringReplaceMap` now accepts `currencySymbol` and `currencyCode` alongside the legacy required regex/replacement fields. Complete scientific amounts retain their exponent. Legacy regex callers remain supported for existing non-scientific currency input, but cannot strip argument commas.
 - Malformed candidates such as `1,0001`, `1,23`, `1,,234`, `1,234.56.7`, and incomplete exponents are left for mathjs to reject. No valid prefix is partially normalized. In `max(1,0001)`, the comma remains a delimiter and mathjs interprets `0001` as one.
-- All normalization and Numerals directive discovery/replacement protects strings/comments, including `@prev`, `@sum`, result directives, emitters, and formatting directives. `@createUnit` has no special preprocessing behavior; unit collisions remain errors. Same-note metadata functions remain supported.
+- All normalization and Numerals directive discovery/replacement protects strings/comments, including `@prev`, `@sum`, result directives, emitters, and formatting directives. `@createUnit` has no special preprocessing behavior; unit collisions remain errors. Same-note metadata functions remain supported. Insertion wrappers unwrap before directive translation, so `@[@prev]` and `@[@sum::3]` retain both their mathematical meaning and original insertion spans; displayed input keeps the directive label.
 
 ## Typed values and binding ownership
 

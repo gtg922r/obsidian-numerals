@@ -93,14 +93,14 @@ function readNumericCandidate(tail: string, delimiters: boolean): string | undef
 /** A lexical extension pass only. Mathjs owns grammar, precedence, and evaluation. */
 export function scanExpression(source: string, currencySymbols: readonly string[] = []): ExpressionToken[] {
 	const tokens: ExpressionToken[] = [];
-	const frames: { close: string; delimiter: boolean }[] = [];
-	let index = 0, endsValue = false;
+	const frames: { close: string; delimiter: boolean; callableAfter: boolean }[] = [];
+	let index = 0, endsValue = false, callable = false;
 	let previous: ExpressionToken | undefined;
 	const symbols = [...currencySymbols].filter(Boolean).sort((a, b) => b.length - a.length);
 	while (index < source.length) {
 		const start = index, tail = source.slice(index), char = source[index];
 		if (/\s/.test(char)) {
-			if (char === '\n' && frames.length === 0) { endsValue = false; previous = undefined; }
+			if (char === '\n' && frames.length === 0) { endsValue = false; callable = false; previous = undefined; }
 			index++; continue;
 		}
 		let kind: ExpressionToken['kind'] = 'syntax';
@@ -119,6 +119,8 @@ export function scanExpression(source: string, currencySymbols: readonly string[
 			kind = 'comment'; text = tail.split('\n')[0];
 		} else if (ref) {
 			kind = 'reference'; text = ref[0];
+		} else if (tail.startsWith('?.') && !/\d/.test(tail[2] ?? '')) {
+			text = '?.';
 		} else if (tail.startsWith('=>')) {
 			kind = 'emitter'; text = tail.split('\n')[0];
 		} else if (/^@\s*\[/.test(tail)) {
@@ -141,13 +143,29 @@ export function scanExpression(source: string, currencySymbols: readonly string[
 		if (kind === 'comment' || kind === 'emitter') continue;
 		if (kind === 'syntax') {
 			if (char === '(' || char === '[' || char === '{') {
-				frames.push({ close: char === '(' ? ')' : char === '[' ? ']' : '}', delimiter: char !== '(' || (endsValue && previous?.kind !== 'number' && previous?.kind !== 'currency') });
+				// Mathjs calls only symbols/accessors (or an explicit optional call).
+				// Parentheses after computed results and postfix operators multiply.
+				frames.push({
+					close: char === '(' ? ')' : char === '[' ? ']' : '}',
+					delimiter: char !== '(' || callable,
+					callableAfter: char === '[' && (endsValue || previous?.text === '?.'),
+				});
 				endsValue = false;
+				callable = false;
 			} else if (char === ')' || char === ']' || char === '}') {
-				if (frames[frames.length - 1]?.close === char) frames.pop();
+				const frame = frames[frames.length - 1]?.close === char ? frames.pop() : undefined;
 				endsValue = true;
-			} else if (char !== "'" && char !== '!') endsValue = false;
-		} else endsValue = !(kind === 'identifier' && /^(and|or|xor|not|mod|to|in)$/.test(text));
+				callable = frame?.callableAfter ?? false;
+			} else {
+				if (char !== "'" && char !== '!') endsValue = false;
+				callable = text === '?.';
+			}
+		} else {
+			const property = previous?.text === '.' || previous?.text === '?.';
+			endsValue = !(kind === 'identifier' && !property && /^(and|or|xor|not|mod|to|in)$/.test(text));
+			callable = kind === 'reference' || kind === 'directive' || kind === 'insertion'
+				|| (kind === 'identifier' && endsValue && (property || !/^(true|false|null|undefined|NaN|Infinity)$/.test(text)));
+		}
 		previous = token;
 	}
 	return tokens;
