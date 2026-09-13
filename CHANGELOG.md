@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file. The format 
 - Update vulnerable development dependencies, including esbuild 0.28.2, without changing mathjs or runtime dependencies.
 - Recorded the recovery implementation contract, work ledger, and BRAT-only publication boundary.
 - Documented recovery task ownership, verified historical-work preservation, and source-ordered function/state semantics.
+- Specified atomic currency runtime replacement and generation ownership to preserve symbol syntax and prevent stale mappings.
 - Centralized block, inline, TeX, and result-insertion formatting behind one result-formatting pipeline so evaluation always retains raw mathjs values.
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 

@@ -19,6 +19,14 @@ The user authorized implementation on 2026-09-13, including dedicated Codex task
 - Retain mathjs feature breadth, shared ResultFormatter, renderer strategies, and metadata opt-in.
 - Keep a short Markdown architecture map; archive the interactive atlas and old prototypes outside source.
 
+## Currency runtime ownership
+
+Use a private `create(all)` mathjs instance behind a small import gateway, retaining the full function set and existing evaluators. Prepare a fresh runtime, currency registry, preprocessing rules and formatter when currency mappings change. Validate and persist the candidate before activating it; failed Save and Cancel preserve the active state. Serialize saves. Formatting-only changes replace presentation configuration without recreating the engine.
+
+Native quoted unit strings, suffix symbols, spaced symbols, compound rates and conversion targets remain supported alongside scanner-recognized prefix amounts. Keep strings protected; native mathjs aliases handle quoted unit strings. Apply alpha hooks only to the owned instance, avoid shared global registry mutation, unit deletion and collision overrides, and use literal validated Unicode currency output instead of global MathJax macros.
+
+Runtime replacement invalidates old scopes, compiled functions, results and insertion proposals. Snapshots retain their originating runtime/formatting context until retired; never interpret an older Unit using a different runtime registry. Removing a configured custom currency removes its unconfigured code/aliases on rebuild, matching restart behavior. Ad-hoc source `createUnit` declarations must replay and still report collisions visibly; this does not resolve #175.
+
 ## Source and evaluation contracts
 
 The shared expression scanner protects strings/comments and recognizes delimiter context, currency tokens and references. Function/array/index commas remain delimiters (`max(1,234)` is two args; `[1,234]` is two elements). Complete grouped numbers may normalize in unambiguous expression positions. Explicit `$1,234.50` is one currency token even in a call/list. Never partially strip malformed grouping (`1,0001`). Mathjs is still the expression parser.
