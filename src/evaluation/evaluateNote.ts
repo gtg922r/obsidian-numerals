@@ -4,17 +4,17 @@ import { evaluateInlineExpression } from '../inline/inlineEvaluator';
 import { bindCrossNoteReferences, ReferenceEvaluationError, type CrossNoteReference, type ResolvedReference, type CrossNoteResolutionResult } from '../processing/crossNoteResolver';
 import { originalSource, scanExpression } from '../processing/expressionScanner';
 import { restoreReferenceNames } from '../processing/referenceBindings';
-import { preProcessBlockForNumeralsDirectives, replaceStringsInTextFromMap } from '../processing/preprocessor';
-import { getScopeFromFrontmatter } from '../processing/scope';
+import { preProcessBlockForNumeralsDirectives } from '../processing/preprocessor';
 import { indexNote, type NoteSourceIndex, type SourceSyntaxPolicy, type CalculationSource } from './sourceIndex';
 import { sourceSpansForRange, type SourceProjection } from './sourceProjection';
 import { captureNoteMetadata, type CapturedNoteMetadata, type DataviewMetadataInput, type MetadataEntry } from './metadata';
-import { EvaluationSession, type CalculationEnvironment, type RowTransaction } from './session';
+import type { CalculationEnvironment, RowTransaction } from './session';
+import { createMetadataSession, finishSessionRow, initializeMetadataEntries, observeSessionRow } from './metadataEvaluation';
 import { mergeProvenance, isVerifiedProvenance, VERIFIED_PROVENANCE, type ValueProvenance } from './provenance';
 import { copyEvaluationValue, copyMetadataValue, detachResult } from './valueOwnership';
 import { createNoteSnapshot, recordSymbolCheckpoint, type CalculationResult, type NoteDiagnostic, type NoteRowResult, type NoteSnapshot, type SymbolCheckpoint } from './noteSnapshot';
 import type { NoteServiceInput } from './noteService';
-import { observeRuntimeRow, recordRuntimeRow, runtimeSafetyDiagnostic, runtimeSafetyEpoch, type RuntimeRowObservation } from './runtimeProvenance';
+import { runtimeSafetyDiagnostic, runtimeSafetyEpoch, type RuntimeRowObservation } from './runtimeProvenance';
 
 /** Offsets are relative to this calculation's unprocessed expression projection. */
 export interface CapturedNoteReference {
@@ -90,57 +90,15 @@ export function evaluateNote(input: CapturedNoteEvaluationInput, signal?: AbortS
 	assertCurrent(signal);
 	diagnostics.push(...metadata.warnings.map(message => ({kind: 'metadata' as const, message})));
 	if (metadata.freshness.reason) diagnostics.push({kind: 'metadata', message: metadata.freshness.reason});
-	const session = new EvaluationSession({sourceRevision: String(generation.sourceRevision),
-		metadataGeneration: generation.metadataRevision, runtimeGeneration: generation.runtimeGeneration}, new Map(), {
-		children(value) {
-			if (engine.isMatrix(value)) {
-				const children: unknown[] = [];
-				value.forEach(child => { children.push(child); }, true);
-				return children;
-			}
-			if (engine.isResultSet(value)) return value.entries;
-			return undefined;
-		},
-	});
+	const session = createMetadataSession(engine, {sourceRevision: String(generation.sourceRevision),
+		metadataGeneration: generation.metadataRevision, runtimeGeneration: generation.runtimeGeneration});
 	const calculations: CalculationResult[] = [];
 	const symbols: SymbolCheckpoint[] = [];
 	const processors = [...input.preProcessors];
-	const finishProvenance = (transaction: RowTransaction, observation: RuntimeRowObservation): ValueProvenance => {
-		const provenance = transaction.provenance;
-		recordRuntimeRow(engine, observation, provenance);
-		return provenance;
-	};
-	const observeEngine = (source: string, environment: CalculationEnvironment) => {
-		const observation = observeRuntimeRow(engine, source, session.copyBindings(environment));
-		session.recordInput(observation.input);
-		if (observation.recognizedEffect) session.recordOpaqueEffect();
-		else if (observation.deferredCapability) session.recordInput({unverified: [], ambiguous: true});
-		return observation;
-	};
 	const initialize = (environment: CalculationEnvironment, entries: readonly MetadataEntry[], publishGlobals = true) => {
-		for (const entry of entries) {
-			assertCurrent(signal);
-			const transaction = session.beginRow(environment, {publishGlobals});
-			let observation = observeEngine('', environment);
-			try {
-				const processedValue = typeof entry.value === 'string' ? replaceStringsInTextFromMap(entry.value, processors) : '';
-				observation = observeEngine(/^[^(]+\([^)]*\)$/.test(entry.key) ? `${entry.key}=${processedValue}` : processedValue, environment);
-				const provenance = entry.provenance === 'dataview' && metadata.freshness.status !== 'verified'
-					? {unverified: [`Dataview field ${entry.key}`], ambiguous: false} : VERIFIED_PROVENANCE;
-				session.recordInput(provenance);
-				// Capture already applied the legacy last-array-entry rule exactly once.
-				// Wrap it once for the existing initializer instead of selecting again.
-				const {warnings} = getScopeFromFrontmatter({numerals: 'all', [entry.key]: [copyMetadataValue(entry.value, engine)]},
-					environment.scope, true, processors, false, engine, {runtimeSafety: 'caller'});
-				if (warnings.length) {
-					transaction.discard();
-					diagnostics.push(...warnings.map(message => ({kind: 'metadata' as const, message})));
-				} else transaction.commit();
-			} catch (error: unknown) {
-				transaction.discard();
-				diagnostics.push({kind: 'metadata', message: `Metadata ${entry.key}: ${errorMessage(error)}`});
-			}
-			finishProvenance(transaction, observation);
+		for (const outcome of initializeMetadataEntries({engine, session, environment, entries, freshness: metadata.freshness,
+			preProcessors: processors, publishGlobals, signal})) {
+			diagnostics.push(...outcome.warnings.map(message => ({kind: 'metadata' as const, message})));
 		}
 	};
 	const copyPayload = (value: unknown): unknown => {
@@ -186,16 +144,16 @@ export function evaluateNote(input: CapturedNoteEvaluationInput, signal?: AbortS
 			let transaction: RowTransaction | undefined;
 			let observation: RuntimeRowObservation;
 			let rowProvenance = VERIFIED_PROVENANCE;
-			const begin = (source: string) => { transaction = session.beginRow(environment); observation = observeEngine(source, environment); };
+			const begin = (source: string) => { transaction = session.beginRow(environment); observation = observeSessionRow(engine, session, environment, source); };
 			const commit = (result: unknown) => {
 				transaction!.commit(result);
-				rowProvenance = finishProvenance(transaction!, observation);
+				rowProvenance = finishSessionRow(engine, transaction!, observation);
 				transaction = undefined;
 			};
 			const discard = () => {
 				if (!transaction) return;
 				transaction.discard();
-				finishProvenance(transaction, observation);
+				finishSessionRow(engine, transaction, observation);
 				transaction = undefined;
 			};
 			const record = (index: number, result: unknown, processed: string, rowProjection: SourceProjection, transparent = false) => {

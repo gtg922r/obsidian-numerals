@@ -14,6 +14,8 @@ export interface MetadataSource {
 
 export interface MetadataEntry {
 	readonly key: string;
+	/** Detached declarative root before the legacy top-level array selection. */
+	readonly rawValue: unknown;
 	/** Declarative source/value only: never a cached executable function. */
 	readonly value: unknown;
 	readonly provenance: 'native' | 'dataview';
@@ -233,14 +235,20 @@ function selectEntries(metadata: Record<string, unknown>, native: Record<string,
 		try {
 			// Copy before selecting the final array item: hidden cached closures are
 			// still rejected instead of being imported from provider-owned graphs.
-			let value = copyMetadataValue(rawValue, input.engine);
-			if (Array.isArray(value)) value = value[value.length - 1];
-			entries.push({ key, value, provenance: projectedKeys.has(key) ? 'dataview' : 'native' });
+			const ownedRawValue = captureDeclarativeMetadataValue(rawValue, input.engine);
+			const selectedValue: unknown = Array.isArray(ownedRawValue) ? ownedRawValue[ownedRawValue.length - 1] : ownedRawValue;
+			const value = copyMetadataValue(selectedValue, input.engine);
+			entries.push({ key, rawValue: ownedRawValue, value, provenance: projectedKeys.has(key) ? 'dataview' : 'native' });
 		} catch (error: unknown) {
 			warnings.push(`Metadata "${key}": ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 	return entries;
+}
+
+/** Capture provider data before scheduling or I/O, without invoking declarative getters. */
+export function captureDeclarativeMetadataValue(value: unknown, engine: MathJsInstance): unknown {
+	return copyMetadataValue(value, engine);
 }
 
 function dataProperties(value: Readonly<Record<string, unknown>>, origin: 'native' | 'dataview',

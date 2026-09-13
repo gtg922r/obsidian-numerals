@@ -164,6 +164,28 @@ describe('complete-note evaluation semantics', () => {
 		expect(snapshot.calculations.map(calculation => calculation.rows[0].insertion.canInsert)).toEqual([true, true, false]);
 	});
 
+	it('retains raw root metadata without linking it to initialized values or later sessions', () => {
+		const text = frontmatter('numerals: all\nrows: [[1,2],[3,4]]', [block('rows[1]=90'), inline('sum(rows)')].join('\n\n'));
+		const captured = captureNoteEvaluationInput(request(text));
+		const entry = captured.metadata.entries.find(value => value.key === 'rows')!;
+		(entry.rawValue as number[][])[1][0] = 500;
+		const first = evaluateNote(captured);
+		const second = evaluateNote(captured);
+		expect(inlineValues(first)).toEqual([7]);
+		expect(inlineValues(second)).toEqual([7]);
+		expect(entry.value).toEqual([3, 4]);
+	});
+
+	it('keeps the original once-per-seed and once-per-local metadata sampling schedule', () => {
+		let samples = 0;
+		engine.import({sample: () => ++samples});
+		const text = frontmatter('numerals: all\n$once: "sample()"\nlocal: "sample()"', [block('$once+local'), inline('$once+local')].join('\n\n'));
+		const snapshot = evaluate(text);
+		expect(samples).toBe(4);
+		expect(snapshot.calculations[0].rows[0].result).toBe(4);
+		expect(inlineValues(snapshot)).toEqual([5]);
+	});
+
 	it('does not let ordinary metadata initialization republish dollar assignments over preceding source', () => {
 		const text = frontmatter('numerals: all\nlocal: "$g=3"', [block('$g=9'), inline('$g'), inline('local')].join('\n\n'));
 		const snapshot = evaluate(text);
