@@ -32,6 +32,8 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Resolve captured cross-note metadata in one private batch with actual dependency provenance, independent typed copies, and preserved raw nested-property/array semantics; avoid repeated sampling, missing-reference side effects and stale-cache authority.
+- Copy declarative metadata through own data properties throughout arrays, plain objects and native Matrix/ResultSet contents, preventing provider accessors or iterators from executing during capture while preserving shared and cyclic values.
 - Match accepted Obsidian fence language tokens, inline HTML boundaries and quoted content tabs in the standalone source index; normalize parser line endings while retaining original UTF-16 mappings; withhold ambiguous quoted fences with diagnostics and preserve physical source order. Record all 95 native Linux extraction cases with explicit conservative source policies.
 - Read complete insertion wrappers containing matrices, nested collections, quoted brackets, and escaped quotes; preserve their exact source spans and existing serialized values when reprocessing a block.
 - Give rendered blocks and Reading inline elements disposable occurrence ownership; refresh native/Dataview and missing-reference changes, initialize Source-mode subscriptions, cancel queued work on unload, and support popout Text/SVG click navigation.

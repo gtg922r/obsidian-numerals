@@ -123,12 +123,46 @@ function copyValue(value: unknown, engine: MathJsInstance, functions: FunctionPo
 	}
 	if (value instanceof Date) return new Date(value.getTime());
 	if (Array.isArray(value)) {
+		if (functions === 'reject') {
+			if (Object.getOwnPropertyDescriptor(value, Symbol.iterator)) throw new Error('Cannot detach an array with a custom own iterator.');
+			const length = Object.getOwnPropertyDescriptor(value, 'length')!.value as number;
+			// Keep the existing sparse-to-undefined result without reading inherited
+			// numeric properties or invoking the provider's iteration hooks.
+			const result = new Array<unknown>(length).fill(undefined);
+			seen.set(value, result);
+			for (const key of Reflect.ownKeys(value)) {
+				const descriptor = Object.getOwnPropertyDescriptor(value, key);
+				if (!descriptor || !('value' in descriptor)) throw new Error('Cannot detach an object with accessor properties.');
+				const child = copyValue(descriptor.value, engine, functions, seen);
+				// Hidden and symbolic data is validated above, although the array's
+				// exported value continues to contain numeric entries only.
+				if (typeof key !== 'string' || !/^(0|[1-9]\d*)$/.test(key) || Number(key) >= 0xffffffff) continue;
+				Object.defineProperty(result, key, {value: child, enumerable: true, configurable: true, writable: true});
+			}
+			return result;
+		}
 		const result: unknown[] = [];
 		seen.set(value, result);
 		for (const entry of value) result.push(copyValue(entry, engine, functions, seen));
 		return result;
 	}
 	const prototype: unknown = Object.getPrototypeOf(value);
+	if (functions === 'reject' && (prototype === null ||
+		(typeof prototype === 'object' && Object.getPrototypeOf(prototype) === null))) {
+		// Accept each realm's plain Object prototype without reading constructor
+		// properties. Native typed objects use their existing branches below.
+		const result: Record<string, unknown> = {};
+		seen.set(value, result);
+		for (const key of Reflect.ownKeys(value)) {
+			const descriptor = Object.getOwnPropertyDescriptor(value, key);
+			if (!descriptor || !('value' in descriptor)) throw new Error('Cannot detach an object with accessor properties.');
+			const child = copyValue(descriptor.value, engine, functions, seen);
+			if (typeof key === 'string' && descriptor.enumerable) {
+				Object.defineProperty(result, key, {value: child, enumerable: true, configurable: true, writable: true});
+			}
+		}
+		return result;
+	}
 	if (prototype === Object.prototype || prototype === null) {
 		const result: Record<string, unknown> = {};
 		seen.set(value, result);
@@ -149,6 +183,14 @@ function copyValue(value: unknown, engine: MathJsInstance, functions: FunctionPo
 		}).ResultSet;
 		const result = new ResultSetConstructor([]);
 		seen.set(value, result);
+		if (functions === 'reject') {
+			const entries = Object.getOwnPropertyDescriptor(value, 'entries');
+			if (!entries || !('value' in entries) || !Array.isArray(entries.value)) {
+				throw new Error('Metadata ResultSet entries must be an own data array.');
+			}
+			result.entries = copyValue(entries.value, engine, functions, seen) as unknown[];
+			return result;
+		}
 		result.entries = value.entries.map(entry => copyValue(entry, engine, functions, seen));
 		return result;
 	}

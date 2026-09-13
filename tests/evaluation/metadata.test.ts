@@ -1,9 +1,13 @@
 import { all, create } from 'mathjs';
+import { runInNewContext } from 'node:vm';
 import {
-	captureNoteMetadata, getMetadataFreshness,
+	captureDeclarativeMetadataValue, captureNoteMetadata, getMetadataFreshness,
 	type CaptureNoteMetadataInput, type DataviewMetadataInput,
 	type ExactDataviewBufferEvidence, type MetadataSource,
 } from '../../src/evaluation/metadata';
+import { createMetadataSession, initializeMetadataEntries } from '../../src/evaluation/metadataEvaluation';
+import { runtimeSafetyEpoch } from '../../src/evaluation/runtimeProvenance';
+import { getNestedProperty } from '../../src/processing/crossNoteResolver';
 
 const { load: parseYaml } = jest.requireActual<{ load: (text: string) => unknown }>('js-yaml');
 const engine = create(all);
@@ -19,6 +23,141 @@ function capture(text: string, options: Partial<CaptureNoteMetadataInput> = {}) 
 function values(result: ReturnType<typeof capture>, native = false): Record<string, unknown> {
 	return Object.fromEntries((native ? result.nativeEntries : result.entries).map(entry => [entry.key, entry.value]));
 }
+
+describe('initial declarative provider capture', () => {
+	it.each(['root', 'nested'] as const)('rejects %s numeric array getters before executing provider code', position => {
+		const getter = jest.fn(() => 2);
+		const array = [0];
+		Object.defineProperty(array, '0', {enumerable: true, get: getter});
+		expect(() => captureDeclarativeMetadataValue(position === 'root' ? array : {values: array}, engine)).toThrow('accessor');
+		expect(getter).not.toHaveBeenCalled();
+	});
+
+	it.each(['data', 'accessor'] as const)('rejects an own %s array iterator without invoking provider code', kind => {
+		const iterator = jest.fn(function* () { yield 2; });
+		const getter = jest.fn(() => iterator);
+		const array = [2];
+		Object.defineProperty(array, Symbol.iterator, kind === 'data' ? {value: iterator} : {get: getter});
+		expect(() => captureDeclarativeMetadataValue(array, engine)).toThrow('iterator');
+		expect(iterator).not.toHaveBeenCalled();
+		expect(getter).not.toHaveBeenCalled();
+	});
+
+	it.each(['array', 'object'] as const)('rejects hidden executable data properties on a declarative %s', kind => {
+		const cached = jest.fn(() => 2);
+		for (const key of ['hidden', Symbol('hidden')]) {
+			const input = kind === 'array' ? [1, 2] : {value: 2};
+			Object.defineProperty(input, key, {value: cached, enumerable: false});
+			expect(() => captureDeclarativeMetadataValue(input, engine)).toThrow('executable function');
+		}
+		expect(cached).not.toHaveBeenCalled();
+	});
+
+	it('rejects hidden symbolic accessors without invoking them', () => {
+		const getter = jest.fn(() => 2);
+		const input = [1, 2];
+		Object.defineProperty(input, Symbol('hidden'), {get: getter, enumerable: false});
+		expect(() => captureDeclarativeMetadataValue(input, engine)).toThrow('accessor');
+		expect(getter).not.toHaveBeenCalled();
+	});
+
+	it('detaches native mathjs values without changing their supported types', () => {
+		const input = {unit: engine.unit('3 cm'), matrix: engine.matrix([[1, 2]]), complex: engine.complex(2, 3)};
+		const captured = captureDeclarativeMetadataValue(input, engine) as typeof input;
+		expect(engine.isUnit(captured.unit)).toBe(true);
+		expect(engine.isMatrix(captured.matrix)).toBe(true);
+		expect(engine.isComplex(captured.complex)).toBe(true);
+		expect(captured.unit.toNumber('cm')).toBeCloseTo(3);
+		expect(captured.matrix.toArray()).toEqual([[1, 2]]);
+		expect(captured.complex.toString()).toBe('2 + 3i');
+		captured.unit.value = 9;
+		captured.matrix.set([0, 0], 9);
+		captured.complex.re = 9;
+		expect(input.unit.toNumber('cm')).toBeCloseTo(3);
+		expect(input.matrix.get([0, 0])).toBe(1);
+		expect(input.complex.re).toBe(2);
+	});
+
+	it('preserves cross-realm arrays and nested native values with independent ownership', () => {
+		const unit = engine.unit('3 cm');
+		const input: unknown = runInNewContext('[value, [1, 2]]', {value: unit});
+		expect(Array.isArray(input)).toBe(true);
+		expect(input instanceof Array).toBe(false);
+		const captured = captureDeclarativeMetadataValue(input, engine) as [typeof unit, number[]];
+		expect(captured).not.toBe(input);
+		expect(captured[0].toNumber('cm')).toBeCloseTo(3);
+		expect(captured[1]).toEqual([1, 2]);
+		captured[0].value = 9;
+		captured[1][0] = 9;
+		expect(unit.toNumber('cm')).toBeCloseTo(3);
+		expect((input as unknown[])[1]).toEqual([1, 2]);
+	});
+
+	it('never executes inherited numeric array getters or imports their values', () => {
+		const runtime = create(all);
+		const precision = runtime.config({}).precision;
+		const getter = jest.fn(() => { runtime.config({precision: 2}); return 99; });
+		const prototype = Object.create(Array.prototype) as object;
+		Object.defineProperty(prototype, '0', {get: getter});
+		const input: unknown[] = [];
+		input[1] = 7;
+		Object.setPrototypeOf(input, prototype);
+		const captured = captureDeclarativeMetadataValue(input, runtime) as unknown[];
+		expect(getter).not.toHaveBeenCalled();
+		expect(runtime.config({}).precision).toBe(precision);
+		expect(runtimeSafetyEpoch(runtime)).toBe(0);
+		expect(captured).toEqual([undefined, 7]);
+		expect(getNestedProperty({values: captured}, 'values.0')).toBeUndefined();
+	});
+
+	it('keeps inherited array data paths unavailable beneath plain objects', () => {
+		const prototype = Object.create(Array.prototype) as object;
+		Object.defineProperty(prototype, '0', {value: {amount: 99}});
+		const input: unknown[] = [];
+		input[1] = {amount: 7};
+		Object.setPrototypeOf(input, prototype);
+		const captured = captureDeclarativeMetadataValue({values: input}, engine) as Record<string, unknown>;
+		expect(getNestedProperty(captured, 'values.0.amount')).toBeUndefined();
+		expect(getNestedProperty(captured, 'values.1.amount')).toBe(7);
+	});
+
+	it.each(['data', 'accessor'] as const)('ignores an inherited %s array iterator without invoking it', kind => {
+		const iterator = jest.fn(function* () { yield 99; });
+		const getter = jest.fn(() => iterator);
+		const prototype = Object.create(Array.prototype) as object;
+		Object.defineProperty(prototype, Symbol.iterator, kind === 'data' ? {value: iterator} : {get: getter});
+		const input = [1, 2];
+		Object.setPrototypeOf(input, prototype);
+		expect(captureDeclarativeMetadataValue(input, engine)).toEqual([1, 2]);
+		expect(getter).not.toHaveBeenCalled();
+		expect(iterator).not.toHaveBeenCalled();
+	});
+
+	it('normalizes foreign plain children and preserves cross-realm sparse arrays and cycles', () => {
+		const input: unknown = runInNewContext('const data=[]; data[2]={amount:7}; data[3]=data; data');
+		const captured = captureDeclarativeMetadataValue(input, engine) as unknown[];
+		expect(captured[0]).toBeUndefined();
+		expect(captured[1]).toBeUndefined();
+		expect(captured[2]).toEqual({amount: 7});
+		expect(captured[3]).toBe(captured);
+		expect(captured).not.toBe(input);
+	});
+
+	it('rejects own getters below foreign plain children without invoking them', () => {
+		const getter = jest.fn(() => 7);
+		const input: unknown = runInNewContext('const child={}; Object.defineProperty(child,"amount",{get:getter,enumerable:true}); [child]', {getter});
+		expect(() => captureDeclarativeMetadataValue(input, engine)).toThrow('accessor');
+		expect(getter).not.toHaveBeenCalled();
+	});
+
+	it('preserves an own __proto__ data key without applying prototype assignment semantics', () => {
+		const input: Record<string, unknown> = {};
+		Object.defineProperty(input, '__proto__', {value: {amount: 7}, enumerable: true});
+		const captured = captureDeclarativeMetadataValue(input, engine) as Record<string, unknown>;
+		expect(Object.getPrototypeOf(captured)).toBe(Object.prototype);
+		expect(Object.getOwnPropertyDescriptor(captured, '__proto__')?.value).toEqual({amount: 7});
+	});
+});
 
 describe('authoritative note metadata capture', () => {
 	it('parses the current full buffer, then removes obsolete fields in the next revision', () => {
@@ -62,6 +201,8 @@ describe('authoritative note metadata capture', () => {
 	it('uses the last native array entry without flattening nested array values', () => {
 		const result = capture('---\nnumerals: all\nrate: [1, 3]\nrows: [[1, 2], [3, 4]]\nempty: []\n---');
 		expect(values(result)).toEqual({ rate: 3, rows: [3, 4], empty: undefined });
+		expect(Object.fromEntries(result.entries.map(entry => [entry.key, entry.rawValue])))
+			.toEqual({rate: [1, 3], rows: [[1, 2], [3, 4]], empty: []});
 	});
 
 	it('treats non-leading YAML, missing frontmatter, and unclosed frontmatter without cached fallback', () => {
@@ -134,6 +275,29 @@ describe('Dataview fields and detached declarative inputs', () => {
 		expect((values(result, true).property as typeof property).nested.cost).toBe(2);
 	});
 
+	it('owns raw root arrays separately from selected values, provider values, and native fallback entries', () => {
+		const rows = [[{cost: 1}], [{cost: 3}]];
+		const repeated = [[1, 2], [3, 4]];
+		const result = capture('---\nnumerals: all\n---', {
+			parseYaml: () => ({numerals: 'all', rows}),
+			dataview: {status: 'projection', origin: 'inline-fields', revision: 1, metadata: {repeated}},
+		});
+		const native = result.entries.find(entry => entry.key === 'rows')!;
+		const projected = result.entries.find(entry => entry.key === 'repeated')!;
+		expect(native.rawValue).toEqual([[{cost: 1}], [{cost: 3}]]);
+		expect(native.value).toEqual([{cost: 3}]);
+		expect(projected.rawValue).toEqual([[1, 2], [3, 4]]);
+		expect(projected.value).toEqual([3, 4]);
+		(native.rawValue as typeof rows)[1][0].cost = 50;
+		(native.value as {cost: number}[])[0].cost = 70;
+		(projected.rawValue as number[][])[1][0] = 60;
+		expect(rows[1][0].cost).toBe(3);
+		expect(repeated[1][0]).toBe(3);
+		expect(projected.value).toEqual([3, 4]);
+		expect(result.nativeEntries.find(entry => entry.key === 'rows')?.rawValue).toEqual(rows);
+		expect(result.nativeEntries.find(entry => entry.key === 'rows')?.value).toEqual(rows[1]);
+	});
+
 	it('rejects cached executable functions even inside collections, preserving other fields', () => {
 		const cached = () => 2;
 		const functionMatrix = engine.matrix([0]);
@@ -156,6 +320,128 @@ describe('Dataview fields and detached declarative inputs', () => {
 		expect(values(result)).toEqual({ good: 3 });
 		expect(accessor).not.toHaveBeenCalled();
 		expect(result.warnings[0]).toContain('accessor');
+	});
+
+	it.each(['root', 'nested'] as const)('rejects numeric array accessors before copying a %s raw value', position => {
+		const accessor = jest.fn(() => 1);
+		const array = [0, 2];
+		Object.defineProperty(array, '0', {enumerable: true, get: accessor});
+		const result = capture('---\nnumerals: all\n---', {dataview: {
+			status: 'projection', origin: 'inline-fields', revision: 1,
+			metadata: {bad: position === 'root' ? array : {values: array}, good: 7},
+		}});
+		expect(values(result)).toEqual({good: 7});
+		expect(accessor).not.toHaveBeenCalled();
+		expect(result.warnings[0]).toContain('accessor');
+	});
+
+	it.each(['data', 'accessor'] as const)('rejects an array’s own %s iterator without reading or calling it', kind => {
+		const iterator = jest.fn(function* () { yield 1; yield 2; });
+		const getter = jest.fn(() => iterator);
+		const array = [1, 2];
+		Object.defineProperty(array, Symbol.iterator, kind === 'data' ? {value: iterator} : {get: getter});
+		const result = capture('---\nnumerals: all\n---', {dataview: {
+			status: 'projection', origin: 'inline-fields', revision: 1, metadata: {bad: {values: array}, good: 7},
+		}});
+		expect(values(result)).toEqual({good: 7});
+		expect(iterator).not.toHaveBeenCalled();
+		expect(getter).not.toHaveBeenCalled();
+		expect(result.warnings[0]).toContain('iterator');
+	});
+
+	it('retains sparse and cyclic arrays plus nested native values during declarative copying', () => {
+		const sparse: unknown[] = [];
+		sparse[2] = [3, 4];
+		const cycle: unknown[] = [];
+		cycle.push(cycle);
+		const nested = {matrix: engine.matrix([[1, 2]]), unit: engine.unit('3 cm')};
+		const result = capture('---\nnumerals: all\n---', {parseYaml: () => ({numerals: 'all', sparse, cycle, nested})});
+		expect(result.warnings).toEqual([]);
+		const sparseEntry = result.entries.find(entry => entry.key === 'sparse')!;
+		expect(sparseEntry.rawValue).toEqual([undefined, undefined, [3, 4]]);
+		expect(sparseEntry.value).toEqual([3, 4]);
+		const cycleEntry = result.entries.find(entry => entry.key === 'cycle')!;
+		expect((cycleEntry.rawValue as unknown[])[0]).toBe(cycleEntry.rawValue);
+		expect((cycleEntry.value as unknown[])[0]).toBe(cycleEntry.value);
+		expect(cycleEntry.rawValue).not.toBe(cycleEntry.value);
+		const nestedEntry = result.entries.find(entry => entry.key === 'nested')!;
+		expect((nestedEntry.value as typeof nested).matrix.toArray()).toEqual([[1, 2]]);
+		expect((nestedEntry.value as typeof nested).unit.toNumber('cm')).toBeCloseTo(3);
+	});
+});
+
+describe('shared captured metadata initialization', () => {
+	const generation = {sourceRevision: '1', metadataGeneration: 'metadata:1', runtimeGeneration: 1};
+
+	it('returns ordered row outcomes with actual dependency provenance and binding rollback', () => {
+		const runtime = create(all);
+		const captured = capture('---\nnumerals: all\n$derived: "$dv+1"\n$failed: "$temporary=9;missing"\n$constant: 5\n---', {
+			engine: runtime, dataview: {status: 'projection', origin: 'inline-fields', revision: 1, metadata: {$dv: 2}},
+		});
+		const session = createMetadataSession(runtime, generation);
+		const environment = session.createEnvironment('metadata');
+		try {
+			const outcomes = initializeMetadataEntries({engine: runtime, session, environment, entries: captured.entries,
+				freshness: captured.freshness, preProcessors: []});
+			expect(outcomes.map(outcome => [outcome.key, outcome.status])).toEqual([
+				['$dv', 'committed'], ['$derived', 'committed'], ['$failed', 'discarded'], ['$constant', 'committed'],
+			]);
+			expect(outcomes[1].provenance.unverified).toEqual(['Dataview field $dv']);
+			expect(outcomes[2].warnings[0]).toContain('Frontmatter: error evaluating "$failed"');
+			expect(outcomes[3].provenance).toEqual({unverified: [], ambiguous: false});
+			expect(session.copyBindings(environment).get('$derived')).toBe(3);
+			expect(session.copyBindings(environment).has('$temporary')).toBe(false);
+		} finally { session.retire(); }
+	});
+
+	it('records runtime effects after failed native evaluation and still initializes later rows', () => {
+		const runtime = create(all);
+		const captured = capture('---\n$effect: "config({precision:2});missing"\n$after: 5\n---', {engine: runtime});
+		const session = createMetadataSession(runtime, generation);
+		const environment = session.createEnvironment('metadata');
+		try {
+			const outcomes = initializeMetadataEntries({engine: runtime, session, environment, entries: captured.entries,
+				freshness: captured.freshness, preProcessors: []});
+			expect(outcomes.map(outcome => outcome.status)).toEqual(['discarded', 'committed']);
+			expect(outcomes[0].provenance.ambiguous).toBe(true);
+			expect(session.copyBindings(environment).has('$effect')).toBe(false);
+			expect(session.copyBindings(environment).get('$after')).toBe(5);
+			expect(runtime.config({}).precision).toBe(2);
+			expect(runtimeSafetyEpoch(runtime)).toBeGreaterThan(0);
+		} finally { session.retire(); }
+	});
+
+	it('discards rejected copy inputs without leaving an active row', () => {
+		const runtime = create(all);
+		const session = createMetadataSession(runtime, generation);
+		const environment = session.createEnvironment('metadata');
+		const cachedFunction = () => 9;
+		try {
+			const outcomes = initializeMetadataEntries({engine: runtime, session, environment, entries: [
+				{key: '$bad', rawValue: cachedFunction, value: cachedFunction, provenance: 'native'},
+				{key: '$good', rawValue: 5, value: 5, provenance: 'native'},
+			], freshness: getMetadataFreshness(source('')), preProcessors: []});
+			expect(outcomes.map(outcome => outcome.status)).toEqual(['discarded', 'committed']);
+			expect(outcomes[0].warnings[0]).toContain('executable function');
+			expect(session.copyBindings(environment).get('$good')).toBe(5);
+		} finally { session.retire(); }
+	});
+
+	it('propagates cancellation after recording native effects and discarding staged bindings', () => {
+		const runtime = create(all);
+		const controller = new AbortController();
+		const stop = jest.fn(() => { controller.abort(); return 0; });
+		runtime.import({stop});
+		const captured = capture('---\n$cancel: "config({precision:2});stop();$leaked=9"\n$never: "stop()"\n---', {engine: runtime});
+		const session = createMetadataSession(runtime, generation);
+		const environment = session.createEnvironment('metadata');
+		try {
+			expect(() => initializeMetadataEntries({engine: runtime, session, environment, entries: captured.entries,
+				freshness: captured.freshness, preProcessors: [], signal: controller.signal})).toThrow('superseded');
+			expect(stop).toHaveBeenCalledTimes(1);
+			expect(session.copyBindings(environment).has('$leaked')).toBe(false);
+			expect(runtimeSafetyEpoch(runtime)).toBeGreaterThan(0);
+		} finally { session.retire(); }
 	});
 });
 
