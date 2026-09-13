@@ -30,6 +30,8 @@ Whole-note boundaries: `indexNote` produces ordered calculations, original spans
 - Frontmatter and Dataview initialize scope.
 - Ordinary assignments remain block-local; ordinary inline assignments remain local to that expression.
 - Successful dollar-prefixed assignments export to subsequent calculations; latest preceding assignment wins. Functions/values never survive into a newer source revision.
+- An exported function retains its defining block's ordinary locals while dollar-prefixed free variables read the latest successful assignment in the current note generation. For example, `$rate = 2; local = 10; $f(x) = local + x * $rate` yields 14 for a subsequent `$f(2)`, then 16 after a later `$rate = 3`. An ordinary `local` in another block does not replace the captured value.
+- Commit evaluation state after each successful source row or inline expression. Discard state changes from a failing row/expression, preserving earlier successful rows. Detach each result when recorded so later collection mutations cannot change earlier displayed results.
 - Errors stop the remainder of that block while preserving earlier successful results. Inline errors clear the inline previous-result chain.
 - Inline `@prev` follows the prior inline expression across the full note. Blocks have their own existing `@prev` and `@sum` semantics, including existing comment/blank boundaries. Formatting directives stay evaluation-transparent.
 - Selection only changes source/widget visibility. Selection/scroll changes do not evaluate math.
@@ -81,4 +83,3 @@ Do not close #82 as fulfilled by @hideRows: it asks to retain variable/result wh
 ## Completion
 
 Verified BRAT prerelease assets, tested commit/hashes, reviewed PR history, recorded platform coverage/limitations, and stable distribution unchanged. Stop before production promotion. Later custom units, locale input, export/alignment and other features remain separately specified work; any publication remains prerelease-only.
-
