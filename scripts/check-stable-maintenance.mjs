@@ -6,8 +6,8 @@ import { readFileSync } from 'node:fs';
 // merged features, separately from the stable 1.10.2 distribution metadata.
 // Keep this guard separate from recovery's candidate/publication validation.
 const protectedBlobs = {
-    'package.json': '144806e2f7aec3e4a4958d6d3a838c10ddeed22a',
-    'package-lock.json': '08c79a35a2010a810505a3a9f32a58171e8c1dcb',
+    'package.json': '23a76edcf19cae3f3f2515fe4d3268428deed0d3',
+    'package-lock.json': '11a95757ef7e7d877e109cec3cac9eb99c6d75eb',
     'manifest.json': 'a8f7f565d79833c333f77f4acfc3e540a8c69b14',
     'versions.json': '51aa485d3ba838dcef42ab89206b36d4e2e07136',
     'styles.css': '703d18fe509a5e3fc849c500035e01b97ec1b552',
