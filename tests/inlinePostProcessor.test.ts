@@ -186,10 +186,10 @@ describe('inline numerals integration', () => {
 		) {
 			const app = {
 				vault: {
-					getAbstractFileByPath: jest.fn(() => null),
+					getAbstractFileByPath: jest.fn(() => null), on: jest.fn(), offref: jest.fn(),
 				},
 				metadataCache: {
-					getFileCache: jest.fn(),
+					getFileCache: jest.fn(), on: jest.fn(), offref: jest.fn(),
 				},
 			};
 			return createInlineNumeralsPostProcessor(
@@ -327,14 +327,14 @@ describe('inline numerals integration', () => {
 // Reading mode cross-note invalidation
 // ---------------------------------------------------------------------------
 describe('inline post-processor cross-note references', () => {
-	it('rerenders inline cross-note expressions when referenced note metadata changes', () => {
+	it('rerenders inline cross-note expressions when referenced note metadata changes', async () => {
 		let referencedPrice = 10;
-		let metadataChangeHandler: ((_callbackType: unknown, file: unknown) => void) | undefined;
+		let metadataChangeHandler: ((...args: unknown[]) => void) | undefined;
 		const sourceFile = { path: 'source.md' };
 		const referencedFile = { path: 'materials.md' };
 		const app = {
 			vault: {
-				getAbstractFileByPath: jest.fn(() => sourceFile),
+				getAbstractFileByPath: jest.fn(() => sourceFile), on: jest.fn(), offref: jest.fn(),
 			},
 			metadataCache: {
 				getFirstLinkpathDest: jest.fn(() => referencedFile),
@@ -343,8 +343,9 @@ describe('inline post-processor cross-note references', () => {
 						? { numerals: 'all', price: referencedPrice }
 						: {},
 				})),
+				offref: jest.fn(),
 				on: jest.fn((_eventName: string, handler: typeof metadataChangeHandler) => {
-					metadataChangeHandler = handler;
+					if (_eventName === 'changed') metadataChangeHandler = handler;
 					return { eventName: 'changed' };
 				}),
 			},
@@ -370,10 +371,11 @@ describe('inline post-processor cross-note references', () => {
 		expect(code.querySelector('.numerals-inline-value')?.textContent).toBe('20');
 		expect(app.metadataCache.on).toHaveBeenCalledWith('changed', expect.any(Function));
 		expect(ctx.addChild).toHaveBeenCalledTimes(1);
-		expect(mockRegisteredEvents).toHaveLength(1);
+		expect(app.metadataCache.on).toHaveBeenCalledWith('dataview:metadata-change', expect.any(Function));
 
 		referencedPrice = 15;
-		metadataChangeHandler?.('changed', referencedFile);
+		metadataChangeHandler?.(referencedFile, '', {});
+		await Promise.resolve();
 
 		expect(code.querySelector('.numerals-inline-value')?.textContent).toBe('30');
 	});

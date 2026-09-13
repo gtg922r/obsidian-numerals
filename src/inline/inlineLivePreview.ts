@@ -1,29 +1,6 @@
-import { ReferenceEvaluationError } from '../processing/crossNoteResolver';
-/**
- * Live Preview (CM6 ViewPlugin) for inline Numerals expressions.
- *
- * Renders inline code spans that match a Numerals trigger prefix as
- * evaluated math results directly in the editor. Works alongside the
- * Reading-mode post-processor (`inlinePostProcessor.ts`).
- *
- * ## Update strategy
- *
- * Rather than rebuilding all decorations from scratch on every change,
- * the plugin uses an incremental approach inspired by Dataview:
- *
- * - **docChanged**: Map existing decorations through the change set
- *   (shifts positions without re-evaluation), then walk the visible
- *   ranges to add new / remove stale decorations.
- * - **selectionSet**: Walk visible ranges to handle cursor guard
- *   (reveal raw source when cursor enters a span).
- * - **viewportChanged**: Full rebuild of visible ranges only.
- *
- * ## Formatting context
- *
- * When inline code sits inside bold, italic, highlight, or
- * strikethrough, the widget inherits those CM formatting classes so
- * the rendered result matches the surrounding text style.
- */
+import { ReferenceEvaluationError, ReferenceDependency } from '../processing/crossNoteResolver';
+/** Host lifecycle for visible inline decorations. G will replace this projection's
+ * legacy evaluation calls with full-note snapshots; C owns subscriptions and disposal. */
 
 import {
 	EditorView,
@@ -33,9 +10,9 @@ import {
 	DecorationSet,
 	WidgetType,
 } from '@codemirror/view';
-import { EditorSelection, Range } from '@codemirror/state';
+import { EditorSelection, EditorState, Range, StateEffect } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
-import { App, EventRef } from 'obsidian';
+import { App } from 'obsidian';
 import { editorInfoField, editorLivePreviewField } from 'obsidian';
 import {
 	NumeralsSettings,
@@ -49,7 +26,7 @@ import type { FormattedResult, ResultFormatter } from '../formatting';
 import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
 import { getActiveInlineTriggers, getInlineTriggers, parseInlineExpression } from './inlineParser';
 import { evaluateInlineExpression } from './inlineEvaluator';
-import { getDataviewApi } from '../dataview';
+import { affectsOccurrence, HostEventHub, HostEventSource, HostInvalidation } from '../host/events';
 import {
 	renderInlineInputContent,
 	renderInlineValueContent,
@@ -262,6 +239,7 @@ interface DecorationContext {
 	filePath: string;
 	app: App;
 	referencedPaths: Set<string>;
+	dependencies: ReferenceDependency[];
 }
 
 /**
@@ -315,6 +293,7 @@ function createDecorationContext(
 		filePath,
 		app,
 		referencedPaths: new Set<string>(),
+		dependencies: [],
 	};
 }
 
@@ -372,6 +351,7 @@ function tryBuildNodeDecoration(
 		formattedResult = ctx.formatter.format(result.raw);
 		processedExpression = result.processedExpression;
 		prevResultRef.value = result.raw;
+		ctx.dependencies.push(...result.dependencies);
 		for (const path of result.referencedPaths) {
 			ctx.referencedPaths.add(path);
 		}
@@ -396,6 +376,7 @@ function tryBuildNodeDecoration(
 		}
 	} catch (error: unknown) {
 		if (error instanceof ReferenceEvaluationError) {
+			ctx.dependencies.push(...error.dependencies);
 			for (const path of error.referencedPaths) ctx.referencedPaths.add(path);
 		}
 		formattedResult = { text: '', tex: '', canonical: '' };
@@ -433,6 +414,7 @@ function buildDecorations(
 	ctx: DecorationContext,
 ): DecorationSet {
 	const decorations: Range<Decoration>[] = [];
+	const visited = new Set<string>();
 	const { state } = view;
 	const selection = state.selection;
 
@@ -449,6 +431,9 @@ function buildDecorations(
 					return;
 				}
 
+				const key = `${node.from}:${node.to}`;
+				if (visited.has(key)) return;
+				visited.add(key);
 				const deco = tryBuildNodeDecoration(
 					node.from, node.to, undefined,
 					state.doc, selection, ctx,
@@ -462,226 +447,87 @@ function buildDecorations(
 	return Decoration.set(decorations, true);
 }
 
-/****************************************************
- * Incremental update (visible ranges only)
- ****************************************************/
 
-/**
- * Incrementally update an existing DecorationSet after a doc change
- * or selection change.
- *
- * 1. Walk visible ranges of the syntax tree.
- * 2. For each inline-code node that matches a trigger:
- *    - If cursor overlaps → ensure no decoration exists (remove if needed)
- *    - If cursor doesn't overlap → ensure a decoration exists (add if needed)
- * 3. For nodes that don't match → remove any stale decoration.
- *
- * This avoids re-evaluating unchanged expressions on every keystroke.
- */
-function updateDecorations(
-	existing: DecorationSet,
-	view: EditorView,
-	ctx: DecorationContext,
-): DecorationSet {
-	const { state } = view;
-	const selection = state.selection;
-	let updated = existing;
+/** Dedicated effect keeps host callbacks out of an active CodeMirror update. */
+const hostRefresh = StateEffect.define<HostInvalidation>();
 
-	// Fresh @prev chain — re-evaluates all visible expressions in document order
-	// so that changes to earlier expressions propagate to @prev-dependent ones.
-	const prevResultRef: PrevResultRef = { value: undefined };
-
-	for (const { from, to } of view.visibleRanges) {
-		syntaxTree(state).iterate({
-			from,
-			to,
-			enter(node) {
-				if (!isInlineCodeContentRange(node.from, node.to, state.doc)) {
-					return;
-				}
-
-				const spanFrom = node.from - 1;
-				const spanTo = node.to + 1;
-
-				// Check if a decoration already exists at this range
-				let hasExisting = false;
-				updated.between(spanFrom, spanTo, () => { hasExisting = true; });
-
-				const deco = tryBuildNodeDecoration(
-					node.from, node.to, undefined,
-					state.doc, selection, ctx,
-					prevResultRef,
-				);
-
-				if (deco && !hasExisting) {
-					// New decoration needed — add it
-					updated = updated.update({ add: [deco] });
-				} else if (!deco && hasExisting) {
-					// Decoration should be removed (cursor entered, or expression removed)
-					updated = updated.update({
-						filterFrom: spanFrom,
-						filterTo: spanTo,
-						filter: () => false,
-					});
-				} else if (deco && hasExisting) {
-					// Expression may have changed — replace
-					// (Widget.eq() will prevent DOM update if content is identical)
-					updated = updated.update({
-						filterFrom: spanFrom,
-						filterTo: spanTo,
-						filter: () => false,
-						add: [deco],
-					});
-				}
-			},
-		});
-	}
-
-	return updated;
+function livePreview(state: EditorState): boolean {
+	return state.field(editorLivePreviewField, false) === true;
+}
+function sourcePath(state: EditorState): string {
+	return state.field(editorInfoField, false)?.file?.path ?? '';
 }
 
-/****************************************************
- * ViewPlugin factory
- ****************************************************/
-
-/**
- * Creates a CM6 `Extension` that renders inline Numerals expressions
- * as evaluated widgets in Obsidian's Live Preview mode.
- *
- * @param getSettings     - Returns current plugin settings (called on each update for hot-reload)
- * @param getFormatter      - Returns the active shared result formatter
- * @param getPreProcessors - Returns current string replacement preprocessors (currency symbols, etc.)
- * @param scopeCache        - Shared cache of per-file variable scopes
- * @param app               - The Obsidian App instance
- * @returns A CM6 Extension to register via `Plugin.registerEditorExtension()`
- */
 export function createInlineLivePreviewExtension(
-	getSettings: () => NumeralsSettings,
-	getFormatter: () => ResultFormatter,
-	getPreProcessors: () => StringReplaceMap[],
-	scopeCache: Map<string, NumeralsScope>,
-	app: App,
+	getSettings: () => NumeralsSettings, getFormatter: () => ResultFormatter,
+	getPreProcessors: () => StringReplaceMap[], scopeCache: Map<string, NumeralsScope>, app: App,
+	hostEvents?: HostEventSource,
 ) {
+	const events = hostEvents ?? new HostEventHub(app);
 	return ViewPlugin.fromClass(
 		class InlineNumeralsViewPlugin {
-			decorations: DecorationSet;
-			private referencedPaths = new Set<string>();
-			private metadataEventRef: EventRef | null = null;
+			decorations: DecorationSet = Decoration.none;
+			private referencedPaths: string[] = [];
+			private dependencies: ReferenceDependency[] = [];
+			private unsubscribe: () => void;
+			private destroyed = false;
+			private pending: HostInvalidation | undefined;
+			private dirty = true;
+			private wasLive: boolean;
+			private path: string;
 
 			constructor(view: EditorView) {
-				try {
-					if (!view.state.field(editorLivePreviewField)) {
-						this.decorations = Decoration.none;
-						return;
-					}
-				} catch {
-					this.decorations = Decoration.none;
-					return;
-				}
-				this.decorations = this.build(view) ?? Decoration.none;
-				this.registerMetadataListener(view);
+				this.wasLive = livePreview(view.state);
+				this.path = sourcePath(view.state);
+				// Source mode owns the same subscriptions as Live Preview.
+				this.unsubscribe = events.subscribe(event => {
+					if (event.kind === 'unload') { this.destroy(); return; }
+					if (this.destroyed || (!affectsOccurrence(event, sourcePath(view.state), this.dependencies, this.referencedPaths) && livePreview(view.state))) return;
+					this.dirty = true;
+					if (!livePreview(view.state)) return;
+					const queued = this.pending !== undefined;
+					this.pending = event;
+					if (queued) return;
+					void Promise.resolve().then(() => {
+						if (this.destroyed || !this.pending) return;
+						const reason = this.pending; this.pending = undefined;
+						view.dispatch({ effects: hostRefresh.of(reason) });
+					});
+				});
+				if (this.wasLive) this.rebuild(view);
 			}
 
 			update(update: ViewUpdate): void {
-				// Only active in Live Preview (not Source mode)
-				try {
-					if (!update.state.field(editorLivePreviewField)) {
-						this.decorations = Decoration.none;
-						return;
-					}
-				} catch {
-					this.decorations = Decoration.none;
-					return;
-				}
-
-				if (update.docChanged) {
-					// Map existing decorations through the change set (shifts
-					// positions without re-evaluation), then incrementally
-					// add/remove for affected visible ranges.
-					this.decorations = this.decorations.map(update.changes);
-					const ctx = this.createContext(update.view);
-					if (ctx) {
-						this.decorations = updateDecorations(
-							this.decorations, update.view, ctx,
-						);
-						this.referencedPaths = ctx.referencedPaths;
-					}
-				} else if (update.selectionSet) {
-					// Cursor moved — only need to update cursor guard
-					// (add/remove decorations near the cursor)
-					const ctx = this.createContext(update.view);
-					if (ctx) {
-						this.decorations = updateDecorations(
-							this.decorations, update.view, ctx,
-						);
-						this.referencedPaths = ctx.referencedPaths;
-					}
-				} else if (update.viewportChanged) {
-					// Viewport changed (scroll) — full rebuild of visible ranges
-					this.decorations = this.build(update.view) ?? Decoration.none;
+				if (this.destroyed) return;
+				const visible = livePreview(update.state), path = sourcePath(update.state);
+				const modeChanged = visible !== this.wasLive;
+				const fileChanged = path !== this.path;
+				this.wasLive = visible; this.path = path;
+				if (update.docChanged || fileChanged || modeChanged) this.dirty = true;
+				if (!visible) { this.decorations = Decoration.none; return; }
+				if (this.dirty || update.docChanged || update.viewportChanged || update.selectionSet ||
+					update.transactions.some(transaction => transaction.effects.some(effect => effect.is(hostRefresh)))) {
+					this.rebuild(update.view);
 				}
 			}
 
-			/** Full rebuild of decorations for visible ranges. */
-			private build(view: EditorView): DecorationSet | null {
-				const ctx = this.createContext(view);
-				if (!ctx) return null;
-				const decorations = buildDecorations(view, ctx);
-				this.referencedPaths = ctx.referencedPaths;
-				return decorations;
-			}
-
-			/** Rebuild inline decorations when a referenced note's metadata changes. */
-			private registerMetadataListener(view: EditorView): void {
-				const rerenderIfReferencedFileChanged = (_callbackType: unknown, file: unknown) => {
-					const changedPath = (file && typeof file === 'object' && 'path' in file)
-						? (file as { path: string }).path
-						: undefined;
-
-					if (!changedPath || !this.referencedPaths.has(changedPath)) {
-						return;
-					}
-
-					this.decorations = this.build(view) ?? Decoration.none;
-					view.dispatch({ effects: [] });
-				};
-
-				const dataviewAPI = getDataviewApi(app);
-				this.metadataEventRef = dataviewAPI
-					? app.metadataCache.on(
-						// @ts-expect-error: dataview custom event not in Obsidian types
-						"dataview:metadata-change",
-						rerenderIfReferencedFileChanged
-					)
-					: app.metadataCache.on("changed", rerenderIfReferencedFileChanged);
+			private rebuild(view: EditorView): void {
+				this.dirty = false;
+				this.dependencies = []; this.referencedPaths = [];
+				const context = createDecorationContext(getSettings, getFormatter, getPreProcessors(), scopeCache, app, sourcePath(view.state));
+				if (!context) { this.decorations = Decoration.none; return; }
+				this.decorations = buildDecorations(view, context);
+				this.dependencies = context.dependencies;
+				this.referencedPaths = [...context.referencedPaths];
 			}
 
 			destroy(): void {
-				if (this.metadataEventRef) {
-					app.metadataCache.offref(this.metadataEventRef);
-					this.metadataEventRef = null;
-				}
-			}
-
-			/** Create a decoration context from current plugin state. */
-			private createContext(view: EditorView): DecorationContext | null {
-				let filePath = '';
-				try {
-					filePath = view.state.field(editorInfoField)?.file?.path ?? '';
-				} catch { /* field not available */ }
-
-				return createDecorationContext(
-					getSettings,
-					getFormatter,
-					getPreProcessors(),
-					scopeCache,
-					app,
-					filePath,
-				);
+				if (this.destroyed) return;
+				this.destroyed = true; this.pending = undefined;
+				this.unsubscribe();
+				this.decorations = Decoration.none;
 			}
 		},
-		{
-			decorations: (plugin) => plugin.decorations,
-		},
+		{ decorations: plugin => plugin.decorations },
 	);
 }

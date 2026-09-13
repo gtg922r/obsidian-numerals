@@ -119,10 +119,11 @@ export function handleNumeralsBlockClick(
 	el: HTMLElement,
 	app: App
 ): void {
-	const target = event.target;
-	if (!(target instanceof HTMLElement)) {
-		return;
-	}
+	const ownerWindow = el.ownerDocument.defaultView;
+	const node = event.target;
+	if (!ownerWindow || !(node instanceof ownerWindow.Node)) return;
+	const target = node.nodeType === ownerWindow.Node.ELEMENT_NODE ? node as Element : node.parentElement;
+	if (!target) return;
 
 	const lineElement = target.closest<HTMLElement>('.numerals-line');
 	if (!lineElement || !el.contains(lineElement)) {

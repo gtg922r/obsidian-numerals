@@ -26,6 +26,7 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Give rendered blocks and Reading inline elements disposable occurrence ownership; refresh native/Dataview and missing-reference changes, initialize Source-mode subscriptions, cancel queued work on unload, and support popout Text/SVG click navigation.
 - Preserve exact normalized BigNumber currency-rate values and public Unit formatting flags when converting aliases to codes.
 - Preserve currency symbols used as native object keys and dotted property names while normalizing currency values and conversion targets.
 - Canonicalize currency aliases inside native mathjs ResultSets, preserving semicolon result entries and retained currency codes during insertion after a remap.
