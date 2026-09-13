@@ -1,0 +1,5 @@
+{
+  "schema": 1,
+  "enabled": false,
+  "reason": "Host execution wiring requires a separately reviewed increment and exact owner-selected checked integration-push artifact."
+}

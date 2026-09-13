@@ -1,0 +1,20 @@
+{
+  "name": "numerals-installed-acceptance",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build": "node build-observer.mjs",
+    "check": "npm test && npm run build",
+    "preflight": "node run.mjs"
+  },
+  "dependencies": {
+    "obsidian-launcher": "3.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

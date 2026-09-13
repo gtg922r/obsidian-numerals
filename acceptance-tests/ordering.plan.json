@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "ORD-01",
+      "path": "acceptance/ordering.md",
+      "actions": [
+        { "op": "open", "bind": "primary" },
+        { "op": "mode", "mode": "reading", "target": "primary" },
+        { "op": "sample", "expectedText": "14", "target": "primary" }
+      ],
+      "assertions": [
+        { "kind": "observed-dom-text", "text": "14" },
+        { "kind": "zero-evaluations" }
+      ]
+    }
+  ]
+}

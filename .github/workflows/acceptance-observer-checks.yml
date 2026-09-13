@@ -1,0 +1,26 @@
+name: Installed acceptance helper checks
+
+on:
+  pull_request:
+    branches: [chore/recovery-1.11]
+    paths: ['acceptance-tests/**', '.github/workflows/acceptance-observer-checks.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  pure-helper-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: acceptance-tests
+      - run: npm run check
+        working-directory: acceptance-tests

@@ -1,0 +1,82 @@
+{
+  "host": {
+    "version": "1.13.7",
+    "releaseId": 369267082,
+    "installer": {
+      "name": "Obsidian-1.13.7.AppImage",
+      "url": "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.13.7/Obsidian-1.13.7.AppImage",
+      "assetId": 511620567,
+      "size": 136902072,
+      "sha256": "e0d8e0a611624de8c9c7dcd8a9e648279fb0a0d552faa1312b7e4f3a5fa72663"
+    },
+    "app": {
+      "name": "obsidian-1.13.7.asar.gz",
+      "url": "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.13.7/obsidian-1.13.7.asar.gz",
+      "assetId": 511621220,
+      "size": 8773048,
+      "sha256": "69253e39aa0b980e3cf96e9e8a8a4bed6b6481ef7021cd762f67872662d8d25a",
+      "uncompressedSha256": "a52a7daf1e2460bae03de80f2816604bd16a56cd374fbe5ce8d1a9ef5604059d"
+    },
+    "launcher": {
+      "version": "3.2.0",
+      "integrity": "sha512-JSsGnXD+uMPy426xkV+st7iVhe1vyxKD3RsQTwiE3FZqGioC+NSnIzKZHqnlPN/AAy/ai94VuBVndc49jLcVlA=="
+    }
+  },
+  "stable": {
+    "id": "numerals",
+    "version": "1.10.2",
+    "releaseId": 324755623,
+    "assets": [
+      {
+        "name": "main.js",
+        "id": 423949155,
+        "size": 808912,
+        "sha256": "41807c9e8cf43511e2416133bd2b1fea534523ad03ff206ae7300c4f441642e4",
+        "url": "https://github.com/gtg922r/obsidian-numerals/releases/download/1.10.2/main.js"
+      },
+      {
+        "name": "manifest.json",
+        "id": 423949153,
+        "size": 362,
+        "sha256": "1e6159e215e32bb260faadce8d910af507d7b7b87fc5d5f615841d5677eca420",
+        "url": "https://github.com/gtg922r/obsidian-numerals/releases/download/1.10.2/manifest.json"
+      },
+      {
+        "name": "styles.css",
+        "id": 423949154,
+        "size": 9310,
+        "sha256": "c289ff08e9e00f9c61d9d95f529b905515d9b77195895064ca495e511c262d8a",
+        "url": "https://github.com/gtg922r/obsidian-numerals/releases/download/1.10.2/styles.css"
+      }
+    ]
+  },
+  "dataview": {
+    "id": "dataview",
+    "releaseVersion": "0.5.70",
+    "manifestVersion": "0.5.68",
+    "releaseId": 210843427,
+    "assets": [
+      {
+        "name": "main.js",
+        "id": 244337758,
+        "size": 2377634,
+        "sha256": "6bb1cf7010afad830e73575fca0e2bfbd3279c562e3d9d24f2d2f45161eb7d00",
+        "url": "https://github.com/blacksmithgu/obsidian-dataview/releases/download/0.5.70/main.js"
+      },
+      {
+        "name": "manifest.json",
+        "id": 244337760,
+        "size": 357,
+        "sha256": "9235db47112da81b85591c79ecb9ae2574e5e72207056e976472f90616286185",
+        "url": "https://github.com/blacksmithgu/obsidian-dataview/releases/download/0.5.70/manifest.json"
+      },
+      {
+        "name": "styles.css",
+        "id": 244337761,
+        "size": 2965,
+        "sha256": "3306dd9032e00f989ba7233a37fd255bc4d3f4340cee661762e952f3f6aa1de9",
+        "url": "https://github.com/blacksmithgu/obsidian-dataview/releases/download/0.5.70/styles.css"
+      }
+    ]
+  }
+}
