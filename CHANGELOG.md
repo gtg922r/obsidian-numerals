@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file. The format 
 - Recorded the recovery implementation contract, work ledger, and BRAT-only publication boundary.
 - Documented recovery task ownership, verified historical-work preservation, and source-ordered function/state semantics.
 - Specified atomic currency runtime replacement and generation ownership to preserve symbol syntax and prevent stale mappings.
+- Clarified failed-expression binding rollback while retaining native mathjs closure identity; opaque mutable closure and engine side effects remain an explicit limitation.
 - Centralized block, inline, TeX, and result-insertion formatting behind one result-formatting pipeline so evaluation always retains raw mathjs values.
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
