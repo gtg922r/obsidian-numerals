@@ -101,7 +101,7 @@ export default class NumeralsPlugin extends Plugin {
    if (!source) return false;
    return checking ? coordinator.canInsert(source.identity) : coordinator.insert(source.identity, true);
   }});
-  if (this.settings.provideSuggestions) this.registerEditorSuggest(new NumeralsSuggestor(this));
+  this.registerEditorSuggest(new NumeralsSuggestor(this));
   try { await loadMathJax(); }
   catch (error: unknown) { if (generation === this.loadGeneration) new Notice(`Numerals could not load MathJax: ${error instanceof Error ? error.message : String(error)}. Settings remain available.`); }
  }

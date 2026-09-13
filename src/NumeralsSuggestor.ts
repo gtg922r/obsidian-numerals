@@ -1,17 +1,12 @@
-import NumeralsPlugin from "./main";
-import { getMetadataForReferencedNote, filterAvailableProperties } from "./processing/crossNoteResolver";
-import {
-    EditorSuggest,
-    EditorPosition,
-    Editor,
-    TFile,
-    EditorSuggestTriggerInfo,
-    EditorSuggestContext,
-    setIcon,
- } from "obsidian";
-import { getMathJsSymbols } from "./mathjsUtilities";
-import { findSuggestionContext } from "./evaluation/sourceIndex";
-import type { SourceProjection } from "./evaluation/sourceProjection";
+import type NumeralsPlugin from './main';
+import { referencePropertyNames } from './suggestionProperties';
+import { EditorSuggest, type EditorPosition, type Editor, type TFile, type EditorSuggestTriggerInfo,
+ type EditorSuggestContext, setIcon } from 'obsidian';
+import { getMathJsSymbols } from './mathjsUtilities';
+import { findSuggestionContext } from './evaluation/sourceIndex';
+import type { SourceProjection } from './evaluation/sourceProjection';
+import type { SourceSnapshotState } from './host/snapshotCoordinator';
+import { scanExpression } from './processing/expressionScanner';
 
 const greekSymbols = [
     { trigger: 'alpha', symbol: 'α' },
@@ -50,227 +45,186 @@ const greekSymbols = [
     { trigger: 'Omega', symbol: 'Ω' },
 ];
 
-const numeralsDirectives = [
-	"@hideRows",
-	"@Sum",
-	"@Total",
-	"@Prev",
-]
+const numeralsDirectives = ['@hideRows', '@Sum', '@Total', '@Prev'];
+const PROPERTY_NAME = /^[\w$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F]+$/;
+const CROSS_NOTE_TRIGGER_REGEX = /\[\[([^\]\r\n]+)\]\]\.([\w$\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F]*)$/;
 
-/** Whether the suggestor was triggered from a math code block or an inline code span. */
-type SuggestorTriggerContext = 'block' | 'inline';
+type TriggerKind = 'block' | 'inline';
+interface CompletionQuery {
+ readonly editor: Editor;
+ readonly file: TFile;
+ readonly path: string;
+ readonly current: SourceSnapshotState;
+ readonly settingsGeneration: number;
+ readonly kind: TriggerKind;
+ readonly from: number;
+ readonly to: number;
+ readonly text: string;
+ readonly noteName?: string;
+}
+interface ReferenceProperties { readonly file: TFile; readonly path: string; readonly names: readonly string[] }
+export interface NumeralsSuggestion {
+ readonly type: string;
+ readonly text: string;
+ readonly note?: string;
+ readonly query: CompletionQuery;
+ readonly reference?: ReferenceProperties;
+}
+const samePosition = (a: EditorPosition, b: EditorPosition) => a.line === b.line && a.ch === b.ch;
 
-/**
- * Regex to detect [[note]]. followed by a partial property name at end of string.
- * Captures: [1] = note name, [2] = partial property (may be empty)
- */
-const CROSS_NOTE_TRIGGER_REGEX = /\[\[([^\]]+)\]\]\.([\w$\u00C0-\u02AF\u0370-\u03FF]*)$/;
+/** Suggestions consume copied snapshot descriptions; they never evaluate note or metadata expressions. */
+export class NumeralsSuggestor extends EditorSuggest<NumeralsSuggestion> {
+ private active?: CompletionQuery;
+ private stopSource = () => {};
+ private disposed = false;
+ constructor(private readonly plugin: NumeralsPlugin) {
+  super(plugin.app);
+  const stopSettings = plugin.subscribeSettingsChanges(() => this.close());
+  plugin.register(() => {this.disposed = true; this.close(); stopSettings();});
+ }
 
-export class NumeralsSuggestor extends EditorSuggest<string> {
-	plugin: NumeralsPlugin;
+ private enabled(kind: TriggerKind): boolean {
+  const settings = this.plugin.settings;
+  return kind === 'block' ? settings.provideSuggestions : settings.enableInlineNumerals && settings.provideInlineSuggestions;
+ }
+ private retire(): void { this.active = undefined; this.context = null; this.stopSource?.(); this.stopSource = () => {}; }
+ close(): void { this.retire(); super.close(); }
 
-	/**
-	 * Tracks whether the current trigger came from a math code block or
-	 * an inline Numerals code span. Set in `onTrigger`, read in `getSuggestions`.
-	 */
-	private triggerContext: SuggestorTriggerContext = 'block';
-
-	/**
-	 * When non-null, the user is typing a property name after `[[noteName]].`
-	 * and we should suggest properties from the referenced note.
-	 */
-	private crossNoteContext: { noteName: string } | null = null;
-	
-	//empty constructor
-	constructor(plugin: NumeralsPlugin) {
-		super(plugin.app);
-		this.plugin = plugin;
-	}
-
-	/**
-	 * This function is triggered when the user starts typing in the editor. It checks if the user is in a math block and if there is a word in the current line.
-	 * If these conditions are met, it returns an object with the start and end positions of the word and the word itself as the query.
-	 * If not, it returns null.
-	 *
-	 * @param cursor - The current position of the cursor in the editor.
-	 * @param editor - The current editor instance.
-	 * @param file - The current file being edited.
-	 * @returns An object with the start and end positions of the word and the word itself as the query, or null if the conditions are not met.
-	 */
- onTrigger(cursor: EditorPosition, editor: Editor, file: TFile): EditorSuggestTriggerInfo | null {
-  this.crossNoteContext = null;
-  if (!this.plugin.settings.provideSuggestions) return null;
-  const current = this.plugin.getEditorSnapshot(editor);
-  const offset = editor.posToOffset(cursor);
-  if (!current || current.index.source.path !== file.path || current.index.source.text !== editor.getValue()) return null;
+ onTrigger(cursor: EditorPosition, editor: Editor, file: TFile | null): EditorSuggestTriggerInfo | null {
+  this.retire();
+  if (this.disposed || !file || this.app.vault.getAbstractFileByPath(file.path) !== file) return null;
+  const settings = this.plugin.settings;
+  if (!settings.provideSuggestions && !(settings.enableInlineNumerals && settings.provideInlineSuggestions)) return null;
+  const current = this.plugin.getEditorSnapshot(editor), offset = editor.posToOffset(cursor);
+  if (!current || current.index.evaluationBlocked || current.index.source.path !== file.path ||
+   current.index.source.text !== editor.getValue()) return null;
   const block = current.index.calculations.find(calculation => calculation.kind === 'block' &&
    offset >= calculation.opener.end && offset <= (calculation.closer?.start ?? calculation.span.end));
-  let projection: SourceProjection | undefined;
-  if (block) { this.triggerContext = 'block'; projection = block.projection; }
+  let projection: SourceProjection, kind: TriggerKind;
+  if (block) {kind = 'block'; projection = block.projection;}
   else {
-   if (!this.plugin.settings.enableInlineNumerals || !this.plugin.settings.provideInlineSuggestions) return null;
    const inline = findSuggestionContext(current.index, offset);
    if (!inline) return null;
-   this.triggerContext = 'inline'; projection = inline.expression;
+   kind = 'inline'; projection = inline.expression;
   }
-  // A replacement token must be an unchanged single physical span. Empty property
-  // queries use the validated cursor point, not contiguousSourceSpan(empty).
+  if (!this.enabled(kind)) return null;
+  // Only a copied physical token is writable. An empty property name uses the
+  // validated cursor point in the segment containing the preceding reference dot.
   const segment = projection.segments.find(segment => segment.kind === 'copy' &&
    segment.source.start <= offset && segment.source.end >= offset);
   if (!segment) return null;
   const to = segment.target.start + offset - segment.source.start;
   const prefix = projection.text.slice(0, to);
-  const crossNote = this.plugin.settings.enableCrossNoteReferences && prefix.match(CROSS_NOTE_TRIGGER_REGEX);
-  const word = crossNote ? crossNote[2] : prefix.match(/[:]?[$@\w\u0370-\u03FF]+$/)?.[0];
+  const protectedToken = scanExpression(prefix).find(token =>
+   (token.kind === 'string' || token.kind === 'comment') && token.start < to && token.end >= to);
+  if (protectedToken) return null;
+  const crossNote = prefix.match(CROSS_NOTE_TRIGGER_REGEX);
+  if (crossNote && !settings.enableCrossNoteReferences) return null;
+  const word = crossNote ? crossNote[2] : prefix.match(/[:]?[$@\w\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F]+$/)?.[0];
   if (word === undefined || offset - word.length < segment.source.start) return null;
-  if (crossNote) this.crossNoteContext = {noteName: crossNote[1]};
-  return {start: editor.offsetToPos(offset - word.length), end: cursor, query: word};
+  const query: CompletionQuery = {editor, file, path: file.path, current, settingsGeneration: this.plugin.settingsGeneration,
+   kind, from: offset - word.length, to: offset, text: word, noteName: crossNote ? crossNote[1] : undefined};
+  this.active = query;
+  const stop = this.plugin.subscribeEditorSnapshot(editor, () => {if (!this.valid(query)) this.close();});
+  if (this.active === query) this.stopSource = stop;
+  else stop();
+  return this.active === query ? {start: editor.offsetToPos(query.from), end: {...cursor}, query: word} : null;
  }
 
-	getSuggestions(context: EditorSuggestContext): string[] | Promise<string[]> {
-		// Cross-note reference suggestions: suggest properties from the referenced note
-		if (this.crossNoteContext) {
-			return this.getCrossNoteSuggestions(context, this.crossNoteContext.noteName);
-		}
-
-  const current = this.plugin.getEditorSnapshot(context.editor);
-  const snapshot = current?.state.status === 'ready' && current.index.source.text === context.editor.getValue()
-   ? current.state.snapshot : undefined;
+ /** All returned items retain their original proposal, including reference lookups. */
+ getSuggestions(context: EditorSuggestContext): NumeralsSuggestion[] {
+  const query = this.active;
+  if (!query || !this.matchesContext(query, context) || !this.valid(query)) return [];
+  if (query.noteName !== undefined) return this.crossNoteSuggestions(query);
+  const snapshot = query.current.state.status === 'ready' ? query.current.state.snapshot : undefined;
   const names = new Set<string>();
   if (snapshot) {
-   for (const symbol of snapshot.metadataSymbols) names.add(symbol.name);
-   for (const symbol of snapshot.symbolsAt(context.editor.posToOffset(context.start))) names.add(symbol.name);
+   // Ordinary seeds initialize every calculation, including unfinished inline
+   // suggestion contexts. Dollar seeds must come from the latest checkpoint.
+   if (!query.current.index.calculations.some(calculation => calculation.span.start <= query.from && query.from < calculation.span.end))
+    for (const symbol of snapshot.metadataSymbols) if (symbol.origin === 'local') names.add(symbol.name);
+   for (const symbol of snapshot.symbolsAt(query.from)) names.add(symbol.name);
   }
-  const localSymbols = [...names].map(name => 'v|' + name);
+  const lower = query.text.toLowerCase();
+  const matches = (text: string) => text.toLowerCase().startsWith(lower) && text.toLowerCase() !== lower;
+  const suggestions: NumeralsSuggestion[] = [...names].filter(matches).sort((a, b) => a.localeCompare(b))
+   .map(text => ({type: 'v', text, query}));
+  if (this.plugin.settings.suggestionsIncludeMathjsSymbols) {
+   for (const encoded of getMathJsSymbols()) {
+    const [type, text] = encoded.split('|');
+    if (matches(text)) suggestions.push({type, text, query});
+   }
+  }
+  for (const text of query.kind === 'block' ? numeralsDirectives : ['@prev']) {
+   if (matches(text)) suggestions.push({type: 'm', text, query});
+  }
+  if (this.plugin.settings.enableGreekAutoComplete) {
+   for (const {trigger, symbol} of greekSymbols) if ((':' + trigger.toLowerCase()).startsWith(lower))
+    suggestions.push({type: 'g', text: symbol, note: trigger, query});
+  }
+  return this.valid(query) ? suggestions : [];
+ }
 
-		const query_lower = context.query.toLowerCase();
+ private matchesContext(query: CompletionQuery, context: EditorSuggestContext): boolean {
+  return context.editor === query.editor && context.file === query.file && context.query === query.text &&
+   samePosition(context.start, query.editor.offsetToPos(query.from)) && samePosition(context.end, query.editor.offsetToPos(query.to));
+ }
+ private valid(query: CompletionQuery): boolean {
+  if (this.disposed || this.active !== query || this.plugin.settingsGeneration !== query.settingsGeneration ||
+   !this.enabled(query.kind) || (query.noteName !== undefined && !this.plugin.settings.enableCrossNoteReferences) || query.file.path !== query.path || this.app.vault.getAbstractFileByPath(query.path) !== query.file) return false;
+  const current = this.plugin.getEditorSnapshot(query.editor), end = query.editor.offsetToPos(query.to);
+  return current?.sourceId === query.current.sourceId && current.index === query.current.index && current.state === query.current.state &&
+   current.index.source.path === query.path && current.index.source.text === query.editor.getValue() &&
+   query.editor.getValue().slice(query.from, query.to) === query.text &&
+   samePosition(query.editor.getCursor('from'), end) && samePosition(query.editor.getCursor('to'), end);
+ }
 
-		// case-insensitive filter local suggestions based on query. Don't return value if full match
-		const local_suggestions = localSymbols.filter((value) => value.slice(0, -1).toLowerCase().startsWith(query_lower, 2));
-		local_suggestions.sort((a, b) => a.slice(2).localeCompare(b.slice(2)));
-		
-		// case-insensitive filter mathjs suggestions based on query. Don't return value if full match
-		let suggestions: string[] = [];
-		if (this.plugin.settings.suggestionsIncludeMathjsSymbols) {
-			const mathjs_suggestions = getMathJsSymbols().filter((value) => value.slice(0, -1).toLowerCase().startsWith(query_lower, 2));
-			suggestions = local_suggestions.concat(mathjs_suggestions);
-		} else { 
-			suggestions = local_suggestions;
-		}
+ private properties(query: CompletionQuery): ReferenceProperties | undefined {
+  if (!this.valid(query) || query.noteName === undefined) return;
+  const file = this.app.metadataCache.getFirstLinkpathDest(query.noteName, query.path);
+  if (!file || this.app.vault.getAbstractFileByPath(file.path) !== file) return;
+  const names = referencePropertyNames(this.app, file, this.plugin.settings.forceProcessAllFrontmatter);
+  if (!this.valid(query)) return;
+  return {file, path: file.path, names: names.filter(key => PROPERTY_NAME.test(key)).sort()};
+ }
+ private crossNoteSuggestions(query: CompletionQuery): NumeralsSuggestion[] {
+  // Current-cache key discovery is synchronous. An artificial Promise would
+  // let an obsolete host continuation replace or close a newer popup.
+  const reference = this.properties(query);
+  if (!reference || !this.valid(query) || !this.referenceCurrent(query, reference)) return [];
+  const lower = query.text.toLowerCase();
+  return reference.names.filter(key => key.toLowerCase().startsWith(lower) && key !== query.text)
+   .map(text => ({type: 'n', text, query, reference}));
+ }
+ private referenceCurrent(query: CompletionQuery, reference: ReferenceProperties): boolean {
+  const current = this.properties(query);
+  return current?.file === reference.file && current.path === reference.path && current.names.length === reference.names.length &&
+   current.names.every((name, index) => name === reference.names[index]);
+ }
 
-		// Directives only apply in block context (they don't work in inline expressions)
-		if (this.triggerContext === 'block') {
-			suggestions = suggestions.concat(
-				numeralsDirectives
-					.filter((value) => value.slice(0,-1).toLowerCase().startsWith(query_lower, 0))
-					.map((value) => 'm|' + value)
-				);
-		}
+ renderSuggestion(value: NumeralsSuggestion, el: HTMLElement): void {
+  el.addClasses(['mod-complex', 'numerals-suggestion']);
+  const content = el.createDiv({cls: 'suggestion-content'});
+  content.createDiv({cls: 'suggestion-title', text: value.text});
+  if (value.note) content.createDiv({cls: 'suggestion-note', text: value.note});
+  const flair = el.createDiv({cls: 'suggestion-aux'}).createDiv({cls: 'suggestion-flair'});
+  const icons: Record<string, string> = {f: 'function-square', c: 'locate-fixed', v: 'file-code', p: 'box',
+   m: 'sparkles', g: 'case-lower', n: 'file-symlink'};
+  if (icons[value.type]) setIcon(flair, icons[value.type]);
+ }
 
-		// TODO MOVE THESE UP INTO THE CACHED portion. also trigger isn't the right name
-		if (this.plugin.settings.enableGreekAutoComplete) {
-			const greek_suggestions = greekSymbols.filter(({ trigger }) => (":" + trigger.toLowerCase()).startsWith(query_lower)).map(({ symbol, trigger }) => 'g|' + symbol + '|' + trigger);
-			suggestions = suggestions.concat(greek_suggestions);
-		}
-
-		return suggestions;
-	}
-
-	/**
-	 * Get property suggestions for a cross-note reference.
-	 * Resolves the note, gets its available properties, and returns them as suggestions.
-	 */
-	private getCrossNoteSuggestions(
-		context: EditorSuggestContext,
-		noteName: string
-	): string[] {
-		const file = this.app.metadataCache.getFirstLinkpathDest(
-			noteName,
-			context.file.path
-		);
-		if (!file) return [];
-
-		const metadata = getMetadataForReferencedNote(file, this.app);
-		if (!metadata) return [];
-
-		const available = filterAvailableProperties(
-			metadata,
-			this.plugin.settings.forceProcessAllFrontmatter
-		);
-
-		const query_lower = context.query.toLowerCase();
-
-		// Build suggestions from available properties
-		const suggestions: string[] = [];
-		for (const key of Object.keys(available)) {
-			if (key === 'position') continue; // internal Obsidian field
-			if (key.toLowerCase().startsWith(query_lower) && key !== context.query) {
-				// Use 'n|' prefix for note-reference properties
-				suggestions.push('n|' + key);
-			}
-		}
-
-		suggestions.sort((a, b) => a.slice(2).localeCompare(b.slice(2)));
-		return suggestions;
-	}
-
-	renderSuggestion(value: string, el: HTMLElement): void {
-		
-		el.addClasses(['mod-complex', 'numerals-suggestion']);
-		const suggestionContent = el.createDiv({cls: 'suggestion-content'});
-		const suggestionTitle = suggestionContent.createDiv({cls: 'suggestion-title'});
-		const suggestionNote = suggestionContent.createDiv({cls: 'suggestion-note'});
-		const suggestionAux = el.createDiv({cls: 'suggestion-aux'});
-		const suggestionFlair = suggestionAux.createDiv({cls: 'suggestion-flair'});
-
-		const [iconType, suggestionText, noteText] = value.split('|');
-
-		if (iconType === 'f') {
-			setIcon(suggestionFlair, 'function-square');		
-		} else if (iconType === 'c') {
-			setIcon(suggestionFlair, 'locate-fixed');
-		} else if (iconType === 'v') {
-			setIcon(suggestionFlair, 'file-code');
-		} else if (iconType === 'p') {
-			setIcon(suggestionFlair, 'box');
-		} else if (iconType === 'm') {
-			setIcon(suggestionFlair, 'sparkles');			
-		} else if (iconType === 'g') {
-			setIcon(suggestionFlair, 'case-lower');
-		} else if (iconType === 'n') {
-			setIcon(suggestionFlair, 'file-symlink');
-		}
-		suggestionTitle.setText(suggestionText);
-		if (noteText) {
-			suggestionNote.setText(noteText);
-		}
-
-	}
-
-	/**
-	 * Called when a suggestion is selected. Replaces the current word with the selected suggestion
-	 * @param value The selected suggestion
-	 * @param evt The event that triggered the selection
-	 * @returns void
-	 */
-	selectSuggestion(value: string, evt: MouseEvent | KeyboardEvent): void {
-		if (this.context) {
-			const editor = this.context.editor;
-			const [suggestionType, suggestion] = value.split('|');
-			const start = this.context.start;
-			const end = editor.getCursor(); // get new end position in case cursor has moved
-			
-			editor.replaceRange(suggestion, start, end);
-			const newCursor = end;
-
-			if (suggestionType === 'f') {
-				newCursor.ch = start.ch + suggestion.length-1;
-			} else {
-				newCursor.ch = start.ch + suggestion.length;
-			}
-			editor.setCursor(newCursor);			
-
-			this.close()
-		}
-	}
+ selectSuggestion(value: NumeralsSuggestion, _evt: MouseEvent | KeyboardEvent): void {
+  const query = value.query;
+  if (this.active !== query) return;
+  if (!this.context || !this.matchesContext(query, this.context) || !this.valid(query) ||
+   (value.reference && !this.referenceCurrent(query, value.reference))) {this.close(); return;}
+  const start = query.editor.offsetToPos(query.from), end = query.editor.offsetToPos(query.to);
+  // Retire our subscription before the edit publishes. Close the host popover
+  // afterwards, so popover/focus callbacks cannot intervene before the write.
+  this.retire();
+  try {
+   query.editor.replaceRange(value.text, start, end);
+   query.editor.setCursor(query.editor.offsetToPos(query.from + value.text.length - (value.type === 'f' ? 1 : 0)));
+  } finally {super.close();}
+ }
 }

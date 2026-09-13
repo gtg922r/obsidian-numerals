@@ -288,7 +288,7 @@ The 1.11.0 recovery candidate is **not yet published**. A future prerelease will
 
 The following features are being prepared for **1.11.0**, targeting **Obsidian 1.13+**. They are absent from Community Plugins stable 1.10.2. If you cannot find these settings in stable, you have not missed a setup step.
 
-The [recovery usage guide](docs/usage.md) explains the intended rules for note-wide variables, grouping, metadata freshness and result insertion. Editor, rendering and suggestion integration is still in progress; this guide is not a claim that a published or fully validated candidate is available.
+The [recovery usage guide](docs/usage.md) explains the intended rules for note-wide variables, grouping, metadata freshness and result insertion. The candidate still awaits installed validation and publication; this guide does not describe a published or fully validated release.
 
 | Preview setting | Purpose |
 | --- | --- |

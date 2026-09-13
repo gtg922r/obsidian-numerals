@@ -36,6 +36,8 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Register one suggestor with independent block/inline controls; complete copied tokens in complete or unfinished inline spans, preserve closing delimiters and reject stale source, cursor, settings and reference proposals.
+- Use current source-ordered suggestion names and inline `@prev`, with real-class regressions and safe, repairable inline diagnostic coverage.
 - Recheck current editor, view, file, document and vault identity before installed-acceptance helper pane actions, refusing stale observer and control handles before input or mutation.
 - Keep live attachment identity available while source text is invalidated, preventing a trusted input witness from crossing into a replacement file at the same path.
 - Render multiline Live Preview calculations through direct StateField decorations, reject stale projection effects, and rebind snapshot subscriptions when the same editor loads a replacement file.
