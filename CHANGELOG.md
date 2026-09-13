@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. The format 
 ## [Unreleased]
 
 ### Added
+- Add an unpublished recovery usage guide covering source order, variable scope, metadata freshness, grouping, formatting and safe insertion. Keep the README stable guide distinct and document recovery-specific checks and release boundaries.
 - Add a disposable Linux CI harness that records official Obsidian Reading callbacks and Live Preview trees for 95 byte-preserved synthetic extraction fixtures, with verified native activity from each primary note, callback origins, support-note hashes, pinned inputs and bounded cancellation.
 - Per-expression TeX rendering for Inline Numerals via the new `#$:` (result only) and `#$=:` (equation) trigger prefixes, which render with MathJax in both Live Preview and Reading mode. Both prefixes are configurable in settings. (Closes #161)
 - Block-level `@format` and `@decimalPlaces` directives for overriding result presentation without changing calculated values. (Closes #75, #140)
