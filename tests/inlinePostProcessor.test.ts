@@ -114,3 +114,15 @@ it('retargets every previously owned section member when only one subtree is cal
  for (const child of old) child.unload(); host.coordinator.inputsChanged(); await flush();
  expect(host.nodes.map(node => node.textContent)).toEqual(['2', '3']); host.dispose();
 });
+
+
+it('shows diagnostic text safely and removes the error after the same occurrence is repaired', async () => {
+ const expression = 'missingRate', host = reading(['#: ' + expression]);
+ host.processor(host.paragraph, host.context); await flush();
+ expect(host.nodes[0].textContent).toContain(expression);
+ expect(host.nodes[0].querySelector('.numerals-error-message')?.textContent).toContain('Undefined symbol');
+ expect(host.nodes[0].querySelector('[aria-hidden="true"]')).toBeNull();
+ host.setSource('`#: 3+4`'); host.nodes[0].textContent = '#: 3+4'; host.processor(host.paragraph, host.context); await flush();
+ expect(host.nodes[0].textContent).toBe('7'); expect(host.nodes[0].classList.contains('numerals-inline-error')).toBe(false);
+ expect(host.nodes[0].querySelector('.numerals-error-message')).toBeNull(); host.dispose();
+});

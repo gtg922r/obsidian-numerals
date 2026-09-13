@@ -342,3 +342,18 @@ describe('InlineNumeralsWidget', () => {
 		});
 	});
 });
+
+
+it('keeps changed diagnostic reasons in safe visible text and widget equality', () => {
+ const expression = 'rate <img src=x onerror=alert(1)>', firstReason = 'Undefined symbol: <script>rate</script>';
+ const first = new InlineNumeralsWidget(formatted(''), InlineNumeralsMode.ResultOnly, expression, ' = ', true,
+  [], NumeralsRenderStyle.Plain, undefined, firstReason);
+ const second = new InlineNumeralsWidget(formatted(''), InlineNumeralsMode.ResultOnly, expression, ' = ', true,
+  [], NumeralsRenderStyle.Plain, undefined, 'Metadata unavailable: repair the reference.');
+ const dom = first.toDOM();
+ expect(dom.textContent).toContain(expression); expect(dom.textContent).toContain(firstReason);
+ expect(dom.querySelector('img, script, [aria-hidden="true"]')).toBeNull();
+ expect(dom.querySelector('.numerals-error-message')?.textContent).toContain(firstReason);
+ expect(first.eq(second)).toBe(false);
+ expect(second.toDOM().textContent).toContain('Metadata unavailable: repair the reference.');
+});

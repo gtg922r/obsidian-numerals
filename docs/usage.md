@@ -1,6 +1,6 @@
 # Recovery usage guide
 
-**Target: Numerals 1.11.0, Obsidian 1.13+. Not yet published, including through BRAT.** This guide describes the accepted recovery behavior being developed. Editor, rendering and suggestion integration is still in progress; a source checkout is not a verified installed candidate. Community Plugins currently installs **1.10.2**; use the [stable guide](../README.md#stable-features) for that release.
+**Target: Numerals 1.11.0, Obsidian 1.13+. Not yet published, including through BRAT.** This guide describes the accepted recovery behavior being developed. The candidate still awaits installed validation and publication; a source checkout is not a verified installed candidate. Community Plugins currently installs **1.10.2**; use the [stable guide](../README.md#stable-features) for that release.
 
 ## Start with a calculation
 
@@ -172,3 +172,14 @@ Use matched backticks for inline calculations and close fenced blocks. Standard 
 Incomplete inline code never evaluates or exports variables. Unclosed frontmatter and Obsidian comments remain excluded. Ambiguous quoted fences or tab-indented containers can withhold all calculations in the note with a diagnostic; close the fence and use spaces for indentation. Content in code opened before a comment marker stays literal code. Raw HTML code elements are not Numerals Markdown expressions. These conservative boundaries avoid calculations appearing out of malformed or hidden source.
 
 Compatibility still requires installed-candidate validation across supported surfaces and platforms. This guide does not claim that Node tests or a source checkout establish that coverage. The [recovery plan](recovery/plan.md) records the acceptance boundaries and remaining work.
+
+
+## Complete an expression
+
+Block and inline suggestions have separate settings. Turning off **Suggest in math blocks** leaves inline suggestions available when inline calculations and their suggestions are enabled. **Include functions and constants** adds built-ins such as `sqrt()`; **Suggest Greek characters** completes names such as `:alpha` to `α`.
+
+Completions work before an existing closing backtick and while an inline span is unfinished. For example, accepting `sqrt()` in `` `#: sq` `` replaces only `sq`, preserves the closing backtick, and places the cursor inside the parentheses. An unfinished span stays unfinished until you type its closer. Inline `@prev` follows the preceding inline calculation; block-only directives are not offered inline.
+
+Variable suggestions use successful preceding definitions and the current calculation's local names. Referenced-note properties respect metadata opt-in. A source, settings or metadata change can close an outdated list; type again to get current suggestions. Selecting an old item after moving the cursor or changing notes leaves the source unchanged. Completion edits do not renew automatic stored-result insertion.
+
+Inline errors keep the expression and a visible reason together. Repairing the expression or its reference refreshes the result. These behaviors are covered by automated source and DOM tests; installed keyboard and accessibility validation remains separate.
