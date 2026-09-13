@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Separate the stable 1.10.2 guide from unpublished recovery features, identify missing currency/inline TeX controls by channel, and correct currency and result-insertion examples. Add verified mathjs rounding examples for numbers, units and currencies.
 - Reject stylesheet changes in maintenance preservation checks, including edits committed with a clean worktree.
 - Inline TeX triggers now use MathJax's inline mode in Reading mode and Live Preview instead of rendering as centered display math.
 
