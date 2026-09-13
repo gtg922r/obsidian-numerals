@@ -58,7 +58,7 @@ test('empty declarations need native render completion and controls need actual 
   const e=evidence(), fixture=catalog.cases.find(c=>c.id==='011');
   for(const r of e.results) { Object.assign(r,{id:fixture.id,path:fixture.path,sourceSha256:fixture.sha256}); for(const event of r.events) { event.sourcePath=fixture.path; if(event.document) event.document=fixture.text; } }
   e.results[0].events=[{kind:'view-open',sourcePath:fixture.path}];
-  assert.throws(()=>captureCheck(e,catalog,['011']),/native empty/);
+  assert.throws(()=>captureCheck(e,catalog,['011']),/primary Reading|native empty/);
   e.results[0].events.push({kind:'section',origin:'reading',requestedMode:'reading',phase:'settling',sourcePath:fixture.path});
   e.results[0].emptyWitness={completed:true,sourceSha256:fixture.sha256,events:[{kind:'section',sourcePath:fixture.path}]};
   captureCheck(e,catalog,['011']);
@@ -109,7 +109,7 @@ test('real first-smoke Reading events cannot be replaced by its hidden CodeMirro
   e.results[0].events=events;
   captureCheck(e,catalog,['001']);
   e.results[0].events=events.filter(event=>event.docId!=='context-4');
-  assert.throws(()=>captureCheck(e,catalog,['001']),/undeclared empty/);
+  assert.throws(()=>captureCheck(e,catalog,['001']),/primary Reading|undeclared empty/);
 });
 test('DOM origin gives known CodeMirror roots priority over active Reading mode', () => {
   const node={}, context={};
@@ -132,6 +132,15 @@ test('support bytes and allowed embeds are independent of the immutable 95-case 
   assert.throws(()=>captureCheck(e,catalog,['001']),/unexpected callback source/);
   const incomplete=evidence();delete incomplete.results[0].supportAfter['Other.md'];
   assert.throws(()=>captureCheck(incomplete,catalog,['001']),/support source/);
+});
+test('an allowed embed cannot replace the primary note Reading callback', () => {
+  const e=evidence(),fixture=catalog.cases.find(c=>c.id==='054');
+  for(const r of e.results) {Object.assign(r,{id:fixture.id,path:fixture.path,sourceSha256:fixture.sha256});for(const event of r.events){event.sourcePath=fixture.path;if(event.document)event.document=fixture.text;}}
+  e.results[0].events[0].sourcePath='Other.md';
+  e.results[0].events.push({kind:'view-open',sourcePath:fixture.path});
+  assert.throws(()=>captureCheck(e,catalog,['054']),/primary Reading/);
+  e.results[0].events.push({kind:'section',sourcePath:fixture.path,origin:'reading',requestedMode:'reading',phase:'settling'});
+  captureCheck(e,catalog,['054']);
 });
 test('observed editor normalization removes initial BOM and normalizes CR without changing disk hashes', () => {
   const fixture=catalog.cases.find(c=>c.id==='043');

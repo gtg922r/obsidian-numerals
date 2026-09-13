@@ -68,6 +68,7 @@ function captureCheck(capture, catalog, ids, support) {
     check(r.opened && r.settled && r.events.length > 0, 'missing view/callback completion');
     if (r.mode === 'reading') {
       check(r.actualMode === 'preview', 'wrong Reading mode');
+      check(r.events.some(e => readingEvent(e) && e.sourcePath === fixture.path && ['section','block-handler','inline-code'].includes(e.kind)), 'missing primary Reading callback');
       const extractions = r.events.filter(e => readingEvent(e) && (e.kind === 'block-handler' || e.kind === 'inline-code'));
       check(extractions.length > 0 || MAY_BE_EMPTY.includes(r.id), 'undeclared empty extraction');
       if (!extractions.length) check(r.events.some(e => readingEvent(e) && e.kind === 'section') && r.emptyWitness?.completed && r.emptyWitness.sourceSha256 === fixture.sha256 && r.emptyWitness.events.every(e => !['block-handler','inline-code'].includes(e.kind)), 'missing native empty-render witness');
