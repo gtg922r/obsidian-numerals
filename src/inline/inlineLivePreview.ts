@@ -173,7 +173,8 @@ export class InlineNumeralsWidget extends WidgetType {
 
 	toDOM(view?: EditorView): HTMLElement {
 		const ownerDocument = view?.dom.ownerDocument ?? activeDocument;
-		const span = ownerDocument.createElement('span');
+		const ownerWindow = ownerDocument.win as Window & { createSpan: typeof createSpan };
+		const span = ownerWindow.createSpan();
 		span.classList.add('cm-inline-code', 'numerals-inline');
 
 		// TeX-rendered spans strip the code chrome so they read as native inline math
@@ -195,7 +196,7 @@ export class InlineNumeralsWidget extends WidgetType {
 		if (this.mode === InlineNumeralsMode.Equation) {
 			span.classList.add('numerals-inline-equation');
 
-			const inputEl = ownerDocument.createElement('span');
+			const inputEl = ownerWindow.createSpan();
 			inputEl.className = 'numerals-inline-input';
 			renderInlineInputContent(
 				inputEl,
@@ -204,11 +205,11 @@ export class InlineNumeralsWidget extends WidgetType {
 				this.renderStyle
 			);
 
-			const sepEl = ownerDocument.createElement('span');
+			const sepEl = ownerWindow.createSpan();
 			sepEl.className = 'numerals-inline-separator';
 			sepEl.textContent = this.separator;
 
-			const valueEl = ownerDocument.createElement('span');
+			const valueEl = ownerWindow.createSpan();
 			valueEl.className = 'numerals-inline-value';
 			renderInlineValueContent(
 				valueEl,
@@ -223,7 +224,7 @@ export class InlineNumeralsWidget extends WidgetType {
 			// ResultOnly
 			span.classList.add('numerals-inline-result');
 
-			const valueEl = ownerDocument.createElement('span');
+			const valueEl = ownerWindow.createSpan();
 			valueEl.className = 'numerals-inline-value';
 			renderInlineValueContent(
 				valueEl,

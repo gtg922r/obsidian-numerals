@@ -1,4 +1,6 @@
-import * as math from 'mathjs';
+import type { Unit } from 'mathjs';
+import { getMathRuntime } from '../src/mathRuntime';
+const math = getMathRuntime();
 import { CurrencyRegistry } from '../src/formatting/currencyRegistry';
 import type { CurrencyType } from '../src/numerals.types';
 
@@ -62,7 +64,7 @@ describe('CurrencyRegistry', () => {
 	it('matches scalar-derived currency through public Unit APIs', () => {
 		const registry = CurrencyRegistry.create(currencyMap);
 		const remaining = math.unit(80, 'GBP');
-		const derived = math.divide(remaining, 8) as math.Unit;
+		const derived = math.divide(remaining, 8) as Unit;
 		const equalBase = jest.spyOn(derived, 'equalBase');
 		const toNumber = jest.spyOn(derived, 'toNumber');
 		const before = derived.toString();
@@ -81,7 +83,7 @@ describe('CurrencyRegistry', () => {
 		const rate = math.divide(
 			math.unit(80, 'GBP'),
 			math.unit(2, 'hour')
-		) as math.Unit;
+		) as Unit;
 
 		expect(registry.match(rate)).toBeUndefined();
 	});

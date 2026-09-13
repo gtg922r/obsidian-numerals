@@ -1,7 +1,7 @@
 import { CrossNoteResolutionResult } from './crossNoteResolver';
 import { createReferenceScope, evaluateWithReferences, restoreReferenceNames, mapExpressionDiagnostic } from './referenceBindings';
 import { scanExpression, MappedSource } from './expressionScanner';
-import * as math from 'mathjs';
+import * as math from '../mathRuntime';
 import { NumeralsScope, NumeralsError } from '../numerals.types';
 
 /**

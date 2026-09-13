@@ -82,9 +82,9 @@ export class PlainRenderer extends BaseLineRenderer {
 			'',
 		];
 
-		inputElement.createEl('span', { text: parts[1] });
-		inputElement.createEl('span', { text: parts[2], cls: 'numerals-sum' });
-		inputElement.createEl('span', { text: parts[3] });
+		inputElement.createSpan({ text: parts[1] });
+		inputElement.createSpan({ text: parts[2], cls: 'numerals-sum' });
+		inputElement.createSpan({ text: parts[3] });
 	}
 
 }

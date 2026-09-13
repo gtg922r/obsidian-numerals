@@ -1,5 +1,5 @@
 import { parseCrossNoteReferences } from '../processing/crossNoteResolver';
-import * as math from 'mathjs';
+import * as math from '../mathRuntime';
 import { LineRenderData, RenderContext } from '../numerals.types';
 import { BaseLineRenderer } from './BaseLineRenderer';
 import {
@@ -93,7 +93,7 @@ export class SyntaxHighlightRenderer extends BaseLineRenderer {
 		for (const [index, ref] of parseCrossNoteReferences(displaySource).slice().reverse().entries()) {
 			let symbol = `NumeralsReferenceLabel${index}`;
 			while (lineData.processedInput.includes(symbol)) symbol += 'X';
-			const label = inputElement.ownerDocument.createElement('span');
+			const label = (inputElement.ownerDocument.win as Window & { createSpan: typeof createSpan }).createSpan();
 			label.className = 'math-symbol';
 			label.textContent = ref.fullMatch;
 			labels.set(symbol, label.outerHTML);

@@ -18,6 +18,7 @@ function fixture(t) {
     t.after(() => rmSync(dir, { recursive: true, force: true }));
     for (const folder of ['src', 'tests', '__mocks__', 'scripts']) mkdirSync(path.join(dir, folder));
     for (const file of ['tsconfig.json', 'tsconfig.test.json', 'tsconfig.scripts.json', 'jest.config.js']) cpSync(path.join(root, file), path.join(dir, file));
+    cpSync(path.join(root, 'tests/setupDom.ts'), path.join(dir, 'tests/setupDom.ts'));
     symlinkSync(path.join(root, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
     return dir;
 }

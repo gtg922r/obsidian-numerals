@@ -70,7 +70,7 @@ export class TeXRenderer extends BaseLineRenderer {
 		);
 
 		// Render with MathJax
-		const inputTexElement = inputElement.createEl('span', { cls: 'numerals-tex' });
+		const inputTexElement = inputElement.createSpan({ cls: 'numerals-tex' });
 		void mathjaxLoop(inputTexElement, inputTex);
 	}
 
@@ -100,7 +100,7 @@ export class TeXRenderer extends BaseLineRenderer {
 		).tex;
 
 		// Render with MathJax
-		const resultTexElement = resultElement.createEl('span', { cls: 'numerals-tex' });
+		const resultTexElement = resultElement.createSpan({ cls: 'numerals-tex' });
 		void mathjaxLoop(resultTexElement, texResult);
 	}
 }

@@ -1,5 +1,5 @@
 import { MappedSource, mapSourceSpan, scanExpression, SourceSpan } from './expressionScanner';
-import * as math from 'mathjs';
+import * as math from '../mathRuntime';
 import { NumeralsScope } from '../numerals.types';
 
 /** Values exported across notes; arbitrary objects and functions are deliberately excluded. */

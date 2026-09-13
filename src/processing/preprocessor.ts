@@ -34,17 +34,19 @@ export function normalizeExpression(mapped: MappedSource, processors: readonly S
 		if (token.kind === 'number') {
 			text = normalizeNumericToken(text, token.groupingAllowed) ?? text;
 		} else if (token.kind === 'currency') {
-			const symbol = [...symbols].sort((a, b) => b.length - a.length).find(s => text.startsWith(s)) ?? text[0];
-			const amount = normalizeNumericToken(text.slice(symbol.length), true);
+			const symbol = token.currencySymbol!;
+			const amount = token.currencyAmount === '' ? '' : normalizeNumericToken(token.currencyAmount!, true);
 			if (amount === undefined) continue;
 			const currency = processors.find(p => p.currencySymbol === symbol && p.currencyCode !== undefined);
-			if (currency) text = `${amount} ${currency.currencyCode!}`.trimEnd();
+			if (currency) text = `${amount} ${currency.currencyCode!}`.trim();
 			else {
-				text = symbol + amount;
+				text = token.currencyAmount ? token.text.replace(token.currencyAmount, amount) : token.text;
 				for (const processor of processors) text = text.replace(processor.regex, processor.replaceStr);
 			}
-		} else if (token.kind === 'identifier') {
-			for (const processor of processors) text = text.replace(processor.regex, processor.replaceStr);
+		} else if (token.kind === 'identifier' && !/\p{Sc}/u.test(text)) {
+			for (const processor of processors) {
+				if (processor.currencySymbol === undefined) text = text.replace(processor.regex, processor.replaceStr);
+			}
 		}
 		if (text !== token.text) edits.push({ ...token, text });
 	}

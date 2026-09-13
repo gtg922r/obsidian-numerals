@@ -60,10 +60,13 @@ export const CROSS_NOTE_REF_REGEX = /\[\[([^\]\r\n]+)\]\]\.([$\w\u00C0-\u02AF\u0
 export interface ExpressionToken extends SourceSpan {
 	kind: 'string' | 'comment' | 'reference' | 'number' | 'currency' | 'identifier' | 'syntax' | 'directive' | 'insertion' | 'emitter';
 	text: string;
+	currencySymbol?: string;
+	/** Empty for a standalone conversion/unit symbol. */
+	currencyAmount?: string;
 	/** No surrounding call, array, index or object; only grouping parentheses are allowed. */
 	groupingAllowed: boolean;
 }
-const identifier = /^[$\p{L}_][\p{L}\p{N}_$]*/u;
+const identifier = /^[$\p{Sc}\p{L}_][\p{Sc}\p{L}\p{N}_$]*/u;
 const number = /^(?:\d[\d,]*(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/;
 const completeNumber = /^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
 const groupedNumber = /^[1-9]\d{0,2}(?:,\d{3})+(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
@@ -105,7 +108,9 @@ export function scanExpression(source: string, currencySymbols: readonly string[
 		}
 		let kind: ExpressionToken['kind'] = 'syntax';
 		let text = char;
-		const currency = symbols.find(symbol => tail.startsWith(symbol)) ?? (/\p{Sc}/u.test(char) ? char : undefined);
+		let currencySymbol: string | undefined, currencyAmount: string | undefined;
+		const readSymbol = (input: string) => symbols.find(symbol => input.startsWith(symbol)) ?? /^\p{Sc}/u.exec(input)?.[0];
+		const currency = readSymbol(tail);
 		const ref = tail.startsWith('[[') ? new RegExp('^' + CROSS_NOTE_REF_REGEX.source).exec(tail) : null;
 		if (char === '"' || (char === "'" && !endsValue)) {
 			kind = 'string'; index++;
@@ -133,12 +138,24 @@ export function scanExpression(source: string, currencySymbols: readonly string[
 			const amount = currency ? readNumericCandidate(tail.slice(currency.length), delimiters) : undefined;
 			const numeric = readNumericCandidate(tail, delimiters);
 			const name = identifier.exec(tail)?.[0];
-			if (amount) { kind = 'currency'; text = currency + amount; }
-			else if (numeric) { kind = 'number'; text = numeric; }
-			else if (name) { kind = 'identifier'; text = name; }
+			// Object keys and dotted accessors name properties, not currency values.
+			const identifierRole = previous?.text === '.' || previous?.text === '?.' ||
+				(frames[frames.length - 1]?.close === '}' && (previous?.text === '{' || previous?.text === ','));
+			const suffixTail = numeric ? tail.slice(numeric.length).replace(/^[\t ]+/, '') : '';
+			const suffix = readSymbol(suffixTail);
+			const isWholeSymbol = (input: string, symbol: string) => !/^[\p{Sc}\p{L}\p{N}_$]/u.test(input.slice(symbol.length));
+			if (name && identifierRole) { kind = 'identifier'; text = name; }
+			else if (amount && !/^[\p{Sc}\p{L}\p{N}_$]/u.test(tail.slice(currency!.length + amount.length))) { kind = 'currency'; text = currency + amount; currencySymbol = currency; currencyAmount = amount; }
+			else if (numeric && (!delimiters || !numeric.includes(',')) && suffix && isWholeSymbol(suffixTail, suffix)) {
+				kind = 'currency'; text = tail.slice(0, tail.length - suffixTail.length + suffix.length);
+				currencySymbol = suffix; currencyAmount = numeric;
+			} else if (numeric) { kind = 'number'; text = numeric; }
+			else if (currency && isWholeSymbol(tail, currency)) {
+				kind = 'currency'; text = currency; currencySymbol = currency; currencyAmount = '';
+			} else if (name) { kind = 'identifier'; text = name; }
 		}
 		index = start + text.length;
-		const token = { start, end: index, kind, text, groupingAllowed: !frames.some(frame => frame.delimiter) };
+		const token = { start, end: index, kind, text, currencySymbol, currencyAmount, groupingAllowed: !frames.some(frame => frame.delimiter) };
 		tokens.push(token);
 		if (kind === 'comment' || kind === 'emitter') continue;
 		if (kind === 'syntax') {

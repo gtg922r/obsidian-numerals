@@ -22,11 +22,11 @@ export function renderError(
 	container: HTMLElement,
 	evaluationResult: EvaluationResult
 ): void {
-	const line = container.createEl("div", {cls: ["numerals-error-line", "numerals-line"]});
-	line.createEl("span", { text: evaluationResult.errorInput, cls: "numerals-input"});
-	const resultElement = line.createEl("span", {cls: "numerals-result" });
-	resultElement.createEl("span", {cls:"numerals-error-name", text: evaluationResult.errorMsg!.name + ":"});
-	resultElement.createEl("span", {cls:"numerals-error-message", text: evaluationResult.errorMsg!.message});
+	const line = container.createDiv({cls: ["numerals-error-line", "numerals-line"]});
+	line.createSpan({ text: evaluationResult.errorInput, cls: "numerals-input"});
+	const resultElement = line.createSpan({cls: "numerals-result" });
+	resultElement.createSpan({cls:"numerals-error-name", text: evaluationResult.errorMsg!.name + ":"});
+	resultElement.createSpan({cls:"numerals-error-message", text: evaluationResult.errorMsg!.message});
 }
 
 /**
@@ -68,7 +68,7 @@ export function renderNumeralsBlock(
 			continue;
 		}
 
-		const lineContainer = container.createEl("div", {cls: "numerals-line"});
+		const lineContainer = container.createDiv({cls: "numerals-line"});
 		lineContainer.dataset.sourceLine = String(lineData.index);
 		if (lineData.isEmitter) {
 			lineContainer.toggleClass("numerals-emitter", true);
@@ -281,8 +281,8 @@ export function processAndRenderNumeralsBlockFromSource(
 	// Phase 8: Render warnings (frontmatter errors, cross-note resolution warnings, etc.)
 	const allWarnings = [...crossNoteResult.warnings, ...warnings];
 	for (const warning of allWarnings) {
-		const warningEl = el.createEl('div', { cls: 'numerals-warning' });
-		warningEl.createEl('span', { cls: 'numerals-warning-message', text: warning });
+		const warningEl = el.createDiv({ cls: 'numerals-warning' });
+		warningEl.createSpan({ cls: 'numerals-warning-message', text: warning });
 	}
 
 	return { scope, referencedPaths: crossNoteResult.referencedPaths, dependencies: crossNoteResult.dependencies };

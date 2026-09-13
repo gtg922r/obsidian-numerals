@@ -14,7 +14,9 @@ jest.mock('obsidian', () => ({
 	}),
 }), { virtual: true });
 
-import * as math from 'mathjs';
+import type { Unit } from 'mathjs';
+import { getMathRuntime } from '../src/mathRuntime';
+const math = getMathRuntime();
 import {
 	CurrencyDisplayMode,
 	CurrencyPrecisionMode,
@@ -78,12 +80,11 @@ function createFormatter(options: FormatterOptions = {}): ResultFormatter {
 		}),
 		currencyPrecisionMode: options.precisionMode ??
 			DEFAULT_SETTINGS.currencyPrecisionMode,
-		currencyDisplayMode: options.displayMode ??
-			DEFAULT_SETTINGS.currencyDisplayMode,
+		currencyDisplayMode: options.displayMode ?? CurrencyDisplayMode.Code,
 	});
 }
 
-function currency(value: number, code: string): math.Unit {
+function currency(value: number, code: string): Unit {
 	return math.unit(value, code);
 }
 
@@ -131,7 +132,7 @@ beforeAll(() => {
 });
 
 describe('currency formatting compatibility matrix', () => {
-	it('uses currency-standard precision and code display by default', () => {
+	it('uses currency-standard precision and symbol display by default', () => {
 		const profile = createNumberFormatProfile(
 			NumeralsNumberFormat.System,
 			'en-US',
@@ -146,10 +147,10 @@ describe('currency formatting compatibility matrix', () => {
 		expect(DEFAULT_SETTINGS.currencyPrecisionMode).toBe(
 			CurrencyPrecisionMode.CurrencyStandard,
 		);
-		expect(DEFAULT_SETTINGS.currencyDisplayMode).toBe(CurrencyDisplayMode.Code);
+		expect(DEFAULT_SETTINGS.currencyDisplayMode).toBe(CurrencyDisplayMode.Symbol);
 		expect(formatter.format(currency(120, 'GBP'))).toEqual({
-			text: '120.00 GBP',
-			tex: '120.00~\\mathrm{GBP}',
+			text: '£120.00',
+			tex: '\\unicode{x00A3} 120.00',
 			canonical: '120.00 GBP',
 		});
 	});
@@ -209,7 +210,7 @@ describe('currency formatting compatibility matrix', () => {
 
 		expect(formatted.text).toBe('$1,234.50');
 		expect(formatted.text).not.toContain('CA$');
-		expect(formatted.tex).toBe('\\dollar 1234.50');
+		expect(formatted.tex).toBe('\\unicode{x0024} 1234.50');
 		expect(formatted.canonical).toBe('1234.50 CAD');
 	});
 });
@@ -240,7 +241,7 @@ describe('currency formatting policy precedence', () => {
 		const formatted = formatter.format(currency(1234.5, 'GBP'), overrides);
 
 		expect(formatted.text).toBe('1.234,50\u00a0£');
-		expect(formatted.tex).toBe('\\pound 1234.50');
+		expect(formatted.tex).toBe('\\unicode{x00A3} 1234.50');
 		expect(formatted.canonical).toBe('1234.50 GBP');
 	});
 
@@ -263,15 +264,15 @@ describe('currency formatting policy precedence', () => {
 			displayMode: CurrencyDisplayMode.Symbol,
 		});
 		const remaining = currency(80, 'GBP');
-		const derived = math.divide(remaining, 8) as math.Unit;
+		const derived = math.divide(remaining, 8) as Unit;
 		const compound = math.divide(
 			currency(0.00416, 'GBP'),
 			math.unit(1, 'hour'),
-		) as math.Unit;
+		) as Unit;
 
 		expect(formatter.format(derived)).toEqual({
 			text: '£10.00',
-			tex: '\\pound 10.00',
+			tex: '\\unicode{x00A3} 10.00',
 			canonical: '10.00 GBP',
 		});
 		expect(formatter.format(compound).text).toBe('0.004 GBP / hour');
@@ -289,7 +290,7 @@ describe('currency formatting policy precedence', () => {
 
 		expect(formatter.format(value)).toEqual({
 			text: '-£1.26',
-			tex: '-\\pound 1.26',
+			tex: '-\\unicode{x00A3} 1.26',
 			canonical: '-1.26 GBP',
 		});
 		expect(value.toNumber('GBP')).toBe(before);
@@ -310,7 +311,7 @@ describe('localized currency text with stable TeX and canonical output', () => {
 		const formatted = formatter.format(currency(1234.5, 'GBP'));
 
 		expect(formatted.text).toBe(expectedText);
-		expect(formatted.tex).toBe('\\pound 1234.50');
+		expect(formatted.tex).toBe('\\unicode{x00A3} 1234.50');
 		expect(formatted.canonical).toBe('1234.50 GBP');
 	});
 });

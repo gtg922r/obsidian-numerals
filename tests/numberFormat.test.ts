@@ -4,7 +4,8 @@ jest.mock('obsidian', () => ({
 	sanitizeHTMLToDom: jest.fn(),
 }));
 
-import * as math from 'mathjs';
+import { getMathRuntime } from '../src/mathRuntime';
+const math = getMathRuntime();
 import { NumeralsNumberFormat } from '../src/numerals.types';
 import {
 	createNumberFormatProfile,

@@ -60,15 +60,15 @@ function renderInlineResult(
 
 	if (mode === InlineNumeralsMode.Equation) {
 		codeEl.addClass('numerals-inline-equation');
-		const inputEl = codeEl.createEl('span', { cls: 'numerals-inline-input' });
+		const inputEl = codeEl.createSpan({ cls: 'numerals-inline-input' });
 		renderInlineInputContent(
 			inputEl,
 			expression,
 			result.processedExpression,
 			renderStyle
 		);
-		codeEl.createEl('span', { cls: 'numerals-inline-separator', text: settings.inlineEquationSeparator });
-		const valueEl = codeEl.createEl('span', { cls: 'numerals-inline-value' });
+		codeEl.createSpan({ cls: 'numerals-inline-separator', text: settings.inlineEquationSeparator });
+		const valueEl = codeEl.createSpan({ cls: 'numerals-inline-value' });
 		renderInlineValueContent(
 			valueEl,
 			formattedResult,
@@ -76,7 +76,7 @@ function renderInlineResult(
 		);
 	} else {
 		codeEl.addClass('numerals-inline-result');
-		const valueEl = codeEl.createEl('span', { cls: 'numerals-inline-value' });
+		const valueEl = codeEl.createSpan({ cls: 'numerals-inline-value' });
 		renderInlineValueContent(
 			valueEl,
 			formattedResult,
@@ -100,7 +100,7 @@ function renderInlineError(
 ): void {
 	codeEl.empty();
 	codeEl.addClass('numerals-inline', 'numerals-inline-error');
-	codeEl.createEl('span', { text: expression });
+	codeEl.createSpan({ text: expression });
 }
 
 /**

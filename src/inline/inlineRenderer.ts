@@ -4,9 +4,7 @@ import { mathjaxLoop } from '../rendering/displayUtils';
 import { expressionToTeX } from '../rendering/texRendering';
 
 function createSpan(parent: HTMLElement, className: string): HTMLElement {
-	const span = parent.ownerDocument.createElement('span');
-	span.className = className;
-	parent.appendChild(span);
+	const span = parent.createSpan({ cls: className });
 	return span;
 }
 

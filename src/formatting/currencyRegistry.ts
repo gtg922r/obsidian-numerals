@@ -1,4 +1,6 @@
-import * as math from 'mathjs';
+import type { MathJsInstance, Unit } from 'mathjs';
+import { getMathRuntime } from '../mathRuntime';
+import { normalizeCurrencyAliases } from '../settings/currencyAliases';
 import type { CurrencyType } from '../numerals.types';
 import type {
 	CurrencyDefinition,
@@ -11,6 +13,7 @@ const MAX_CURRENCY_FRACTION_DIGITS = 20;
 
 export interface CurrencyRegistryOptions {
 	locale?: string;
+	runtime?: MathJsInstance;
 	fractionDigitsByCode?: ReadonlyMap<string, number>;
 }
 
@@ -25,7 +28,8 @@ export class CurrencyRegistry {
 	private readonly definitionsByCode: ReadonlyMap<string, CurrencyDefinition>;
 	readonly definitions: readonly CurrencyDefinition[];
 
-	private constructor(definitions: CurrencyDefinition[]) {
+	private constructor(definitions: CurrencyDefinition[], readonly runtime: MathJsInstance,
+		readonly mappings: readonly CurrencyType[]) {
 		this.definitions = Object.freeze(definitions.map(definition => Object.freeze(definition)));
 		this.definitionsByCode = new Map(
 			this.definitions.map(definition => [definition.code, definition])
@@ -36,6 +40,7 @@ export class CurrencyRegistry {
 		currencyMap: readonly CurrencyType[],
 		options: CurrencyRegistryOptions = {}
 	): CurrencyRegistry {
+		const math = options.runtime ?? getMathRuntime();
 		const clonedEntries = currencyMap.map(entry => ({ ...entry }));
 		const definitionsByCode = new Map<string, CurrencyDefinition>();
 
@@ -45,7 +50,7 @@ export class CurrencyRegistry {
 				continue;
 			}
 
-			let unit: math.Unit;
+			let unit: Unit;
 			try {
 				unit = math.unit(code);
 			} catch {
@@ -63,22 +68,27 @@ export class CurrencyRegistry {
 			definitionsByCode.set(code, {
 				code,
 				symbol: entry.symbol,
-				texCommand: `\\${entry.name}`,
+				texCommand: Array.from(entry.symbol).map(character => `\\unicode{x${character.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}}`).join(''),
 				fractionDigits: resolvedFractionDigits,
 				unit,
 			});
 		}
 
-		return new CurrencyRegistry([...definitionsByCode.values()]);
+		return new CurrencyRegistry([...definitionsByCode.values()], math, Object.freeze(clonedEntries.map(entry => Object.freeze(entry))));
 	}
 
 	get(code: string): CurrencyDefinition | undefined {
 		return this.definitionsByCode.get(code);
 	}
 
+	/** Code-only unit notation on a detached value, including native compound aliases. */
+	canonicalizeAliases(value: unknown): unknown {
+		return normalizeCurrencyAliases(value, this.mappings, this.runtime);
+	}
+
 	/** Match a dimensionally pure currency result from the active registry. */
 	match(value: unknown): CurrencyMatch | undefined {
-		if (!math.isUnit(value)) {
+		if (!this.runtime.isUnit(value)) {
 			return undefined;
 		}
 

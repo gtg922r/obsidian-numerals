@@ -1,4 +1,6 @@
-import * as math from 'mathjs';
+import type * as MathTypes from 'mathjs';
+import { getMathRuntime } from '../src/mathRuntime';
+const math = getMathRuntime();
 import { App } from 'obsidian';
 import { DEFAULT_SETTINGS, NumeralsScope, StringReplaceMap } from '../src/numerals.types';
 import { applySourceEdits, mapSourceSpan, originalSource, scanExpression } from '../src/processing/expressionScanner';
@@ -81,7 +83,7 @@ describe('shared lexical input contract through all evaluation routes', () => {
 	test.each(['$1,234.50', 'max($1,234.50, $2)', '[$1,234.50,$2][1]'])('explicit currency amount is a single amount: %s', source => {
 		for (const value of [inline(source).raw, block(source).results[0], evaluateMetadataValue(source, processors).result]) {
 			expect(math.isUnit(value)).toBe(true);
-			expect((value as math.Unit).toNumber('USD')).toBe(1234.5);
+			expect((value as MathTypes.Unit).toNumber('USD')).toBe(1234.5);
 		}
 	});
 
@@ -125,8 +127,8 @@ describe('typed reference values and ownership', () => {
 		const app = host({ numerals: 'all', value });
 		const b = block(source, app); expect(b.errorMsg).toBeNull();
 		if (math.isUnit(expected)) {
-			expect((b.results[0] as math.Unit).toNumber('mm')).toBe(20);
-			expect((inline(source, app).raw as math.Unit).toNumber('mm')).toBe(20);
+			expect((b.results[0] as MathTypes.Unit).toNumber('mm')).toBe(20);
+			expect((inline(source, app).raw as MathTypes.Unit).toNumber('mm')).toBe(20);
 		} else {
 			expect(b.results[0]).toEqual(expected);
 			expect(inline(source, app).raw).toEqual(expected);
@@ -145,10 +147,10 @@ describe('typed reference values and ownership', () => {
 	test('typed metadata, returned matrices and mutating consumers cannot change exported values', () => {
 		const matrix = math.matrix([math.complex(1, 2), 3]);
 		const app = host({ numerals: 'all', value: matrix });
-		const result = inline('[[n]].value', app).raw as math.Matrix;
+		const result = inline('[[n]].value', app).raw as MathTypes.Matrix;
 		result.set([0], 99);
 		expect(matrix.get([0])).toEqual(math.complex(1, 2));
-		const scope = new NumeralsScope([['mutate', (value: math.Matrix) => { value.set([1], 99); return value; }]]);
+		const scope = new NumeralsScope([['mutate', (value: MathTypes.Matrix) => { value.set([1], 99); return value; }]]);
 		inline('mutate([[n]].value)', app, scope);
 		expect(inline('[[n]].value[2]', app).raw).toBe(3);
 		const unit = math.unit(1.2345678901234567, 'cm');
@@ -282,9 +284,9 @@ test('mathjs diagnostic character locations map back through reference and group
 test('complete scientific currency amounts retain exponents', () => {
 	for (const source of ['$1e3', '$1,000e3', 'max($1e3, $2)']) {
 		const expected = source.includes('1,000') ? 1000000 : 1000;
-		expect((inline(source).raw as math.Unit).toNumber('USD')).toBe(expected);
-		expect((block(source).results[0] as math.Unit).toNumber('USD')).toBe(expected);
-		expect((evaluateMetadataValue(source, processors).result as math.Unit).toNumber('USD')).toBe(expected);
+		expect((inline(source).raw as MathTypes.Unit).toNumber('USD')).toBe(expected);
+		expect((block(source).results[0] as MathTypes.Unit).toNumber('USD')).toBe(expected);
+		expect((evaluateMetadataValue(source, processors).result as MathTypes.Unit).toNumber('USD')).toBe(expected);
 	}
 });
 

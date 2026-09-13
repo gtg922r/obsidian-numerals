@@ -66,8 +66,8 @@ export abstract class BaseLineRenderer implements ILineRenderer {
 		inputElement: HTMLElement;
 		resultElement: HTMLElement;
 	} {
-		const inputElement = container.createEl('span', { cls: 'numerals-input' });
-		const resultElement = container.createEl('span', { cls: 'numerals-result' });
+		const inputElement = container.createSpan({ cls: 'numerals-input' });
+		const resultElement = container.createSpan({ cls: 'numerals-result' });
 		return { inputElement, resultElement };
 	}
 

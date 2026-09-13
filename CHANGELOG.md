@@ -7,9 +7,11 @@ All notable changes to this project will be documented in this file. The format 
 ### Added
 - Per-expression TeX rendering for Inline Numerals via the new `#$:` (result only) and `#$=:` (equation) trigger prefixes, which render with MathJax in both Live Preview and Reading mode. Both prefixes are configurable in settings. (Closes #161)
 - Block-level `@format` and `@decimalPlaces` directives for overriding result presentation without changing calculated values. (Closes #75, #140)
-- Currency-standard decimal places by default and optional configured-symbol display for pure currency results, including derived currency values. Currency-code display remains the default. (Closes #160)
+- Currency-standard decimal places by default and optional configured-symbol display for pure currency results, including derived currency values. Configured-symbol display is the default when no valid saved preference exists; saved code/symbol choices are preserved. (Closes #160)
 
 ### Changed
+- Provide all settings through Obsidian 1.13 native searchable definitions. Currency changes use explicit Save/Cancel forms, preserve valid saved preferences, and validate complete settings with legacy migration and duplicate-trigger protection.
+- Pin Obsidian 1.13.1 typings and the 0.4.2 Obsidian linter; adopt native DOM helpers and keep their owning-document behavior.
 - Removed the hidden no-op `@createUnit` preprocessing stub; unsupported declarations and existing unit collisions remain visible errors.
 - Recovery candidates use synchronized 1.11.0 package/lock/manifest metadata and require Obsidian 1.13.0; historical stable version mappings remain unchanged.
 - Run recovery CI on Node 24 with locked installs, separate strict production/test/script typechecks, Jest, lint, symbol checks, and reproducible production builds; explicitly exclude nested worktrees.
@@ -24,6 +26,11 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Preserve exact normalized BigNumber currency-rate values and public Unit formatting flags when converting aliases to codes.
+- Preserve currency symbols used as native object keys and dotted property names while normalizing currency values and conversion targets.
+- Canonicalize currency aliases inside native mathjs ResultSets, preserving semicolon result entries and retained currency codes during insertion after a remap.
+- Apply currency remaps and removal atomically using private full mathjs runtimes; failed saves keep the active configuration, and invalid saved mappings stay editable with a visible calculation error until repaired. Expose typed settings generations for cache/insertion invalidation.
+- Support currency suffixes, standalone conversion symbols and native quoted unit strings without shared parser patches or global MathJax macros. Preserve delimiter commas, variable names, compound-unit serialization and retained values' originating runtime.
 - Preserve grouped literals after implicit multiplication and compose insertion wrappers with previous/sum directives; keep reference display labels intact with many references and magic-variable text in note/property names.
 - Preserve mathjs argument, array, and index commas while normalizing complete grouped numbers only outside delimiter contexts; protect strings and comments through currency and directive preprocessing.
 - Bind cross-note properties as cloned typed values, fixing negative-value powers and preserving complex numbers, units, matrices, and precision. Reject reference assignments and cross-note function exports, retain original labels/diagnostics, and expose unresolved dependencies for refresh adapters.
