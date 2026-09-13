@@ -216,11 +216,10 @@ export default class NumeralsPlugin extends Plugin {
 
 	private updatePreProcessors() {
 		const currencyPreProcessors = this.currencyMap.map(m => {
-			return {regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
+			return {currencySymbol: m.symbol, currencyCode: m.currency, regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
 		});
 
 		this.preProcessors = [
-			{regex: /,(\d{3})/g, replaceStr: '$1'}, // remove thousands separators
 			...currencyPreProcessors
 		];
 	}

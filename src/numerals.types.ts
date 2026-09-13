@@ -1,3 +1,5 @@
+import type { MappedSource } from './processing/expressionScanner';
+import type { ReferenceDependency } from './processing/crossNoteResolver';
 /****************************************************
  * Shared Type Imports
  ****************************************************/
@@ -198,6 +200,8 @@ export interface NumeralsBlockResult {
 	scope: NumeralsScope;
 	/** File paths referenced via [[note]].property syntax (for re-render tracking) */
 	referencedPaths: string[];
+	/** Includes unresolved notes/properties, with original expression spans. */
+	dependencies: ReferenceDependency[];
 }
 
 export type numeralsBlockInfo = {
@@ -220,6 +224,7 @@ export interface ProcessedBlock {
 	rawRows: string[];
 	/** Processed source string with directives replaced, ready for mathjs evaluation */
 	processedSource: string;
+	sourceMap: MappedSource;
 	/** Source rows preserved for alignment but ignored by evaluator state. */
 	transparentLineIndexes: number[];
 	/** Metadata about special lines (emitters, insertions, etc.) */
@@ -292,6 +297,9 @@ export interface RenderContext {
 export interface StringReplaceMap {
 	/** Regular expression to match */
 	regex: RegExp;
+	/** Explicit symbol token for the lexical currency pass (including custom symbols). */
+	currencySymbol?: string;
+	currencyCode?: string;
 	/** String to replace matches with */
 	replaceStr: string;
 }
@@ -330,8 +338,11 @@ export interface InlineEvaluationResult {
 	raw: unknown;
 	/** Expression after cross-note resolution, preprocessing, and inline directives */
 	processedExpression: string;
+	sourceMap: MappedSource;
 	/** Note-global ($-prefixed) variables that were assigned during evaluation */
 	globals: Map<string, unknown>;
 	/** File paths referenced via [[note]].property syntax */
 	referencedPaths: string[];
+	/** Includes unresolved notes/properties, with original expression spans. */
+	dependencies: ReferenceDependency[];
 }

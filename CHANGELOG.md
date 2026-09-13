@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. The format 
 - Currency-standard decimal places by default and optional configured-symbol display for pure currency results, including derived currency values. Currency-code display remains the default. (Closes #160)
 
 ### Changed
+- Removed the hidden no-op `@createUnit` preprocessing stub; unsupported declarations and existing unit collisions remain visible errors.
 - Recovery candidates use synchronized 1.11.0 package/lock/manifest metadata and require Obsidian 1.13.0; historical stable version mappings remain unchanged.
 - Run recovery CI on Node 24 with locked installs, separate strict production/test/script typechecks, Jest, lint, symbol checks, and reproducible production builds; explicitly exclude nested worktrees.
 - Restrict recovery release tooling to BRAT prereleases from the exact current reviewed integration tip, reject mismatched or reused versions and earlier ancestor commits, and disable production promotion. Verify the remote tag and all three uploaded assets before publishing the newly created draft by its exact release ID; failures leave it private. Preserve stable 1.10.2 and existing release assets.
@@ -22,6 +23,9 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Preserve grouped literals after implicit multiplication and compose insertion wrappers with previous/sum directives; keep reference display labels intact with many references and magic-variable text in note/property names.
+- Preserve mathjs argument, array, and index commas while normalizing complete grouped numbers only outside delimiter contexts; protect strings and comments through currency and directive preprocessing.
+- Bind cross-note properties as cloned typed values, fixing negative-value powers and preserving complex numbers, units, matrices, and precision. Reject reference assignments and cross-note function exports, retain original labels/diagnostics, and expose unresolved dependencies for refresh adapters.
 - Inline TeX triggers now use MathJax's inline mode in Reading mode and Live Preview instead of rendering as centered display math.
 
 ## [1.10.2] - 2026-05-19

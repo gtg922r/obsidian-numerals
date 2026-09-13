@@ -1,3 +1,4 @@
+import { ReferenceEvaluationError } from '../processing/crossNoteResolver';
 import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
 import { NumeralsSettings, NumeralsScope, StringReplaceMap, InlineNumeralsMode, InlineEvaluationResult, NumeralsRenderStyle } from '../numerals.types';
 import type { FormattedResult, ResultFormatter } from '../formatting';
@@ -182,10 +183,10 @@ function processInlineCodeElement(
 			settings
 		);
 		return { referencedPaths: result.referencedPaths };
-	} catch {
+	} catch (error: unknown) {
 		prevResultRef.value = undefined;
 		renderInlineError(codeEl, parsed.expression);
-		return { referencedPaths: [] };
+		return { referencedPaths: error instanceof ReferenceEvaluationError ? error.referencedPaths : [] };
 	}
 }
 

@@ -1,3 +1,4 @@
+import { ReferenceEvaluationError } from '../processing/crossNoteResolver';
 /**
  * Live Preview (CM6 ViewPlugin) for inline Numerals expressions.
  *
@@ -392,7 +393,10 @@ function tryBuildNodeDecoration(
 				}
 			}
 		}
-	} catch {
+	} catch (error: unknown) {
+		if (error instanceof ReferenceEvaluationError) {
+			for (const path of error.referencedPaths) ctx.referencedPaths.add(path);
+		}
 		formattedResult = { text: '', tex: '', canonical: '' };
 		processedExpression = parsed.expression;
 		isError = true;

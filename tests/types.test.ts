@@ -1,3 +1,4 @@
+import { originalSource } from '../src/processing/expressionScanner';
 /**
  * Unit tests for new rendering pipeline types introduced in Phase 1 refactoring.
  * These tests verify type safety and ensure proper structure of DTOs.
@@ -30,7 +31,8 @@ describe('Rendering Pipeline Types', () => {
 			const processedBlock: ProcessedBlock = {
 				rawRows: ['line1', 'line2'],
 				processedSource: 'processed\nsource',
-				transparentLineIndexes: [],
+				sourceMap: originalSource(''),
+			transparentLineIndexes: [],
 				blockInfo: {
 					emitter_lines: [1],
 					insertion_lines: [],
@@ -50,7 +52,8 @@ describe('Rendering Pipeline Types', () => {
 			const processedBlock: ProcessedBlock = {
 				rawRows: [],
 				processedSource: '',
-				transparentLineIndexes: [],
+				sourceMap: originalSource(''),
+			transparentLineIndexes: [],
 				blockInfo: {
 					emitter_lines: [],
 					insertion_lines: [],
@@ -272,6 +275,7 @@ describe('Type Compatibility', () => {
 		const processedBlock: ProcessedBlock = {
 			rawRows,
 			processedSource,
+			sourceMap: originalSource(''),
 			transparentLineIndexes: [],
 			blockInfo,
 			formatOverrides: {},

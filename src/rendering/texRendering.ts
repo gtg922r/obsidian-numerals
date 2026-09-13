@@ -1,3 +1,4 @@
+import { parseCrossNoteReferences } from '../processing/crossNoteResolver';
 import * as math from 'mathjs';
 import { StringReplaceMap } from '../numerals.types';
 import {
@@ -15,7 +16,21 @@ export function expressionToTeX(
 	processedExpression: string,
 	rawExpression = processedExpression
 ): string {
-	const preprocessedTex = math.parse(processedExpression).toTex();
+	// Keep literal reference labels in TeX without printing internal evaluation symbols.
+	const references = parseCrossNoteReferences(processedExpression);
+	let displaySource = processedExpression;
+	const labels = new Map<string, string>();
+	for (const [index, ref] of references.slice().reverse().entries()) {
+		let symbol = `NumeralsReferenceLabel${index}`;
+		while (processedExpression.includes(symbol)) symbol += 'X';
+		const escapes: Record<string, string> = { '\\': '\\textbackslash{}', '{': '\\{', '}': '\\}', '$': '\\$', '&': '\\&', '#': '\\#', '%': '\\%', '_': '\\_', '^': '\\textasciicircum{}', '~': '\\textasciitilde{}' };
+		labels.set(symbol, `\\text{${ref.fullMatch.replace(/[\\{}$&#%_^~]/g, character => escapes[character])}}`);
+		displaySource = displaySource.slice(0, ref.start) + symbol + displaySource.slice(ref.end);
+	}
+	const preprocessedTex = math.parse(displaySource).toTex({ handler: (node: math.MathNode) => {
+		if (math.isSymbolNode(node) && labels.has(node.name)) return node.name;
+		return undefined;
+	} });
 	let tex = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(
 		preprocessedTex,
 		rawExpression,
@@ -26,7 +41,9 @@ export function expressionToTeX(
 	// unescapeSubscripts, which would rewrite `\_\_prev` into `\__{prev}`.
 	tex = tex.replace(/(\\_\\_|__)prev\b/g, '@prev');
 	tex = unescapeSubscripts(tex);
-	return texCurrencyReplacement(tex);
+	tex = texCurrencyReplacement(tex);
+	if (labels.size) tex = tex.replace(new RegExp(`\\b(?:${[...labels.keys()].join('|')})\\b`, 'g'), symbol => labels.get(symbol)!);
+	return tex;
 }
 
 /**

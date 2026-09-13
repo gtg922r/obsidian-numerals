@@ -1,6 +1,7 @@
 import * as math from 'mathjs';
 import { App, TFile } from 'obsidian';
 import { NumeralsScope, StringReplaceMap } from '../numerals.types';
+import { isSupportedReferenceValue, cloneReferenceValue } from './referenceBindings';
 import { replaceStringsInTextFromMap } from './preprocessor';
 import { getDataviewApi } from '../dataview';
 import { hasOwnProperty } from '../utils/hasOwnProperty';
@@ -80,9 +81,6 @@ export function getScopeFromFrontmatter(
 			for (const [key, rawValue] of Object.entries(frontmatter_process)) {
 				let value = rawValue;
 				
-				// If value is a mathjs unit, convert to string representation
-				value = math.isUnit(value) ? value.valueOf() : value;
-
 				// if processedValue is array-like, take the last element. For inline dataview fields, this generally means the most recent line will be used
 				if (Array.isArray(value)) {
 					value = value[value.length - 1];
@@ -127,6 +125,8 @@ export function getScopeFromFrontmatter(
 				} else if (typeof value === "function") {
 					// Functions (like those cached from previous evaluations) should be stored directly
 					scope.set(key, value);
+				} else if (typeof value === "boolean" || isSupportedReferenceValue(value)) {
+					scope.set(key, cloneReferenceValue(value));
 				} else if (typeof value === "object") {
 					warnings.push(`Frontmatter: value for "${key}" is an object and will be ignored. ` +
 						`Consider surrounding the value with quotes (e.g. \`${key}: "value"\`).`);

@@ -1,3 +1,4 @@
+import { scanExpression } from '../processing/expressionScanner';
 import { NumeralsSettings, numeralsBlockInfo, LineRenderData } from '../numerals.types';
 
 /**
@@ -20,11 +21,17 @@ export function extractComment(rawInput: string): {
 	inputWithoutComment: string;
 	comment: string | null;
 } {
-	const commentMatch = rawInput.match(/#.+$/);
+	const tokens = scanExpression(rawInput);
+	let commentMatch = tokens.find(t => t.kind === 'comment');
+	const emitter = tokens.find(t => t.kind === 'emitter');
+	if (!commentMatch && emitter) {
+		const comment = scanExpression(emitter.text.slice(2)).find(t => t.kind === 'comment');
+		if (comment) commentMatch = { ...comment, start: emitter.start + 2 + comment.start };
+	}
 	if (commentMatch) {
 		return {
-			inputWithoutComment: rawInput.replace(/#.+$/, ""),
-			comment: commentMatch[0],
+			inputWithoutComment: rawInput.slice(0, commentMatch.start),
+			comment: commentMatch.text,
 		};
 	}
 	return {
@@ -72,15 +79,17 @@ export function renderComment(element: HTMLElement, comment: string): void {
  * ```
  */
 export function cleanRawInput(rawInput: string, settings: NumeralsSettings): string {
+	// Scanner guards prevent literal strings/comments from becoming display directives.
+	const tokens = scanExpression(rawInput);
 	let cleaned = rawInput;
-
-	// Remove emitter markup (=>) if setting is enabled
-	if (settings.hideEmitterMarkupInInput) {
-		cleaned = cleaned.replace(/^([^#\r\n]*?)([\t ]*=>[\t ]*)(\$\{.*\})?(.*)$/gm, "$1$4");
+	for (const token of tokens.slice().reverse()) {
+		if (token.kind === 'insertion') {
+			const replacement = /^@[\t ]*\[([^\]:]+)(::[^\]]*)?\]/.exec(token.text)![1];
+			cleaned = cleaned.slice(0, token.start) + replacement + cleaned.slice(token.end);
+		} else if (token.kind === 'emitter' && settings.hideEmitterMarkupInInput) {
+			cleaned = cleaned.slice(0, token.start).replace(/[\t ]+$/, '') + token.text.replace(/^=>[\t ]*(\$\{.*?\})?/, '');
+		}
 	}
-
-	// Remove result insertion directive, keeping only the variable name
-	cleaned = cleaned.replace(/@\s*\[([^\]:]+)(::[^\]]*)?\](.*)$/gm, "$1$3");
 
 	return cleaned;
 }

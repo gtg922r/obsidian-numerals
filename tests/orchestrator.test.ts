@@ -1,4 +1,7 @@
-import { renderError, renderNumeralsBlock } from '../src/numeralsUtilities';
+import { App, MarkdownPostProcessorContext } from 'obsidian';
+import { DEFAULT_SETTINGS } from '../src/numerals.types';
+import { originalSource } from '../src/processing/expressionScanner';
+import { renderError, renderNumeralsBlock, processAndRenderNumeralsBlockFromSource } from '../src/numeralsUtilities';
 import { EvaluationResult, ProcessedBlock, RenderContext, NumeralsRenderStyle, NumeralsNumberFormat, NumeralsSettings, numeralsBlockInfo } from '../src/numerals.types';
 import { createNumberFormatProfile, createResultFormatter } from '../src/formatting';
 
@@ -98,6 +101,7 @@ describe('renderNumeralsBlock', () => {
 		processedBlock = {
 			rawRows: ['1 + 1', '2 + 2', '3 + 3'],
 			processedSource: '1 + 1\n2 + 2\n3 + 3',
+			sourceMap: originalSource(''),
 			transparentLineIndexes: [],
 			blockInfo,
 			formatOverrides: {},
@@ -277,4 +281,39 @@ describe('renderNumeralsBlock', () => {
 		const lines = container.querySelectorAll('.numerals-line');
 		expect(lines.length).toBe(3);
 	});
+});
+
+
+describe('integrated reference rendering', () => {
+	test.each([NumeralsRenderStyle.Plain, NumeralsRenderStyle.TeX, NumeralsRenderStyle.SyntaxHighlight])('retains original note names and typed results in %s', async style => {
+		const container = createMockElement();
+		const app = { metadataCache: {
+			getFirstLinkpathDest: () => ({ path: 'Budget 💰.md' }),
+			getFileCache: () => ({ frontmatter: { numerals: 'all', price: -2 } }),
+		} } as unknown as App;
+		const formatter = createResultFormatter({ profile: createNumberFormatProfile(NumeralsNumberFormat.Fixed) });
+		const result = processAndRenderNumeralsBlockFromSource(
+			container, '[[Budget 💰]].price ^ 2', { sourcePath: 'source.md' } as MarkdownPostProcessorContext,
+			{ numerals: 'all', __numerals_ref_0: 99 }, style, DEFAULT_SETTINGS, formatter, [], app,
+		);
+		await Promise.resolve();
+		expect(result.dependencies[0].status).toBe('resolved');
+		expect(container.querySelector('.numerals-input')?.textContent).toContain('Budget 💰');
+		expect(container.querySelector('.numerals-result')?.textContent).toContain('4');
+		expect(container.textContent).not.toMatch(/__numerals_ref|NumeralsReferenceLabel/);
+	});
+});
+
+
+test('syntax highlighting preserves magic-variable text inside reference labels', () => {
+	const container = createMockElement();
+	const source = '[[n]].__total + [[__total]].x';
+	const app = { metadataCache: {
+		getFirstLinkpathDest: () => ({ path: 'n.md' }),
+		getFileCache: () => ({ frontmatter: { numerals: 'all', __total: 2, x: 3 } }),
+	} } as unknown as App;
+	const formatter = createResultFormatter({ profile: createNumberFormatProfile(NumeralsNumberFormat.Fixed) });
+	processAndRenderNumeralsBlockFromSource(container, source, { sourcePath: 'source.md' } as MarkdownPostProcessorContext, {}, NumeralsRenderStyle.SyntaxHighlight, DEFAULT_SETTINGS, formatter, [], app);
+	expect(container.querySelector('.numerals-input')?.textContent).toBe('[[n]].__total+[[__total]].x');
+	expect(container.querySelector('.numerals-result')?.textContent).toContain('5');
 });
