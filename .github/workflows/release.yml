@@ -1,55 +1,17 @@
-name: Build And Release obsidian plugin
+name: Stable publication disabled
 
 on:
   push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-      - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
+    tags: ["*"]
 
-env:
-  PLUGIN_NAME: numerals # Change this to the name of your plugin-id folder
-
-permissions:
-  attestations: write
-  contents: write
-  id-token: write
-  artifact-metadata: write
+permissions: {}
 
 jobs:
-  build:
+  publication-disabled:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22.x"
-      - name: Build
+      - name: Refuse publication from stable maintenance
         run: |
-          npm install
-          npm run build --if-present
-          node scripts/prepare-release-artifacts.mjs ${{ github.ref_name }}
-      - name: Attest release artifacts
-        uses: actions/attest@v4
-        with:
-          subject-path: |
-            release/${{ env.PLUGIN_NAME }}/main.js
-            release/${{ env.PLUGIN_NAME }}/manifest.json
-            release/${{ env.PLUGIN_NAME }}/styles.css
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: false
-          prerelease: true
-          body: |
-            # Numerals ${{ github.ref_name }}
-            -
-          files: |
-            release/${{ env.PLUGIN_NAME }}/main.js
-            release/${{ env.PLUGIN_NAME }}/manifest.json
-            release/${{ env.PLUGIN_NAME }}/styles.css
+          echo "::error::Publication from stable maintenance is disabled. The owner must use the reviewed chore/recovery-1.11 workflow for BRAT prereleases. Stable remains 1.10.2; production promotion is prohibited."
+          exit 1

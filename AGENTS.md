@@ -10,7 +10,7 @@
 
 ## Environment & tooling
 
-- Node.js: use current LTS (Node 18+ recommended).
+- Node.js: use Node 24 as selected by `.nvmrc`.
 - **Package manager: npm** (`package.json` defines npm scripts and dependencies).
 - **Bundler: esbuild** (`scripts/esbuild.config.mjs` handles bundling).
 - Types: `obsidian` type definitions.
@@ -19,7 +19,7 @@
 ### Install
 
 ```bash
-npm install
+npm ci
 ```
 
 ### Dev (watch)
@@ -94,11 +94,11 @@ npm run lint
 
 ## Versioning & releases
 
-- Use `npm run version:patch|minor|major` to bump version in `package.json`
-- Beta releases use production-shaped version tags like `1.10.0` (no `-beta` suffix). `npm run release:beta` tags the current `package.json` version and GitHub Actions publishes a GitHub prerelease for BRAT users.
-- Production releases promote the tested prerelease: `npm run release` updates stable `manifest.json` and `versions.json`, then the matching GitHub release should be flipped from prerelease to full release.
-- Do not reintroduce `manifest-beta.json`; modern BRAT installs beta builds from GitHub release assets.
-- GitHub Actions generates release assets from the tag, including a tag-matched `manifest.json`, and creates GitHub Artifact Attestations for the uploaded files.
+- Preserve the default-branch baseline of `package.json`, `package-lock.json`, plugin source and `styles.css`. This baseline includes unreleased merged features. Keep `manifest.json` and `versions.json` unchanged to preserve stable 1.10.2 distribution metadata. Do not run version-bump commands here.
+- The tag workflow and beta/production release entrypoints unconditionally refuse publication. Do not re-enable them or add bypass flags.
+- Only the owner may publish BRAT prereleases from the reviewed `chore/recovery-1.11` checkout using that branch's accepted guards. Never promote stable, move existing tags or replace published assets.
+- Do not copy these branch-specific publication-denial files into the recovery branch or weaken its publisher.
+- Do not reintroduce `manifest-beta.json`; modern BRAT uses GitHub release assets.
 
 ## Security, privacy, and compliance
 
