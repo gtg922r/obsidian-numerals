@@ -44,6 +44,27 @@ jobs:
       - run: npm run symbols:check
       - run: npm run build:reproducible
       - run: npm run release:check
+      - name: Package checked acceptance assets
+        id: acceptance
+        if: inputs.release_tag == '' && (github.event_name == 'push' || github.event_name == 'pull_request')
+        run: |
+          set -euo pipefail
+          version=$(node --input-type=module -e 'import { readCandidate } from "./scripts/release-policy.mjs"; process.stdout.write(readCandidate().version);')
+          node scripts/prepare-release-artifacts.mjs "$version"
+          source_sha=$(git rev-parse HEAD)
+          echo "Checked acceptance source: $source_sha"
+          echo "sha=$source_sha" >> "$GITHUB_OUTPUT"
+      - name: Upload checked acceptance assets
+        if: inputs.release_tag == '' && (github.event_name == 'push' || github.event_name == 'pull_request')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numerals-acceptance-${{ steps.acceptance.outputs.sha }}
+          path: |
+            release/numerals/main.js
+            release/numerals/manifest.json
+            release/numerals/styles.css
+          if-no-files-found: error
+          retention-days: 14
       - name: Package validated BRAT assets
         if: inputs.release_tag != ''
         env:
