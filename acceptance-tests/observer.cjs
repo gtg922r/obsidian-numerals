@@ -88,9 +88,17 @@ module.exports = class AcceptanceObserver extends Plugin {
       this.state.reconcile(this.plugin('numerals'));
     } catch { this.journal.fault('owner-reconcile-gap'); }
   }
+  actionOwner(leaf, expected) {
+    const view = leaf?.view, editor = view?.editor, owner = editor && this.ownership.current(editor);
+    C.check(owner && leaf && !this.dead && this.app.vault.adapter.getBasePath() === this.root && owner?.leaf === leaf && owner?.view === view &&
+      this.allowedNotes.has(owner.file.path) && this.app.vault.getAbstractFileByPath(owner.file.path) === owner.file, 'action-current-owner');
+    if (expected) C.check(owner.id === expected.id && owner.view === expected.view && owner.file === expected.file && owner.window === expected.window, 'action-owner-changed');
+    return owner;
+  }
   observe() {
     this.reconcile();
     for (const [editor, owner] of this.ownership.editors) {
+      this.actionOwner(owner.leaf, owner);
       const nodes = owner.view.containerEl.querySelectorAll('.numerals-block, .numerals-inline');
       if (nodes.length > 2000) { this.journal.fault('dom-node-limit'); continue; }
       this.journal.emit('surface', {editorId: owner.id, windowId: owner.windowId, sourcePath: owner.file.path,
@@ -118,7 +126,7 @@ module.exports = class AcceptanceObserver extends Plugin {
       const file = this.app.vault.getAbstractFileByPath(operation.path); C.check(file, 'action-file');
       C.check(!this.creatingLeaf, 'leaf-operation-pending');
       const target = operation.leafId ? this.leaves.get(operation.leafId) : undefined;
-      if (operation.leafId) C.check(target && [...this.ownership.editors.keys()].some(editor => this.ownership.current(editor)?.leaf === target), 'action-target');
+      if (operation.leafId) this.actionOwner(target);
       // Targeted splits need a verified native split-relative-to-leaf driver.
       C.check(!(op === 'split' && operation.target), 'targeted-split-driver-pending');
       let leaf;
@@ -145,20 +153,20 @@ module.exports = class AcceptanceObserver extends Plugin {
       else if (!leaf) leaf = this.app.workspace.getLeaf(op === 'split' ? 'split' : false);
       const id = this.ids.id(leaf, 'leaf'); this.leaves.set(id, leaf);
       await leaf.setViewState({type: 'markdown', active: true, state: {file: operation.path, mode: 'source'}});
-      C.check(!this.dead && leaf.view.file === file, 'action-owner-changed'); this.reconcile();
+      C.check(!this.dead && leaf.view.file === file, 'action-owner-changed'); this.reconcile(); this.actionOwner(leaf);
       return {leafId: id, windowId: this.ownership.windows.get(leaf.view.containerEl.ownerDocument.defaultView)?.id};
       } finally { this.creatingLeaf = false; }
     }
-    const leaf = this.leaves.get(operation.leafId); C.check(leaf && [...this.ownership.editors.values()].some(o => o.leaf === leaf), 'action-leaf');
-    const view = leaf.view, editor = view.editor;
-    if (op === 'sample') { this.observe(); return {sampled: true, texts: [...view.containerEl.querySelectorAll('.numerals-block, .numerals-inline')].slice(0, 2000).map(node => node.textContent.slice(0, 16384))}; }
+    const leaf = this.leaves.get(operation.leafId), owner = this.actionOwner(leaf);
+    const view = owner.view, editor = view.editor;
+    if (op === 'sample') { this.observe(); this.actionOwner(leaf, owner); return {sampled: true, texts: [...view.containerEl.querySelectorAll('.numerals-block, .numerals-inline')].slice(0, 2000).map(node => node.textContent.slice(0, 16384))}; }
     if (op === 'close') { leaf.detach(); this.reconcile(); return {closed: true}; }
     if (op === 'mode') {
       C.check(['reading', 'source', 'live-preview'].includes(operation.mode), 'action-mode');
       await leaf.setViewState({type: 'markdown', state: {file: view.file.path, mode: operation.mode === 'reading' ? 'preview' : 'source'}});
-      C.check(!this.dead, 'action-cancelled'); this.reconcile(); return {requested: operation.mode, actual: leaf.view.getMode(), livePreview: 'see-cm-evidence'};
+      C.check(!this.dead, 'action-cancelled'); this.reconcile(); this.actionOwner(leaf, owner); return {requested: operation.mode, actual: leaf.view.getMode(), livePreview: 'see-cm-evidence'};
     }
-    if (op === 'focus') { this.app.workspace.setActiveLeaf(leaf, {focus: true}); editor.focus(); return {focused: true}; }
+    if (op === 'focus') { this.app.workspace.setActiveLeaf(leaf, {focus: true}); this.actionOwner(leaf, owner); editor.focus(); this.actionOwner(leaf, owner); return {focused: true}; }
     if (op === 'select') { C.check(Number.isInteger(operation.from) && Number.isInteger(operation.to) && operation.from >= 0 && operation.to >= operation.from && operation.to <= editor.getValue().length, 'action-selection'); editor.setSelection(editor.offsetToPos(operation.from), editor.offsetToPos(operation.to)); return {selected: true}; }
     if (op === 'scroll') { C.check(Number.isInteger(operation.offset) && operation.offset >= 0 && operation.offset <= editor.getValue().length, 'action-scroll'); const pos = editor.offsetToPos(operation.offset); editor.scrollIntoView({from: pos, to: pos}, true); return {scrolled: true}; }
     if (op === 'dataview') {

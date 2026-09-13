@@ -81,3 +81,32 @@ test('observer targets the selected pane and refuses leaf overflow before creati
   assert.equal(h.leaves.length, 6);
   await call({op: 'open', path: 'acceptance/a.md', leafId: left.leafId}); assert.equal(h.leaves.length, 6);
 });
+
+test('observer refuses every existing-pane action after ownership changes, before any action side effect', async () => {
+  const {paneHost, paneInvalidations, existingPaneActions, spyPaneActions} = await import('./support.mjs');
+  const {Ownership} = await import('../observer-core.cjs');
+  for (const [name, invalidate] of Object.entries(paneInvalidations)) for (const op of existingPaneActions) {
+    const h = paneHost(), Observer = helperClass(), helper = new Observer();
+    Object.assign(helper, {app: h.app, root: '/fixture', config: {nonce: 'n', integration: 'dataview'}, allowedNotes: new Set(h.files.keys()), leaves: new Map(), ids: new Identities(), journal: new Journal()});
+    helper.ownership = new Ownership(helper.journal, helper.ids); helper.ownership.addWindow(h.win, {document: h.document}); helper.journal.context.caseId = 'ORD-01';
+    helper.reconcile = () => { for (const leaf of h.leaves) if (leaf.view.file) helper.ownership.addEditor(leaf.view.editor, {view: leaf.view, file: leaf.view.file, window: h.win, leaf}); };
+    const opened = await helper.call('n', {op: 'open', actionId: 'action-1', path: 'acceptance/a.md'}), leaf = h.leaves[0], calls = spyPaneActions(h, leaf);
+    invalidate(h, leaf);
+    await assert.rejects(helper.call('n', {op, leafId: opened.leafId, actionId: 'action-2', from: 0, to: 0, offset: 0, mode: 'reading'}), /action-current-owner/, `${name}:${op}`);
+    assert.deepEqual(calls, [], `${name}:${op}`);
+  }
+});
+test('observer rechecks ownership after workspace and editor focus callbacks before returning input permission', async () => {
+  for (const callback of ['workspace', 'editor']) for (const invalidation of ['view-file', 'vault-file']) {
+  const {paneHost, spyPaneActions} = await import('./support.mjs'), {Ownership} = await import('../observer-core.cjs'), h = paneHost(), Observer = helperClass(), helper = new Observer();
+  Object.assign(helper, {app: h.app, root: '/fixture', config: {nonce: 'n'}, allowedNotes: new Set(h.files.keys()), leaves: new Map(), ids: new Identities(), journal: new Journal()});
+  helper.ownership = new Ownership(helper.journal, helper.ids); helper.ownership.addWindow(h.win, {document: h.document}); helper.journal.context.caseId = 'ORD-01';
+  helper.reconcile = () => { for (const leaf of h.leaves) if (leaf.view.file) helper.ownership.addEditor(leaf.view.editor, {view: leaf.view, file: leaf.view.file, window: h.win, leaf}); };
+  const opened = await helper.call('n', {op: 'open', actionId: 'action-1', path: 'acceptance/a.md'}), leaf = h.leaves[0], calls = spyPaneActions(h, leaf);
+  h.app.workspace.setActiveLeaf = () => {};
+  leaf.view.editor.focus = () => {};
+  const invalidate = () => { if (invalidation === 'view-file') leaf.view.file = {path: 'unexpected.md'}; else h.files.set('acceptance/a.md', {path: 'acceptance/a.md'}); };
+  if (callback === 'workspace') h.app.workspace.setActiveLeaf = invalidate; else leaf.view.editor.focus = invalidate;
+  await assert.rejects(helper.call('n', {op: 'focus', leafId: opened.leafId, actionId: 'action-2'}), /action-current-owner/); assert.deepEqual(calls, []);
+  }
+});

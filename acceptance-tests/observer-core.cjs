@@ -44,7 +44,7 @@ class Ownership {
   }
   current(editor) {
     const o = this.editors.get(editor);
-    if (!o || this.closed || !this.windows.has(o.window) || o.window.closed || o.view.editor !== editor || o.view.file !== o.file || !o.view.containerEl.isConnected || o.view.containerEl.ownerDocument !== o.window.document) return;
+    if (!o || this.closed || !this.windows.has(o.window) || o.window.closed || o.view.editor !== editor || o.view.file !== o.file || !o.view.containerEl.isConnected || (o.leaf && o.leaf.view !== o.view) || this.windows.get(o.window).document !== o.window.document || o.view.containerEl.ownerDocument !== o.window.document) return;
     return o;
   }
   removeWindow(win) { for (const [editor, o] of this.editors) if (o.window === win) this.editors.delete(editor); this.windows.delete(win); }

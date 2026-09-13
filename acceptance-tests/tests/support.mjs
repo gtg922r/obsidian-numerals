@@ -32,3 +32,22 @@ export function paneHost() {
   }}; win.app = app;
   return {win, document, app, leaves, files, makeLeaf};
 }
+
+export const paneInvalidations = {
+  unexpectedFile(h, leaf) { leaf.view.file = {path: 'unexpected.md'}; },
+  replacedAllowedFile(h, leaf) { leaf.view.file = {path: 'acceptance/a.md'}; },
+  replacedVaultFile(h) { h.files.set('acceptance/a.md', {path: 'acceptance/a.md'}); },
+  disconnected(h, leaf) { leaf.view.containerEl.isConnected = false; },
+  differentDocument(h, leaf) { leaf.view.containerEl.ownerDocument = {}; },
+  replacedEditor(h, leaf) { leaf.view.editor = {...leaf.view.editor}; },
+  replacedView(h, leaf) { leaf.view = {...leaf.view}; },
+};
+export const existingPaneActions = ['focus', 'select', 'scroll', 'mode', 'sample', 'dataview', 'close'];
+export function spyPaneActions(h, leaf) {
+  const calls = [], record = name => () => { calls.push(name); };
+  h.app.workspace.setActiveLeaf = record('activate');
+  Object.assign(leaf.view.editor, {focus: record('focus'), setSelection: record('select'), scrollIntoView: record('scroll'), offsetToPos: () => ({line: 0, ch: 0})});
+  leaf.setViewState = record('mode'); leaf.detach = record('close'); leaf.view.containerEl.querySelectorAll = () => { calls.push('sample'); return []; };
+  h.app.plugins.getPlugin = () => ({api: {page: record('dataview')}});
+  return calls;
+}

@@ -36,6 +36,7 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Recheck current editor, view, file, document and vault identity before installed-acceptance helper pane actions, refusing stale observer and control handles before input or mutation.
 - Keep live attachment identity available while source text is invalidated, preventing a trusted input witness from crossing into a replacement file at the same path.
 - Render multiline Live Preview calculations through direct StateField decorations, reject stale projection effects, and rebind snapshot subscriptions when the same editor loads a replacement file.
 - Exhaust automatic insertion permission after a ready no-op or ineligible attempt, so later reference repair or formatting changes cannot spend an earlier input cycle; publish the exhausted state without reevaluating math.
