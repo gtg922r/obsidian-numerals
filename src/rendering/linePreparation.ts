@@ -84,7 +84,8 @@ export function cleanRawInput(rawInput: string, settings: NumeralsSettings): str
 	let cleaned = rawInput;
 	for (const token of tokens.slice().reverse()) {
 		if (token.kind === 'insertion') {
-			const replacement = /^@[\t ]*\[([^\]:]+)(::[^\]]*)?\]/.exec(token.text)![1];
+			const expression = token.insertion!.expressionSpan;
+			const replacement = rawInput.slice(expression.start, expression.end);
 			cleaned = cleaned.slice(0, token.start) + replacement + cleaned.slice(token.end);
 		} else if (token.kind === 'emitter' && settings.hideEmitterMarkupInInput) {
 			cleaned = cleaned.slice(0, token.start).replace(/[\t ]+$/, '') + token.text.replace(/^=>[\t ]*(\$\{.*?\})?/, '');

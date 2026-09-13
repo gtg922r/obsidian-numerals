@@ -57,12 +57,110 @@ export function applySourceEdits(mapped: MappedSource, edits: readonly SourceEdi
 }
 
 export const CROSS_NOTE_REF_REGEX = /\[\[([^\]\r\n]+)\]\]\.([$\w\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F]+(?:\.[$\w\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F]+)*)/g;
+/** Exact spans in the supplied source; no stored value bytes are interpreted or normalized. */
+export interface InsertionSpan extends SourceSpan {
+	/** Everything between the outer brackets, including the optional :: separator. */
+	contentSpan: SourceSpan;
+	/** The expression before ::, or all content when there is no stored value. */
+	expressionSpan: SourceSpan;
+	/** Stored bytes after :: and before the outer ]; present even for an empty value. */
+	valueSpan?: SourceSpan;
+}
+
+/**
+ * Read one single-line insertion wrapper, balancing nested delimiters and strings.
+ * This only locates the wrapper; mathjs still parses the extracted expression.
+ */
+export function readInsertion(source: string, start = 0): InsertionSpan | undefined {
+	if (!Number.isInteger(start) || start < 0 || source[start] !== '@') return undefined;
+	let index = start + 1;
+	while (source[index] === ' ' || source[index] === '\t') index++;
+	if (source[index] !== '[') return undefined;
+	const contentStart = ++index;
+	const closes: string[] = [];
+	let expressionEnd: number | undefined, valueStart: number | undefined;
+	let endsValue = false, property = false;
+	while (index < source.length) {
+		const char = source[index];
+		if (char === '\r' || char === '\n') return undefined;
+		// Note labels are opaque: their parentheses and quotes are not math syntax.
+		const reference = valueStart === undefined && source.startsWith('[[', index)
+			? new RegExp('^' + CROSS_NOTE_REF_REGEX.source).exec(source.slice(index)) : null;
+		if (reference) {
+			index += reference[0].length;
+			endsValue = true;
+			property = false;
+			continue;
+		}
+		if (char === '"' || (char === "'" && !endsValue)) {
+			const quote = char;
+			let closed = false;
+			index++;
+			while (index < source.length) {
+				const quoted = source[index++];
+				if (quoted === '\r' || quoted === '\n') return undefined;
+				if (quoted === '\\') {
+					if (index === source.length || source[index] === '\r' || source[index] === '\n') return undefined;
+					index++;
+				} else if (quoted === quote) { closed = true; break; }
+			}
+			if (!closed) return undefined;
+			endsValue = true;
+			property = false;
+			continue;
+		}
+		if (char === ']' && closes.length === 0) {
+			const expressionSpan = { start: contentStart, end: expressionEnd ?? index };
+			if (expressionSpan.start === expressionSpan.end) return undefined;
+			return {
+				start, end: index + 1,
+				contentSpan: { start: contentStart, end: index }, expressionSpan,
+				...(valueStart === undefined ? {} : { valueSpan: { start: valueStart, end: index } }),
+			};
+		}
+		if (char === ':' && closes.length === 0 && valueStart === undefined) {
+			if (source[index + 1] !== ':') return undefined;
+			expressionEnd = index;
+			index += 2;
+			valueStart = index;
+			endsValue = false;
+			property = false;
+			continue;
+		}
+		// Only delimiter boundaries matter here, not whether mathjs accepts a name.
+		// In particular, letter-like symbols such as ℘ also precede transpose quotes.
+		const atom = /^[^\s[\](){}"'+\-*/\\%^=<>?:&|~,;.!]+/u.exec(source.slice(index))?.[0];
+		if (atom) {
+			endsValue = property || !/^(and|or|xor|not|mod|to|in)$/.test(atom);
+			property = false;
+			index += atom.length;
+			continue;
+		}
+		if (char === '[' || char === '(' || char === '{') {
+			closes.push(char === '[' ? ']' : char === '(' ? ')' : '}');
+			endsValue = false;
+		} else if (char === ']' || char === ')' || char === '}') {
+			if (closes.pop() !== char) return undefined;
+			endsValue = true;
+		} else if (!/\s/.test(char)) {
+			// Match the scanner's quote/transpose distinction without parsing math.
+			// Names and numeric leaves end a value; operators start the next one.
+			if (char !== "'" && char !== '!') endsValue = /\d/.test(char);
+		}
+		if (!/\s/.test(char)) property = char === '.';
+		index++;
+	}
+	return undefined;
+}
+
 export interface ExpressionToken extends SourceSpan {
 	kind: 'string' | 'comment' | 'reference' | 'number' | 'currency' | 'identifier' | 'syntax' | 'directive' | 'insertion' | 'emitter';
 	text: string;
 	currencySymbol?: string;
 	/** Empty for a standalone conversion/unit symbol. */
 	currencyAmount?: string;
+	/** Present for insertion tokens; all child spans use source-absolute offsets. */
+	insertion?: InsertionSpan;
 	/** No surrounding call, array, index or object; only grouping parentheses are allowed. */
 	groupingAllowed: boolean;
 }
@@ -109,6 +207,7 @@ export function scanExpression(source: string, currencySymbols: readonly string[
 		let kind: ExpressionToken['kind'] = 'syntax';
 		let text = char;
 		let currencySymbol: string | undefined, currencyAmount: string | undefined;
+		let insertion: InsertionSpan | undefined;
 		const readSymbol = (input: string) => symbols.find(symbol => input.startsWith(symbol)) ?? /^\p{Sc}/u.exec(input)?.[0];
 		const currency = readSymbol(tail);
 		const ref = tail.startsWith('[[') ? new RegExp('^' + CROSS_NOTE_REF_REGEX.source).exec(tail) : null;
@@ -128,9 +227,8 @@ export function scanExpression(source: string, currencySymbols: readonly string[
 			text = '?.';
 		} else if (tail.startsWith('=>')) {
 			kind = 'emitter'; text = tail.split('\n')[0];
-		} else if (/^@\s*\[/.test(tail)) {
-			const insertion = /^@[\t ]*\[([^\]:\r\n]+)(::[^\]\r\n]*)?\]/.exec(tail);
-			if (insertion) { kind = 'insertion'; text = insertion[0]; }
+		} else if (char === '@' && (insertion = readInsertion(source, start))) {
+			kind = 'insertion'; text = source.slice(start, insertion.end);
 		} else if (/^@(sum|total|prev)\b/i.test(tail)) {
 			kind = 'directive'; text = /^@(sum|total|prev)\b/i.exec(tail)![0];
 		} else {
@@ -155,7 +253,7 @@ export function scanExpression(source: string, currencySymbols: readonly string[
 			} else if (name) { kind = 'identifier'; text = name; }
 		}
 		index = start + text.length;
-		const token = { start, end: index, kind, text, currencySymbol, currencyAmount, groupingAllowed: !frames.some(frame => frame.delimiter) };
+		const token = { start, end: index, kind, text, currencySymbol, currencyAmount, insertion, groupingAllowed: !frames.some(frame => frame.delimiter) };
 		tokens.push(token);
 		if (kind === 'comment' || kind === 'emitter') continue;
 		if (kind === 'syntax') {

@@ -2,6 +2,7 @@ import esbuild from "esbuild";
 import process from "process";
 import { builtinModules } from 'node:module';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
 
 // Get the project root directory (parent of scripts folder)
 const projectRoot = path.resolve(process.cwd());
@@ -22,7 +23,7 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = (process.argv[2] === 'production');
 
-const buildOptions = {
+export const buildOptions = {
 	banner: {
 		js: banner,
 	},
@@ -39,8 +40,6 @@ const buildOptions = {
 		'@codemirror/search',
 		'@codemirror/state',
 		'@codemirror/view',
-		'@lezer/common',
-		'@lezer/highlight',
 		'@lezer/lr',
 		...nodeBuiltins],
 	format: 'cjs',
@@ -52,12 +51,14 @@ const buildOptions = {
 	outfile: path.join(projectRoot, 'main.js'),
 };
 
-if (prod) {
-	// Production build
-	esbuild.build(buildOptions).catch(() => process.exit(1));
-} else {
-	// Development build with watch
-	const context = await esbuild.context(buildOptions);
-	await context.watch();
-	console.log('Watching for changes...');
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+	if (prod) {
+		// Production build
+		esbuild.build(buildOptions).catch(() => process.exit(1));
+	} else {
+		// Development build with watch
+		const context = await esbuild.context(buildOptions);
+		await context.watch();
+		console.log('Watching for changes...');
+	}
 }

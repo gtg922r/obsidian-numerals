@@ -1,5 +1,6 @@
 import { App, TFile } from 'obsidian';
-import * as math from '../mathRuntime';
+import type { MathJsInstance } from 'mathjs';
+import { getMathRuntime } from '../mathRuntime';
 import { NumeralsSettings, StringReplaceMap } from '../numerals.types';
 import { replaceStringsInTextFromMap } from './preprocessor';
 import { getScopeFromFrontmatter, removeCanonicalizedDuplicates } from './scope';
@@ -7,6 +8,7 @@ import { getDataviewApi } from '../dataview';
 import { applySourceEdits, originalSource, scanExpression, CROSS_NOTE_REF_REGEX, MappedSource, SourceSpan } from './expressionScanner';
 import { cloneReferenceValue, restoreReferenceNames, mapExpressionDiagnostic } from './referenceBindings';
 import { hasOwnProperty } from '../utils/hasOwnProperty';
+import { evaluateRuntimeMetadata } from '../evaluation/runtimeProvenance';
 
 export { CROSS_NOTE_REF_REGEX } from './expressionScanner';
 
@@ -24,12 +26,22 @@ export interface ReferenceDependency extends CrossNoteReference {
 	error?: string;
 }
 
+/** Captured reference value or failure, independent of host metadata APIs. */
+export interface ResolvedReference {
+	value?: unknown;
+	referencedPath?: string;
+	status: ReferenceDependency['status'];
+	error?: string;
+}
+
 export interface CrossNoteResolutionResult {
 	/** Mathjs source containing opaque symbols; evaluate only with this binding table. */
 	resolvedSource: string;
 	sourceMap: MappedSource;
 	bindings: ReadonlyMap<string, unknown>;
 	bindingNames: ReadonlyMap<string, string>;
+	/** Exact occurrence for each opaque binding; equal text can occur repeatedly. */
+	bindingReferences?: ReadonlyMap<string, CrossNoteReference>;
 	referencedPaths: string[];
 	dependencies: ReferenceDependency[];
 	warnings: string[];
@@ -51,10 +63,23 @@ export class ReferenceEvaluationError extends Error {
 }
 
 export function parseCrossNoteReferences(source: string): CrossNoteReference[] {
-	return scanExpression(source).filter(token => token.kind === 'reference').map(token => {
-		const match = new RegExp(CROSS_NOTE_REF_REGEX.source).exec(token.text)!;
-		return { start: token.start, end: token.end, fullMatch: token.text, noteName: match[1], propertyPath: match[2] };
-	});
+	const references: CrossNoteReference[] = [];
+	const pending: SourceSpan[] = [{start: 0, end: source.length}];
+	while (pending.length) {
+		const span = pending.pop()!;
+		for (const token of scanExpression(source.slice(span.start, span.end))) {
+			if (token.kind === 'reference') {
+				const match = new RegExp(CROSS_NOTE_REF_REGEX.source).exec(token.text)!;
+				references.push({start: span.start + token.start, end: span.start + token.end,
+					fullMatch: token.text, noteName: match[1], propertyPath: match[2]});
+			} else if (token.kind === 'insertion') {
+				// Only the validated expression is source. Stored result bytes remain opaque.
+				const expression = token.insertion!.expressionSpan;
+				pending.push({start: span.start + expression.start, end: span.start + expression.end});
+			}
+		}
+	}
+	return references.sort((left, right) => left.start - right.start);
 }
 
 /**
@@ -183,6 +208,7 @@ export function filterAvailableProperties(
 export function evaluateMetadataValue(
 	value: unknown,
 	preProcessors: StringReplaceMap[],
+	runtime: MathJsInstance = getMathRuntime(),
 ): { result: unknown; error?: string } {
 	// Arrays: take last element (Dataview inline fields can produce arrays)
 	if (Array.isArray(value)) {
@@ -194,7 +220,7 @@ export function evaluateMetadataValue(
 	}
 
 	if (typeof value === 'number') {
-		return { result: math.number(value) };
+		return { result: runtime.number(value) };
 	}
 
 	if (typeof value === 'object') {
@@ -205,8 +231,7 @@ export function evaluateMetadataValue(
 	if (typeof value === 'string') {
 		const processed = replaceStringsInTextFromMap(value, preProcessors);
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- mathjs evaluate() returns any
-			const evaluated = math.evaluate(processed);
+			const evaluated = evaluateRuntimeMetadata(processed, runtime);
 			return { result: evaluated };
 		} catch (e: unknown) {
 			return { result: undefined, error: e instanceof Error ? e.message : String(e) };
@@ -223,7 +248,8 @@ export function resolveSingleReference(
 	sourcePath: string,
 	settings: NumeralsSettings,
 	preProcessors: StringReplaceMap[],
-): { value?: unknown; referencedPath?: string; status: ReferenceDependency['status']; error?: string } {
+	runtime: MathJsInstance = getMathRuntime(),
+): ResolvedReference {
 	const file = app.metadataCache.getFirstLinkpathDest(ref.noteName, sourcePath);
 	if (!file) return { status: 'missing-note', error: `Note "${ref.noteName}" not found in vault` };
 	const referencedPath = file.path;
@@ -237,26 +263,26 @@ export function resolveSingleReference(
 	if (nested.length) {
 		const raw = getNestedProperty(available, ref.propertyPath);
 		if (raw === undefined) return { referencedPath, status: 'unavailable-property', error: `Property "${ref.propertyPath}" not found in "${ref.noteName}"` };
-		const evaluated = evaluateMetadataValue(raw, preProcessors);
+		const evaluated = evaluateMetadataValue(raw, preProcessors, runtime);
 		if (evaluated.error) return { referencedPath, status: 'invalid-value', error: evaluated.error };
 		value = evaluated.result;
 	} else {
-		const { scope, warnings } = getScopeFromFrontmatter(available, undefined, true, preProcessors);
+		const { scope, warnings } = getScopeFromFrontmatter(available, undefined, true, preProcessors, false, runtime);
 		if (scope.has(key)) value = scope.get(key);
 		else {
-			const evaluated = evaluateMetadataValue(available[key], preProcessors);
+			const evaluated = evaluateMetadataValue(available[key], preProcessors, runtime);
 			if (evaluated.error) return { referencedPath, status: 'invalid-value', error: warnings[0] ?? evaluated.error };
 			value = evaluated.result;
 		}
 	}
 	try {
-		return { value: cloneReferenceValue(value), referencedPath, status: 'resolved' };
+		return { value: cloneReferenceValue(value, runtime), referencedPath, status: 'resolved' };
 	} catch (error: unknown) {
 		return { referencedPath, status: 'invalid-value', error: error instanceof Error ? error.message : String(error) };
 	}
 }
 
-// Monotonic per runtime, plus source/scope collision checks. Never a shared mutable value table.
+// Monotonic across captures/runtimes, plus source/scope collision checks. No shared value table.
 let bindingGeneration = 0;
 
 export function resolveCrossNoteReferences(
@@ -266,27 +292,52 @@ export function resolveCrossNoteReferences(
 	settings: NumeralsSettings,
 	preProcessors: StringReplaceMap[],
 	occupiedNames: ReadonlyMap<string, unknown> = new Map(),
+	runtime: MathJsInstance = getMathRuntime(),
 ): CrossNoteResolutionResult {
-	const refs = settings.enableCrossNoteReferences ? parseCrossNoteReferences(source) : [];
+	if (!settings.enableCrossNoteReferences) return {
+		resolvedSource: source, sourceMap: originalSource(source), bindings: new Map(), bindingNames: new Map(),
+		referencedPaths: [], dependencies: [], warnings: [], error: null,
+	};
+	return bindCrossNoteReferences(source, sourcePath,
+		ref => resolveSingleReference(ref, app, sourcePath, settings, preProcessors, runtime), occupiedNames, runtime);
+}
+
+/** Bind already-captured typed values without reading an App, cache or vault. */
+export function bindCrossNoteReferences(
+	source: string,
+	sourcePath: string,
+	resolve: (reference: CrossNoteReference) => ResolvedReference,
+	occupiedNames: ReadonlyMap<string, unknown> = new Map(),
+	runtime: MathJsInstance = getMathRuntime(),
+): CrossNoteResolutionResult {
+	const refs = parseCrossNoteReferences(source);
 	const dependencies: ReferenceDependency[] = [];
 	const bindings = new Map<string, unknown>();
 	const bindingNames = new Map<string, string>();
+	const bindingReferences = new Map<string, CrossNoteReference>();
 	const edits = [];
 	for (const ref of refs) {
-		let result: ReturnType<typeof resolveSingleReference>;
-		try { result = resolveSingleReference(ref, app, sourcePath, settings, preProcessors); }
-		catch (error: unknown) { result = { status: 'invalid-value', error: error instanceof Error ? error.message : String(error) }; }
+		let result: ResolvedReference = { status: 'invalid-value' };
+		try {
+			result = resolve(ref);
+			if (result.status === 'resolved' && !result.error) result = { ...result, value: cloneReferenceValue(result.value, runtime) };
+			else result = { ...result, status: result.status === 'resolved' ? 'invalid-value' : result.status,
+				error: result.error ?? `Cannot resolve ${ref.fullMatch}: ${result.status}.` };
+		} catch (error: unknown) {
+			result = { ...result, status: 'invalid-value', error: error instanceof Error ? error.message : String(error) };
+		}
 		dependencies.push({ ...ref, sourcePath, resolvedPath: result.referencedPath, status: result.status, error: result.error });
 		if (result.error) continue;
 		let symbol: string;
 		do { symbol = `__numerals_ref_${bindingGeneration++}`; } while (source.includes(symbol) || occupiedNames.has(symbol));
 		bindings.set(symbol, result.value);
 		bindingNames.set(symbol, ref.fullMatch);
+		bindingReferences.set(symbol, ref);
 		edits.push({ start: ref.start, end: ref.end, text: symbol });
 	}
 	const sourceMap = applySourceEdits(originalSource(source), edits);
 	return {
-		resolvedSource: sourceMap.source, sourceMap, bindings, bindingNames, dependencies,
+		resolvedSource: sourceMap.source, sourceMap, bindings, bindingNames, bindingReferences, dependencies,
 		referencedPaths: [...new Set(dependencies.flatMap(d => d.resolvedPath ? [d.resolvedPath] : []))],
 		warnings: [], error: dependencies.find(d => d.error)?.error ?? null,
 	};

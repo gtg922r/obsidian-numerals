@@ -1,114 +1,99 @@
+import type { MathJsInstance, MathType } from 'mathjs';
 import { CrossNoteResolutionResult } from './crossNoteResolver';
 import { createReferenceScope, evaluateWithReferences, restoreReferenceNames, mapExpressionDiagnostic } from './referenceBindings';
 import { scanExpression, MappedSource } from './expressionScanner';
-import * as math from '../mathRuntime';
+import { getMathRuntime } from '../mathRuntime';
 import { NumeralsScope, NumeralsError } from '../numerals.types';
 
-/**
- * Evaluates a block of math expressions and returns the results. Each row is evaluated separately
- * and the results are returned in an array. If an error occurs, the error message and the input that
- * caused the error are returned.
- * 
- * @remarks
- * This function uses the mathjs library to evaluate the expressions. The scope parameter is used to
- * provide variables and functions that can be used in the expressions. The scope is a Map object
- * where the keys are the variable names and the values are the variable values.
- * 
- * All Numerals directive must be removed from the source before calling this function as it is processed
- * directly by mathjs.
- * 
- * @param processedSource The source string to evaluate
- * @param scope The scope object to use for the evaluation
- * @returns An object containing the results of the evaluation, the inputs that were evaluated, and
- * any error message and input that caused the error.
- */
+/** Optional session integration. Legacy callers retain their existing scope behavior. */
+export interface BlockEvaluationOptions {
+	readonly runtime?: MathJsInstance;
+	/** Exact indexed physical rows, including a final blank body row. */
+	readonly physicalRowCount?: number;
+	readonly onReferenceRead?: (name: string, value: unknown) => void;
+	readonly beginRow?: (index: number, source: string) => void;
+	readonly borrow?: (name: '__prev' | '__total', value: unknown, contributors: readonly number[]) => void;
+	readonly commitRow?: (index: number, result: unknown) => void;
+	readonly discardRow?: (index: number) => void;
+	/** Private payload ownership, separate from the displayed copy. */
+	readonly copyValue?: (value: unknown) => unknown;
+	/** Runs after binding commit; presentation capture must handle its own errors. */
+	readonly recordResult?: (index: number, result: unknown, transparent: boolean) => unknown;
+}
+
+/** Evaluate physical rows through the existing mathjs/reference pipeline. */
 export function evaluateMathFromSourceStrings(
 	processedSource: string,
 	scope: NumeralsScope,
 	transparentLineIndexes: readonly number[] = [],
 	context?: { originalRows: readonly string[]; resolution: CrossNoteResolutionResult; sourceMap?: MappedSource },
-): {
-	results: unknown[];
-	inputs: string[];
-	errorMsg: Error | null;
-	errorInput: string;
-} {
-	let errorMsg = null;
-	let errorInput = "";
-
+	options: BlockEvaluationOptions = {},
+): { results: unknown[]; inputs: string[]; errorMsg: Error | null; errorInput: string } {
+	const runtime = options.runtime ?? getMathRuntime();
+	const copy = options.copyValue ?? ((value: unknown) => value);
+	const borrow = options.borrow ?? ((name: string, value: unknown) => { scope.set(name, value); });
+	let errorMsg: Error | null = null;
+	let errorInput = '';
 	let evaluationScope: NumeralsScope;
-	try { evaluationScope = createReferenceScope(scope, context?.resolution.bindings ?? new Map()); }
-	catch (error: unknown) {
-		return { results: [], inputs: [], errorMsg: error instanceof Error ? error : new Error(String(error)), errorInput: context?.originalRows[0] ?? processedSource.split('\n')[0] };
+	try {
+		evaluationScope = createReferenceScope(scope, context?.resolution.bindings ?? new Map(), {
+			runtime, onRead: options.onReferenceRead,
+		});
+	} catch (error: unknown) {
+		return { results: [], inputs: [], errorMsg: asError(error), errorInput: context?.originalRows[0] ?? processedSource.split('\n')[0] };
 	}
-	const rows: string[] = processedSource.split("\n");
+	const rows = processedSource.split('\n');
+	const rowsToProcess = options.physicalRowCount === undefined
+		? (rows[rows.length - 1] === '' ? rows.slice(0, -1) : rows)
+		: rows.slice(0, options.physicalRowCount);
 	const results: unknown[] = [];
 	const inputs: string[] = [];
 	const transparentLines = new Set(transparentLineIndexes);
-	const segmentResults: unknown[] = [];
-	let hasPreviousEvaluation = false;
-	let previousResult: unknown;
-
-	// Last row is empty in reader view, so ignore it if empty
-	const isLastRowEmpty = rows.slice(-1)[0] === "";
-	const rowsToProcess = isLastRowEmpty ? rows.slice(0, -1) : rows;
+	const segment: { value: unknown; index: number }[] = [];
+	let previous: { value: unknown; index: number } | undefined;
 
 	for (const [index, row] of rowsToProcess.entries()) {
+		const displayInput = restoreReferenceNames(row, context?.resolution.bindingNames ?? new Map());
 		if (transparentLines.has(index)) {
-			// Preserve source/result index alignment without allowing a display-only
-			// directive row to change @prev or reset the current @total segment.
-			results.push(undefined);
-			inputs.push(restoreReferenceNames(row, context?.resolution.bindingNames ?? new Map()));
+			results.push(options.recordResult?.(index, undefined, true));
+			inputs.push(displayInput);
 			continue;
 		}
-
+		let committed = false;
+		let started = false;
 		try {
-			const failure = context?.resolution.dependencies.find(d => d.error && context.resolution.sourceMap.originalSource.slice(0, d.start).split('\n').length - 1 === index);
+			options.beginRow?.(index, row);
+			started = true;
+			const failure = context?.resolution.dependencies.find(dependency => dependency.error &&
+				context.resolution.sourceMap.originalSource.slice(0, dependency.start).split('\n').length - 1 === index);
 			if (failure) throw new NumeralsError('Note Reference Error', failure.error!);
-			if (hasPreviousEvaluation) {
-				scope.set("__prev", previousResult);
-			} else {
-				scope.set("__prev", undefined);
-				if (scanExpression(row).some(t => t.kind === 'identifier' && t.text === '__prev')) {
-					errorMsg = new NumeralsError("Previous Value Error", 'Error evaluating @prev directive. There is no previous result.');
-					errorInput = context?.originalRows[index] ?? row;
-					break;
-				}
+			const tokens = scanExpression(row);
+			const uses = (name: string) => tokens.some(token => token.kind === 'identifier' && token.text === name);
+			borrow('__prev', previous ? copy(previous.value) : undefined, previous ? [previous.index] : []);
+			if (!previous && uses('__prev')) {
+				throw new NumeralsError('Previous Value Error', 'Error evaluating @prev directive. There is no previous result.');
 			}
-			
-			if (segmentResults.length > 1) {
+			let total: unknown;
+			if (segment.length > 1) {
 				try {
-					// eslint-disable-next-line prefer-spread -- mathjs variadic add requires at least two typed operands
-					const rollingSum = math.add.apply(math, segmentResults as [math.MathType, math.MathType, ...math.MathType[]]);
-					scope.set("__total", rollingSum);
+					// eslint-disable-next-line prefer-spread -- mathjs's variadic add requires at least two typed operands
+					total = runtime.add.apply(runtime, segment.map(item => copy(item.value)) as [MathType, MathType, ...MathType[]]);
 				} catch {
-					scope.set("__total", undefined);
-					// TODO consider doing this check before evaluating
-					if (scanExpression(row).some(t => t.kind === 'identifier' && t.text === '__total')) {
-						errorMsg = new NumeralsError("Summing Error", 'Error evaluating @sum or @total directive. Previous lines may not be summable.');
-						errorInput = context?.originalRows[index] ?? row;
-						break;
-					}						
+					if (uses('__total')) throw new NumeralsError('Summing Error', 'Error evaluating @sum or @total directive. Previous lines may not be summable.');
 				}
-
-			} else if (segmentResults.length === 1) {
-				scope.set("__total", segmentResults[0]);
-			} else {
-				scope.set("__total", undefined);
-			}
-
-			const result = evaluateWithReferences(row, evaluationScope, context?.resolution.bindings);
-			results.push(result);
-			inputs.push(restoreReferenceNames(row, context?.resolution.bindingNames ?? new Map())); // Only pushes if evaluate is successful
-			hasPreviousEvaluation = true;
-			previousResult = result;
-			if (result === undefined) {
-				segmentResults.length = 0;
-			} else {
-				segmentResults.push(result);
-			}
+			} else if (segment.length === 1) total = copy(segment[0].value);
+			borrow('__total', total, segment.map(item => item.index));
+			const result = evaluateWithReferences(row, evaluationScope, context?.resolution.bindings, runtime);
+			options.commitRow?.(index, result);
+			committed = true;
+			results.push(options.recordResult ? options.recordResult(index, result, false) : result);
+			inputs.push(displayInput);
+			previous = { value: copy(result), index };
+			if (result === undefined) segment.length = 0;
+			else segment.push({ value: copy(result), index });
 		} catch (error: unknown) {
-			errorMsg = error instanceof Error ? error : new Error(String(error));
+			if (started && !committed) options.discardRow?.(index);
+			errorMsg = asError(error);
 			if (context?.sourceMap) {
 				const generatedBase = rows.slice(0, index).reduce((sum, line) => sum + line.length + 1, 0);
 				const originalBase = context.originalRows.slice(0, index).reduce((sum, line) => sum + line.length + 1, 0);
@@ -119,6 +104,11 @@ export function evaluateMathFromSourceStrings(
 			break;
 		}
 	}
-
 	return { results, inputs, errorMsg, errorInput };
+}
+
+function asError(error: unknown): Error {
+	const copy = new Error(error instanceof Error ? error.message : String(error));
+	if (error instanceof Error) copy.name = error.name;
+	return copy;
 }
