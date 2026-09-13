@@ -10,11 +10,7 @@ try {
     git('fetch', '--no-tags', 'origin',
         `+refs/heads/${RECOVERY_BRANCH}:refs/remotes/origin/${RECOVERY_BRANCH}`,
         '+refs/heads/master:refs/remotes/origin/master');
-    assertReviewedCommit();
-    const reviewedHead = git('rev-parse', 'HEAD');
-    if (reviewedHead !== git('rev-parse', `origin/${RECOVERY_BRANCH}`)) {
-        throw new Error('Release only the current reviewed integration tip.');
-    }
+    const reviewedHead = assertReviewedCommit();
     if (git('tag', '--list', version) || git('ls-remote', '--tags', 'origin', `refs/tags/${version}`)) {
         throw new Error(`Tag ${version} already exists; never move tags. Bump the candidate version.`);
     }

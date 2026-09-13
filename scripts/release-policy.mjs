@@ -55,9 +55,14 @@ export function assertStableMetadata(ref = 'origin/master') {
 }
 
 export function assertReviewedCommit() {
-    // Only integration commits are eligible, including earlier reviewed candidates.
-    git('merge-base', '--is-ancestor', 'HEAD', `origin/${RECOVERY_BRANCH}`);
+    // An ancestor may be an intermediate feature commit that was never approved
+    // for release. The owner holds integration fixed through publication.
+    const head = git('rev-parse', 'HEAD');
+    if (head !== git('rev-parse', `origin/${RECOVERY_BRANCH}`)) {
+        throw new Error('Release only the current reviewed integration tip.');
+    }
     assertStableMetadata();
+    return head;
 }
 
 export function assertCleanWorktree() {

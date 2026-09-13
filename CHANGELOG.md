@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file. The format 
 ### Changed
 - Recovery candidates use synchronized 1.11.0 package/lock/manifest metadata and require Obsidian 1.13.0; historical stable version mappings remain unchanged.
 - Run recovery CI on Node 24 with locked installs, separate strict production/test/script typechecks, Jest, lint, symbol checks, and reproducible production builds; explicitly exclude nested worktrees.
-- Restrict recovery release tooling to reviewed BRAT prereleases, reject mismatched or reused versions, and disable production promotion. Preserve stable 1.10.2 and existing release assets.
+- Restrict recovery release tooling to BRAT prereleases from the exact current reviewed integration tip, reject mismatched or reused versions and earlier ancestor commits, and disable production promotion. Verify the remote tag and all three uploaded assets before publishing the newly created draft by its exact release ID; failures leave it private. Preserve stable 1.10.2 and existing release assets.
 - Update vulnerable development dependencies, including esbuild 0.28.2, without changing mathjs or runtime dependencies.
 - Recorded the recovery implementation contract, work ledger, and BRAT-only publication boundary.
 - Documented recovery task ownership, verified historical-work preservation, and source-ordered function/state semantics.

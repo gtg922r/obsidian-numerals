@@ -191,6 +191,25 @@ test('an existing remote tag cannot be replaced', t => {
     assert.equal(git(dir, 'tag', '--list'), '');
 });
 
+test('tag validation rejects an earlier candidate ancestor of the reviewed integration tip', t => {
+    const { dir } = reviewedFixture(t);
+    const ancestor = git(dir, 'rev-parse', 'HEAD');
+    git(dir, 'tag', '1.11.0', ancestor);
+    writeFileSync(path.join(dir, 'reviewed-fix.txt'), 'final reviewed change');
+    git(dir, 'add', 'reviewed-fix.txt');
+    git(dir, 'commit', '-m', 'test: advance reviewed integration tip');
+    git(dir, 'push', 'origin', 'chore/recovery-1.11');
+    git(dir, 'fetch', '--no-tags', 'origin');
+    git(dir, 'switch', '--detach', ancestor);
+    // The metadata and tag match, and the commit is an ancestor: those checks
+    // alone must not authorize publishing an intermediate candidate commit.
+    assert.equal(run(dir, 'check-release.mjs', ['--tag', '1.11.0']).status, 0);
+    git(dir, 'merge-base', '--is-ancestor', 'HEAD', 'origin/chore/recovery-1.11');
+    const result = run(dir, 'check-release.mjs', ['--tag', '1.11.0', '--reviewed']);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /current reviewed integration tip/);
+});
+
 test('unmerged and dirty source cannot release', t => {
     const { dir, remote, env } = reviewedFixture(t);
     writeFileSync(path.join(dir, 'unreviewed.txt'), 'not reviewed');
