@@ -94,7 +94,7 @@ npm run lint
 
 ## Versioning & releases
 
-- This is stable maintenance: keep `package.json`, `package-lock.json`, `manifest.json`, `versions.json` and plugin source unchanged from stable 1.10.2. Do not run version-bump commands here.
+- Preserve the default-branch baseline of `package.json`, `package-lock.json`, plugin source and `styles.css`. This baseline includes unreleased merged features. Keep `manifest.json` and `versions.json` unchanged to preserve stable 1.10.2 distribution metadata. Do not run version-bump commands here.
 - The tag workflow and beta/production release entrypoints unconditionally refuse publication. Do not re-enable them or add bypass flags.
 - Only the owner may publish BRAT prereleases from the reviewed `chore/recovery-1.11` checkout using that branch's accepted guards. Never promote stable, move existing tags or replace published assets.
 - Do not copy these branch-specific publication-denial files into the recovery branch or weaken its publisher.

@@ -21,7 +21,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - name: Verify stable metadata and source
+      - name: Verify preserved baseline and stable metadata
         run: node scripts/check-stable-maintenance.mjs
       - run: npm ci
       - run: npm run lint
@@ -38,6 +38,6 @@ jobs:
       - run: npm run symbols:check
       - name: Verify reproducible bundle
         run: node scripts/check-reproducible-build.mjs
-      - name: Recheck stable metadata and source
+      - name: Recheck preserved baseline and stable metadata
         if: always()
         run: node scripts/check-stable-maintenance.mjs

@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
-const protectedFiles = ['package.json', 'package-lock.json', 'manifest.json', 'versions.json'];
+const protectedFiles = ['package.json', 'package-lock.json', 'manifest.json', 'versions.json', 'styles.css'];
 const git = (dir, ...args) => execFileSync('git', args, { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 
 function fixture(t) {
@@ -22,13 +22,13 @@ function fixture(t) {
     git(dir, 'config', 'user.email', 'tests@example.invalid');
     git(dir, 'config', 'commit.gpgsign', 'false');
     git(dir, 'add', '.');
-    git(dir, 'commit', '-m', 'test: stable fixture');
+    git(dir, 'commit', '-m', 'test: preserved default-branch fixture');
     return dir;
 }
 
 const check = dir => spawnSync(process.execPath, ['scripts/check-stable-maintenance.mjs'], { cwd: dir, encoding: 'utf8' });
 
-test('unchanged stable inputs pass even after a documentation commit advances HEAD', t => {
+test('preserved baseline and distribution metadata pass after a documentation commit advances HEAD', t => {
     const dir = fixture(t);
     const before = protectedFiles.map(file => readFileSync(path.join(dir, file), 'utf8'));
     writeFileSync(path.join(dir, 'README.md'), 'Documentation maintenance.\n');
@@ -45,9 +45,20 @@ for (const file of protectedFiles) {
         appendFileSync(path.join(dir, file), '\n');
         const result = check(dir);
         assert.notEqual(result.status, 0);
-        assert.match(result.stderr, new RegExp('Protected stable file changed: ' + file.replaceAll('.', '\\.')));
+        assert.match(result.stderr, new RegExp('Protected baseline file changed: ' + file.replaceAll('.', '\\.')));
     });
 }
+
+test('product stylesheet edits fail even with a clean committed worktree', t => {
+    const dir = fixture(t);
+    appendFileSync(path.join(dir, 'styles.css'), '\n.numerals { display: none; }\n');
+    git(dir, 'add', 'styles.css');
+    git(dir, 'commit', '-m', 'test: stylesheet change');
+    assert.equal(git(dir, 'status', '--porcelain'), '');
+    const result = check(dir);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Protected baseline file changed: styles\.css/);
+});
 
 test('a committed source change fails even with a clean worktree', t => {
     const dir = fixture(t);

@@ -306,7 +306,7 @@ To test upcoming releases before they reach the stable Obsidian directory:
 
 Numerals is an Obsidian community plugin written in TypeScript and bundled with esbuild.
 
-Use Node 24 (see `.nvmrc`) and the committed npm lockfile for maintenance builds. Pull requests to `master` run the same checks for code and documentation changes while preserving the stable package, lockfile, manifest, version mappings and plugin source.
+Use Node 24 (see `.nvmrc`) and the committed npm lockfile for maintenance builds. Pull requests to `master` run the same checks for code and documentation changes while preserving the default-branch package, lockfile, plugin source and styles baseline. That baseline includes unreleased merged features; the distribution manifest and compatibility mappings continue to identify stable 1.10.2.
 
 ### Local Commands
 
@@ -326,7 +326,7 @@ node scripts/check-stable-maintenance.mjs
 
 ### Versioning
 
-Stable maintenance preserves `package.json`, `package-lock.json`, `manifest.json` and `versions.json` byte-for-byte at their existing 1.10.2 state. Do not run version-bump commands here. Candidate version changes belong on `chore/recovery-1.11` and must follow that branch's reviewed procedure.
+Maintenance preserves `package.json` and `package-lock.json` byte-for-byte from the default-branch baseline, and preserves `manifest.json` and `versions.json` as the stable 1.10.2 distribution metadata. Do not run version-bump commands here. Candidate version changes belong on `chore/recovery-1.11` and must follow that branch's reviewed procedure.
 
 ### Mathjs Symbol Suggestions
 
@@ -351,6 +351,8 @@ Review the generated diff and adjust explicit exclusions in `scripts/mathjs-symb
 Publication from this stable maintenance branch is disabled. The tag workflow and `npm run release`, `npm run release:beta` and `npm run release:production` fail without publishing or updating metadata.
 
 Only the owner may prepare BRAT prereleases from the reviewed `chore/recovery-1.11` branch, using its own validation and publication workflow. Stable remains 1.10.2; production promotion, moving existing tags and replacing published assets are prohibited. Keep this branch's publication-denial files separate from the recovery publisher.
+
+The publication denial applies to commits containing these entrypoints. Historical tags retain their historical workflows; the owner-only reviewed recovery tagging policy still applies.
 
 ## Related
 
