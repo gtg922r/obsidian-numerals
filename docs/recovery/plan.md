@@ -27,6 +27,8 @@ Native quoted unit strings, suffix symbols, spaced symbols, compound rates and c
 
 Runtime replacement invalidates old scopes, compiled functions, results and insertion proposals. Snapshots retain their originating runtime/formatting context until retired; never interpret an older Unit using a different runtime registry. Removing a configured custom currency removes its unconfigured code/aliases on rebuild, matching restart behavior. Ad-hoc source `createUnit` declarations must replay and still report collisions visibly; this does not resolve #175.
 
+Reject canonical currency codes that collide with physical units, mathjs constants, functions or operators. Optional lowercase aliases may be omitted with explicit guidance when occupied: `CUP` can identify currency while `cup` remains a volume. Currency aliases inside collection results must serialize to codes without changing value precision, valueless status or unrelated unit formatting. If saved currency settings are semantically invalid on load, preserve them and keep settings accessible; present a configuration diagnostic and block evaluation until a valid Save or explicit Remove repairs the configuration. Do not silently activate a substitute mapping.
+
 ## Source and evaluation contracts
 
 The shared expression scanner protects strings/comments and recognizes delimiter context, currency tokens and references. Function/array/index commas remain delimiters (`max(1,234)` is two args; `[1,234]` is two elements). Complete grouped numbers may normalize in unambiguous expression positions. Explicit `$1,234.50` is one currency token even in a call/list. Never partially strip malformed grouping (`1,0001`). Mathjs is still the expression parser.
@@ -62,7 +64,7 @@ Insertion proposals contain editor identity, file, source revision and metadata/
 | C | Targeted agent PRs | Render controllers, correct events, Source subscriptions, popout safety |
 | D | Dedicated task | Lexical normalization + typed references + wrong-answer regressions |
 | E | Dedicated task | Complete declarative settings, normalization, currency lifecycle/defaults |
-| F | Dedicated task after D/E | Source index + ordered note snapshots |
+| F | Dedicated task; new modules after D/settings contract, integration after E | Source index + ordered note snapshots |
 | G | Dedicated task after C-F | Both surfaces use snapshots + transactional insertion |
 | H | Targeted agents | Suggestions/errors, documentation, accurate backlog disposition |
 | I | Dedicated validation + owner | Installed-artifact QA, BRAT publication/verification, handoff |
