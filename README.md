@@ -2,13 +2,19 @@
 
 ![Obsidian Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=%23483699&label=downloads&query=%24%5B%22numerals%22%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json)
 ![GitHub release](https://img.shields.io/github/v/release/gtg922r/obsidian-numerals?color=%23483699)
-![Prerelease](https://img.shields.io/github/v/release/gtg922r/obsidian-numerals?include_prereleases&label=pre-release)
 
 **Numerals turns Obsidian notes into living calculations.** Use math blocks or inline expressions to calculate with units, currencies, variables, functions, frontmatter, Dataview metadata, and values from other notes.
+
+| Channel | Availability |
+| --- | --- |
+| **Stable 1.10.2** | Available through Obsidian's Community Plugins browser. The guide below describes this [published release](https://github.com/gtg922r/obsidian-numerals/releases/tag/1.10.2). |
+| **Recovery preview 1.11.0** | Under development for Obsidian **1.13+**. **Not yet published**, including through BRAT. See the [preview features](#recovery-preview--not-yet-published). |
 
 ![Numerals Lemonade Stand - Side by Side](docs/images/Numerals-LemonadeStand-SideBySide.png)
 
 ## At a Glance
+
+Examples use the default `$` → USD mapping and US English number formatting. Separators follow your selected number format.
 
 | Feature | Example |
 | --- | --- |
@@ -16,10 +22,10 @@
 | Show-your-work equations | `` `#=: 2 * (3ft + 4ft)` `` -> `2 * (3 ft + 4 ft) = 14 ft` |
 | Full math blocks | <code>```math<br>20 mi / 4 hr to m/s<br>```</code> -> `2.235 m / s` |
 | Units and conversions | `100 km/hr in mi/hr` -> `62.137 mi / hr` |
-| Currency math | `$100/hr * 3 days` -> `7,200.00 USD` |
+| Currency math | `$100/hr * 3 days` -> `7,200 USD` |
 | Note-wide variables | `$rate = $150/hr`, then `` `#: $rate * 40hr` `` |
 | Cross-note references | `[[Client Settings]].rates.hourly * 8hr` |
-| Result insertion | `@[profit] = revenue - expenses` writes `@[profit::10.00 USD]` |
+| Result insertion | `@[profit] = $2,400 - $850` becomes `@[profit::1,550 USD] = $2,400 - $850` |
 
 ## Quick Start
 
@@ -45,7 +51,7 @@ Use equation mode when the calculation itself is important:
 The room perimeter is `#=: 2 * (12ft + 10ft)`.
 ```
 
-## Core Features
+## Stable Features
 
 ### Inline Calculations
 
@@ -55,12 +61,10 @@ Inline Numerals expressions are ordinary inline code with a trigger prefix:
 | --- | --- | --- |
 | `` `#: 3ft * 4ft` `` | `12 ft^2` | Showing just the answer |
 | `` `#=: 3ft * 4ft` `` | `3 ft * 4 ft = 12 ft^2` | Showing the expression and answer |
-| `` `#$: 3ft * 4ft` `` | 12 ft² typeset with MathJax | A TeX-rendered answer |
-| `` `#$=: 3ft * 4ft` `` | 3 ft · 4 ft = 12 ft² typeset with MathJax | A TeX-rendered equation |
 
 Inline calculations work in Live Preview and Reading mode. They support the same math engine, number formatting, units, currency symbols, variables, frontmatter, and Dataview values as math blocks.
 
-The `#$:` and `#$=:` triggers render the result (and, in equation mode, the expression) as TeX-style MathJax, inline with surrounding text in both Live Preview and Reading mode. All four trigger prefixes are configurable in the Numerals settings.
+Both trigger prefixes and the equation separator are configurable in Numerals settings. Inline TeX triggers belong to the [unpublished recovery preview](#recovery-preview--not-yet-published); stable supports TeX rendering in math blocks.
 
 ### Math Blocks
 
@@ -88,13 +92,13 @@ Numerals uses [mathjs](https://mathjs.org/) for calculations and adds Obsidian-f
 | --- | --- |
 | Units | `1ft + 12in` -> `2 ft` |
 | Conversions | `72 degF to degC` -> `22.222 degC` |
-| Currency | `$1,000 * 2` -> `2,000.00 USD` |
-| Rates | `$100/hr * 3 days` -> `7,200.00 USD` |
+| Currency | `$1,000 * 2` -> `2,000 USD` |
+| Rates | `$100/hr * 3 days` -> `7,200 USD` |
 | Functions | `sqrt(144)`, `sin(pi/2)`, `log(1000, 10)` |
 | Bases | `0xff + 0b100` -> `259` |
 | Fractions | `fraction(1/3) + fraction(1/4)` -> `7/12` |
 
-Currency symbols can be customized in settings.
+Currency symbols can be customized in settings. Numerals treats currencies as units: it does not fetch exchange rates or automatically convert between currencies.
 
 ### Note-Wide Variables
 
@@ -146,7 +150,7 @@ $25
 
 ### Frontmatter and Dataview Metadata
 
-Numerals can read selected note properties from frontmatter:
+Frontmatter is opt-in by default. Select the note properties Numerals should read with the `numerals` property:
 
 ```markdown
 ---
@@ -160,11 +164,11 @@ quantity: 150
 
 Use `numerals: all` to expose all frontmatter properties to Numerals. `$`-prefixed frontmatter values are automatically available as note-wide variables.
 
-Dataview inline fields and metadata can also be used in calculations when Dataview is installed.
+Dataview inline fields and metadata can also be used in calculations when Dataview is installed. Expose the desired fields with the same `numerals` property selection, or enable **Always process all frontmatter** in settings.
 
 ### Cross-Note References
 
-Reference frontmatter and Dataview metadata from other notes with `[[note]].property`:
+Reference frontmatter and Dataview metadata from other notes with `[[note]].property`. In the referenced note, expose the needed properties with `numerals` too; for this example, `numerals: [rates, taxRate]`:
 
 ````markdown
 ```math
@@ -194,11 +198,13 @@ Use `@[label]` to write a result back into the raw note as Dataview-style inline
 ```
 ````
 
-Numerals updates the source text to:
+With US English number formatting, Numerals updates the value inside the label and keeps the assignment and expression:
 
-```markdown
-@[profit::1550.00 USD]
+````markdown
+```math
+@[profit::1,550 USD] = $2,400 - $850
 ```
+````
 
 ### Auto-Complete
 
@@ -215,7 +221,7 @@ Auto-complete suggestions work in math blocks and inline Numerals expressions. S
 
 Rendered math blocks remain easy to edit. Click or tap a rendered Numerals line in Live Preview to focus the matching source line.
 
-## Display Options
+## Stable Display Options
 
 Numerals is designed to fit naturally with Obsidian themes and supports multiple render styles.
 
@@ -254,7 +260,45 @@ Configure how rendered numbers are displayed:
 - **Engineering**: exponent is a multiple of 3.
 - **Formatted**: choose a specific thousands/decimal style.
 
-Override formatting for one math block with display-only directives:
+### Rounding Values
+
+To round a calculated value in stable 1.10.2, use mathjs [`round`](https://mathjs.org/docs/reference/functions/round.html). For units and currencies, supply the unit as the third argument:
+
+| Expression | Result |
+| --- | --- |
+| `round(123.456, 2)` | `123.46` |
+| `round(3.241 cm, 1, cm)` | `3.2 cm` |
+| `round(12.345 GBP, 2, GBP)` | `12.35 GBP` |
+
+Rounding changes the value used by later calculations. Number formatting changes how a value is displayed.
+
+### Currency Display in Stable
+
+Stable 1.10.2 uses the general **Rendered number format** setting for currency results. It has no separate currency-precision or symbol-display control. For example, `$1,000 * 2` renders as `2,000 USD` with US English number formatting; stable does not automatically add two currency decimal places.
+
+The **$ symbol currency mapping**, **¥ symbol currency mapping**, and **Custom currency mapping** settings select the units used for currency input. They do not fetch exchange rates.
+
+## Installation
+
+Install **Numerals** from Obsidian's Community Plugins browser for **stable 1.10.2**.
+
+The 1.11.0 recovery candidate is **not yet published**. A future prerelease will be available for testing through [BRAT](https://github.com/TfTHacker/obsidian42-brat), with installation details in its [release notes](https://github.com/gtg922r/obsidian-numerals/releases). Installing BRAT today does not make these preview features available.
+
+## Recovery Preview — Not Yet Published
+
+The following features are being prepared for **1.11.0**, targeting **Obsidian 1.13+**. They are absent from Community Plugins stable 1.10.2. If you cannot find these settings in stable, you have not missed a setup step.
+
+| Preview setting | Purpose |
+| --- | --- |
+| **Currency precision** | Use standard currency decimal places, or follow the general number format. |
+| **Currency display** | Show a configured currency symbol or a currency code. |
+| **Custom currency decimal places** | Choose precision for a custom currency mapping. |
+| **TeX result trigger** | `#$:` renders an inline result with MathJax. |
+| **TeX equation trigger** | `#$=:` renders an inline expression and result with MathJax. |
+
+The recovery candidate defaults to **configured symbols**, including for upgrades without a saved display choice. A valid saved code/symbol preference is preserved. Currency-standard precision uses the currency's conventional decimal places; compound rates such as `GBP / hour` keep the general number format and code. Result insertion always writes currency codes, even when the displayed result uses a symbol.
+
+The preview also adds block-level formatting directives:
 
 ````markdown
 ```math
@@ -265,42 +309,9 @@ third = 1 / 3
 ```
 ````
 
-`@format` accepts `system`, `fixed`, `exponential` (or `scientific`), `engineering`, `comma-period`, `period-comma`, `space-comma`, and `indian`. `@decimalPlaces` accepts an integer from 0 through 20; `@decimalPlace` is also accepted.
+`@format` selects the displayed number format: `system`, `fixed`, `exponential` (or `scientific`), `engineering`, `comma-period`, `period-comma`, `space-comma`, or `indian`. `@decimalPlaces` sets 0–20 decimal places and takes precedence over currency-standard precision; `@decimalPlace` is an alias. These directives affect displayed and inserted results while retaining the calculated values in scope. They are **not supported in stable 1.10.2**.
 
-These directives change displayed and inserted results, not values in calculation scope. For computational rounding, use mathjs directly: `round(value, 2)` for numbers or `round(amount, 2, GBP)` for currency Units.
-
-### Currency Formatting
-
-Currency results use **Currency standard** precision and **Currency code** display by default. Pure currency values therefore render with the conventional number of decimal places for their currency while keeping an unambiguous unit code.
-
-Examples of the default precision are:
-
-- GBP and USD use 2 places: `120.00 GBP`
-- JPY uses 0 places: `120 JPY`
-- KWD uses 3 places: `120.000 KWD`
-
-A custom currency mapping uses the configured **Custom currency decimal places** value, from 0 through 20. This setting is enabled when currency-standard precision is selected.
-
-Choose **Use rendered number format** when currency values should instead follow the general number-format behavior used by other Units.
-
-Choose **Configured symbol** to display the symbol from Numerals' active currency mapping instead of its code. Symbol order, spacing, digits, and signs follow the selected locale, while the configured symbol itself is preserved. For example, a `$` mapping to CAD still uses `$`, rather than substituting `CA$`.
-
-Currency presentation applies to pure currency results, including derived values such as `remaining / 8`. Compound rates such as `GBP / hour` retain the general number format and code. A block-level `@decimalPlaces` directive takes precedence over currency-standard digits.
-
-Result insertion always writes the currency code, never a display symbol. For example, a result displayed as `£12.50` is inserted as `12.50 GBP`.
-
-## Installation
-
-Install **Numerals** from Obsidian's Community Plugins browser.
-
-### Pre-Release Testing
-
-To test upcoming releases before they reach the stable Obsidian directory:
-
-1. Install the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat).
-2. Run `Obsidian42 - BRAT: Add a beta plugin for testing`.
-3. Enter `gtg922r/obsidian-numerals`.
-4. Enable Numerals in Community Plugins.
+Reliable top-to-bottom evaluation of note-wide variables is also planned for recovery. That work is still in progress and is not a shipped guarantee.
 
 ## Development
 
