@@ -10,7 +10,7 @@
 
 ## Environment & tooling
 
-- Node.js: use current LTS (Node 18+ recommended).
+- Node.js: use Node 24 as selected by `.nvmrc`.
 - **Package manager: npm** (`package.json` defines npm scripts and dependencies).
 - **Bundler: esbuild** (`scripts/esbuild.config.mjs` handles bundling).
 - Types: `obsidian` type definitions.
@@ -19,7 +19,7 @@
 ### Install
 
 ```bash
-npm install
+npm ci
 ```
 
 ### Dev (watch)

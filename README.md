@@ -306,14 +306,22 @@ To test upcoming releases before they reach the stable Obsidian directory:
 
 Numerals is an Obsidian community plugin written in TypeScript and bundled with esbuild.
 
+Use Node 24 (see `.nvmrc`) and the committed npm lockfile for maintenance builds. Pull requests to `master` run the same checks for code and documentation changes while preserving the stable package, lockfile, manifest, version mappings and plugin source.
+
 ### Local Commands
 
 ```bash
-npm install
+npm ci
 npm run dev
 npm test
 npm run lint
+./node_modules/.bin/tsc --project tsconfig.json
+./node_modules/.bin/tsc --project tsconfig.test.json
+./node_modules/.bin/tsc --project tsconfig.scripts.json
+node --test tests/maintenance/*.test.mjs
 npm run build
+node scripts/check-reproducible-build.mjs
+node scripts/check-stable-maintenance.mjs
 ```
 
 ### Versioning
