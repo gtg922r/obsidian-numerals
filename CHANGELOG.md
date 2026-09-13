@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file. The format 
 - Currency-standard decimal places by default and optional configured-symbol display for pure currency results, including derived currency values. Configured-symbol display is the default when no valid saved preference exists; saved code/symbol choices are preserved. (Closes #160)
 
 ### Changed
+- Record accepted isolated host extraction evidence and completed stable documentation review in the recovery work ledger.
 - Provide all settings through Obsidian 1.13 native searchable definitions. Currency changes use explicit Save/Cancel forms, preserve valid saved preferences, and validate complete settings with legacy migration and duplicate-trigger protection.
 - Pin Obsidian 1.13.1 typings and the 0.4.2 Obsidian linter; adopt native DOM helpers and keep their owning-document behavior.
 - Removed the hidden no-op `@createUnit` preprocessing stub; unsupported declarations and existing unit collisions remain visible errors.
