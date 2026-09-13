@@ -1,10 +1,12 @@
-import * as math from '../mathRuntime';
+import type { MathJsInstance } from 'mathjs';
+import { getMathRuntime } from '../mathRuntime';
 import { App, TFile } from 'obsidian';
 import { NumeralsScope, StringReplaceMap } from '../numerals.types';
 import { isSupportedReferenceValue, cloneReferenceValue } from './referenceBindings';
 import { replaceStringsInTextFromMap } from './preprocessor';
 import { getDataviewApi } from '../dataview';
 import { hasOwnProperty } from '../utils/hasOwnProperty';
+import { evaluateRuntimeMetadata } from '../evaluation/runtimeProvenance';
 
 /**
  * Process frontmatter and return updated scope object
@@ -25,18 +27,27 @@ export interface ScopeResult {
 	warnings: string[];
 }
 
+export interface ScopeEvaluationOptions {
+	/** Only F's active row collector may take responsibility for exact-source provenance. */
+	readonly runtimeSafety?: 'caller';
+}
+
 export function getScopeFromFrontmatter(
 	frontmatter: { [key: string]: unknown } | undefined,
 	scope: NumeralsScope|undefined,
 	forceAll=false,
 	stringReplaceMap: StringReplaceMap[] = [],
-	keysOnly=false
+	keysOnly=false,
+	runtime: MathJsInstance = getMathRuntime(),
+	options: ScopeEvaluationOptions = {},
 ): ScopeResult {
 	const warnings: string[] = [];
 	
 	if (!scope) {
 		scope = new NumeralsScope();
 	}
+	const evaluate = (source: string): unknown => options.runtimeSafety === 'caller'
+		? runtime.evaluate(source, scope) as unknown : evaluateRuntimeMetadata(source, runtime, scope);
 
 	if (frontmatter && typeof frontmatter === "object") {
 		let frontmatter_process:{ [key: string]: unknown } = {}
@@ -87,7 +98,7 @@ export function getScopeFromFrontmatter(
 				}
 
 				if (typeof value === "number") {
-					scope.set(key, math.number(value));
+					scope.set(key, runtime.number(value));
 				} else if (typeof value === "string") {
 					const processedValue = replaceStringsInTextFromMap(value, stringReplaceMap);
 					
@@ -102,8 +113,7 @@ export function getScopeFromFrontmatter(
 						
 						try {
 							// Evaluate the complete function assignment expression
-							// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- mathjs evaluate() returns `any`
-							const evaluatedFunction = math.evaluate(fullExpression, scope);
+							const evaluatedFunction = evaluate(fullExpression);
 							// Store the function under the function name (without parentheses)
 							scope.set(functionName, evaluatedFunction);
 						} catch (error: unknown) {
@@ -113,7 +123,7 @@ export function getScopeFromFrontmatter(
 						// Regular variable assignment
 						let evaluatedValue: unknown;
 						try {
-							evaluatedValue = math.evaluate(processedValue, scope);
+								evaluatedValue = evaluate(processedValue);
 						} catch (error: unknown) {
 							warnings.push(`Frontmatter: error evaluating "${key}": ${error instanceof Error ? error.message : String(error)}`);
 							evaluatedValue = undefined;
@@ -125,8 +135,8 @@ export function getScopeFromFrontmatter(
 				} else if (typeof value === "function") {
 					// Functions (like those cached from previous evaluations) should be stored directly
 					scope.set(key, value);
-				} else if (typeof value === "boolean" || isSupportedReferenceValue(value)) {
-					scope.set(key, cloneReferenceValue(value));
+				} else if (typeof value === "boolean" || isSupportedReferenceValue(value, runtime)) {
+					scope.set(key, cloneReferenceValue(value, runtime));
 				} else if (typeof value === "object") {
 					warnings.push(`Frontmatter: value for "${key}" is an object and will be ignored. ` +
 						`Consider surrounding the value with quotes (e.g. \`${key}: "value"\`).`);

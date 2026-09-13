@@ -1,9 +1,23 @@
 import { App } from 'obsidian';
+import type { MathJsInstance } from 'mathjs';
+import { getMathRuntime } from '../mathRuntime';
 import { NumeralsScope, NumeralsSettings, StringReplaceMap, InlineEvaluationResult } from '../numerals.types';
 import { normalizeExpression, replaceExpressionDirectives } from '../processing/preprocessor';
 import { originalSource, scanExpression } from '../processing/expressionScanner';
 import { createReferenceScope, evaluateWithReferences, restoreReferenceNames } from '../processing/referenceBindings';
 import { resolveCrossNoteReferences, ReferenceEvaluationError, CrossNoteResolutionResult } from '../processing/crossNoteResolver';
+
+export interface InlineEvaluationOptions {
+	readonly runtime?: MathJsInstance;
+	readonly resolution?: CrossNoteResolutionResult;
+	/** The note session already owns an expression-local, stable scope. */
+	readonly stableScope?: boolean;
+	readonly onReferenceRead?: (name: string, value: unknown) => void;
+	readonly beginRow?: (processed: string) => void;
+	readonly borrowPrevious?: (value: unknown) => void;
+	readonly commitRow?: (result: unknown) => void;
+	readonly discardRow?: () => void;
+}
 
 /**
  * Evaluate a single inline expression against a scope.
@@ -33,30 +47,40 @@ export function evaluateInlineExpression(
 	app?: App,
 	sourcePath?: string,
 	settings?: NumeralsSettings,
+	options: InlineEvaluationOptions = {},
 ): InlineEvaluationResult {
-	const resolution: CrossNoteResolutionResult = app && sourcePath && settings
-		? resolveCrossNoteReferences(expression, app, sourcePath, settings, preProcessors, scope)
-		: { resolvedSource: expression, sourceMap: originalSource(expression), bindings: new Map(), bindingNames: new Map(), referencedPaths: [], dependencies: [], warnings: [], error: null };
+	const runtime = options.runtime ?? getMathRuntime();
+	const resolution: CrossNoteResolutionResult = options.resolution ?? (app && sourcePath && settings
+		? resolveCrossNoteReferences(expression, app, sourcePath, settings, preProcessors, scope, runtime)
+		: { resolvedSource: expression, sourceMap: originalSource(expression), bindings: new Map(), bindingNames: new Map(), referencedPaths: [], dependencies: [], warnings: [], error: null });
 	const sourceMap = normalizeExpression(replaceExpressionDirectives(resolution.sourceMap, false), preProcessors);
 	const processed = sourceMap.source;
-	const localScope = new NumeralsScope(scope);
+	const localScope = options.stableScope ? scope : new NumeralsScope(scope);
 	let result: unknown;
+	let started = false;
 	try {
+		options.beginRow?.(processed);
+		started = true;
 		if (resolution.error) throw new Error(resolution.error);
 		if (scanExpression(processed).some(t => t.kind === 'identifier' && t.text === '__prev')) {
 			if (prevResult === undefined) throw new Error('Error evaluating @prev directive. There is no previous inline result.');
-			localScope.set('__prev', prevResult);
+			if (options.borrowPrevious) options.borrowPrevious(prevResult);
+			else localScope.set('__prev', prevResult);
 		}
-		result = evaluateWithReferences(processed, createReferenceScope(localScope, resolution.bindings), resolution.bindings);
+		result = evaluateWithReferences(processed, createReferenceScope(localScope, resolution.bindings, {
+			runtime, onRead: options.onReferenceRead,
+		}), resolution.bindings, runtime);
 		if (result === undefined) throw new Error('Expression produced no result');
+		options.commitRow?.(result);
 	} catch (error: unknown) {
+		if (started) options.discardRow?.();
 		throw new ReferenceEvaluationError(error instanceof Error ? error.message : String(error), resolution, expression, sourceMap);
 	}
 
 	// Extract note-global ($-prefixed) variable assignments.
 	// Compare the local scope against the original to find new or changed $-keys.
 	const globals = new Map<string, unknown>();
-	for (const [key, value] of localScope.entries()) {
+	for (const [key, value] of options.stableScope ? [] : localScope.entries()) {
 		if (key.startsWith('$') && value !== scope.get(key)) {
 			globals.set(key, value);
 		}

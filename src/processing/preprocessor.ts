@@ -62,7 +62,8 @@ export function replaceExpressionDirectives(mapped: MappedSource, block: boolean
 		const edits: SourceEdit[] = [];
 		for (const token of scanExpression(mapped.source)) {
 			if (token.kind === 'insertion') {
-				edits.push({ ...token, text: /^@[\t ]*\[([^\]:]+)(::[^\]]*)?\]/.exec(token.text)![1] });
+				const expression = token.insertion!.expressionSpan;
+				edits.push({ ...token, text: mapped.source.slice(expression.start, expression.end) });
 			} else if (token.kind === 'emitter') {
 				edits.push({ ...token, start: mapped.source.slice(0, token.start).replace(/[\t ]+$/, '').length, text: '' });
 			}

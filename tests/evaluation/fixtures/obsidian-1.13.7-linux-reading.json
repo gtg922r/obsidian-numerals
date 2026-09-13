@@ -1,0 +1,1423 @@
+{
+  "description": "Literal same-path Reading-origin block-handler and inline-code observations from the owner-accepted official Linux capture. No expected index output is generated from the implementation.",
+  "runId": "34777502267",
+  "artifactId": 10323508172,
+  "commit": "c52a77afd15bb94c9f15083e0968cb56753e5e31",
+  "host": {
+    "apiVersion": "1.13.7",
+    "platform": "linux",
+    "electron": "43.3.0",
+    "chromium": "150.0.7871.212"
+  },
+  "captureSha256": "97eda0fd8691c2e575a4510b6052bfafab82c429d27aea413f5ca9f9431989e4",
+  "zipSha256": "9da0e8f9ce47626a2ac43a9e540fd728dc9e92475d3d5fcbbc4d7d479b7588c0",
+  "sourcesSha256": "b446f8b6f732fd13864b679d26e334e01c6a21e2d9f8d57c1c6884127c66f604",
+  "cases": [
+    {
+      "id": "001",
+      "path": "cases/001-ordinary-fence.md",
+      "sourceSha256": "8c193e82ed7709794ef4d7ef4ce7485de71c0db4e9d969b6ac89733a645603ab",
+      "events": [
+        {
+          "sequence": 12,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/001-ordinary-fence.md",
+          "language": "math",
+          "source": "a=1"
+        }
+      ]
+    },
+    {
+      "id": "002",
+      "path": "cases/002-four-ticks-containing-shorter-fences.md",
+      "sourceSha256": "0163edaf1b6a8ac35c5d2b5b5dd1de623d92cc12bc392c3665c7d1b52239a3b1",
+      "events": [
+        {
+          "sequence": 17,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/002-four-ticks-containing-shorter-fences.md",
+          "language": "math",
+          "source": "a=1\n```\nb=2"
+        }
+      ]
+    },
+    {
+      "id": "003",
+      "path": "cases/003-longer-closing-fence.md",
+      "sourceSha256": "b579c700805a5b9ad320b6a60c5b96cc0cb64c0c716549d6689771320b83da26",
+      "events": [
+        {
+          "sequence": 22,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/003-longer-closing-fence.md",
+          "language": "math",
+          "source": "1+2"
+        }
+      ]
+    },
+    {
+      "id": "004",
+      "path": "cases/004-tilde-fence.md",
+      "sourceSha256": "7b91767a0c5a5f0509030acc2f49ea26b4f73351c4c13c49f2f681e857dd00f7",
+      "events": [
+        {
+          "sequence": 27,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/004-tilde-fence.md",
+          "language": "math-tex",
+          "source": "1+2"
+        }
+      ]
+    },
+    {
+      "id": "005",
+      "path": "cases/005-mismatched-fence.md",
+      "sourceSha256": "1da1606666e666aac4da4cf3bf708a377792e841dbb647ac7d03d8da7444088b",
+      "events": [
+        {
+          "sequence": 32,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/005-mismatched-fence.md",
+          "language": "math",
+          "source": "1+2\n~~~\n3+4"
+        }
+      ]
+    },
+    {
+      "id": "006",
+      "path": "cases/006-empty-fence.md",
+      "sourceSha256": "e5ff8cf755c20328af158107f15c0f4f73f836f7334b8aed0f1cef43921116fb",
+      "events": [
+        {
+          "sequence": 37,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/006-empty-fence.md",
+          "language": "math",
+          "source": ""
+        }
+      ]
+    },
+    {
+      "id": "007",
+      "path": "cases/007-blank-body.md",
+      "sourceSha256": "71daa04be4cfa730436a3c6adab02597a58ac297da302115632aef6f78056b51",
+      "events": [
+        {
+          "sequence": 42,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/007-blank-body.md",
+          "language": "math",
+          "source": ""
+        }
+      ]
+    },
+    {
+      "id": "008",
+      "path": "cases/008-blank-rows.md",
+      "sourceSha256": "5fea42dd6bd3f7e6054b4075921adf1101bd71db643bd4c00fd2530a4fe44ab0",
+      "events": [
+        {
+          "sequence": 47,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/008-blank-rows.md",
+          "language": "math",
+          "source": "1\n\n2\n"
+        }
+      ]
+    },
+    {
+      "id": "009",
+      "path": "cases/009-indented-opener.md",
+      "sourceSha256": "32005dcd48d27d43cba71a7d7d5cc35670f3eba92fe00fd0ca07360cf8935876",
+      "events": [
+        {
+          "sequence": 52,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/009-indented-opener.md",
+          "language": "math",
+          "source": "1\n  2"
+        }
+      ]
+    },
+    {
+      "id": "010",
+      "path": "cases/010-tab-indented-example.md",
+      "sourceSha256": "f37a946042a9baa50a33cdb700c9cedc1ad83683c41036706723dbeb92e5ce75",
+      "events": []
+    },
+    {
+      "id": "011",
+      "path": "cases/011-opaque-outer-fence.md",
+      "sourceSha256": "9938c265a2b317bf519d15002935189aaf615ed0dfd29515b677a6092d00af5e",
+      "events": []
+    },
+    {
+      "id": "012",
+      "path": "cases/012-unregistered-case.md",
+      "sourceSha256": "449b7fce6f1a3b2025fc1d5e1b0f9590a4dc067fd969d05fd4920c082709e0d5",
+      "events": [
+        {
+          "sequence": 66,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/012-unregistered-case.md",
+          "language": "math",
+          "source": "1+2"
+        }
+      ]
+    },
+    {
+      "id": "013",
+      "path": "cases/013-quote-fence.md",
+      "sourceSha256": "5466ed6b3f6374fdf4c970f27169ec41bbb293ddcad9c24c6d0ac046824d07c1",
+      "events": [
+        {
+          "sequence": 70,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/013-quote-fence.md",
+          "language": "math",
+          "source": "a=1\nb=a+2"
+        }
+      ]
+    },
+    {
+      "id": "014",
+      "path": "cases/014-nested-quotes.md",
+      "sourceSha256": "d2ecf1d0cb60def8deead584f6e7543941cdd3435cc413c52c563ff76e39908a",
+      "events": [
+        {
+          "sequence": 74,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/014-nested-quotes.md",
+          "language": "math",
+          "source": "a=1\nb=a+2"
+        }
+      ]
+    },
+    {
+      "id": "015",
+      "path": "cases/015-quote-list.md",
+      "sourceSha256": "cb3277df5764e8e098aa3890ddbf144ffb6fb2166290570423dc0005f1aaf7ee",
+      "events": [
+        {
+          "sequence": 78,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/015-quote-list.md",
+          "language": "math",
+          "source": "a=1\nb=2"
+        }
+      ]
+    },
+    {
+      "id": "016",
+      "path": "cases/016-list-fence.md",
+      "sourceSha256": "db63d75dbb11e9fc17d904c24f4324c2e6d630c141aa927fdfd3e4133a22b4d3",
+      "events": [
+        {
+          "sequence": 83,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/016-list-fence.md",
+          "language": "math",
+          "source": "a=1\nb=2"
+        }
+      ]
+    },
+    {
+      "id": "017",
+      "path": "cases/017-indented-list-marker.md",
+      "sourceSha256": "e03a8952f46e436781ad3010cb9e72bb66eef466960caf118dc1eac5a2ee36b5",
+      "events": [
+        {
+          "sequence": 88,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/017-indented-list-marker.md",
+          "language": "math",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "018",
+      "path": "cases/018-nested-list.md",
+      "sourceSha256": "1cfe020736ab36865f6aed8316de0e492f8af36470fe477ff926edcced952036",
+      "events": [
+        {
+          "sequence": 93,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/018-nested-list.md",
+          "language": "math",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "019",
+      "path": "cases/019-tab-list.md",
+      "sourceSha256": "fe45fdb5ad8930f9311f3067f08d4df0675ad3bf383003c0f3b6b5250e615ba5",
+      "events": [
+        {
+          "sequence": 97,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/019-tab-list.md",
+          "language": "math",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "020",
+      "path": "cases/020-tab-quote.md",
+      "sourceSha256": "d68505509cc6bf61babc09b638725bf2717e17d04641d9216852f0048ab5be29",
+      "events": []
+    },
+    {
+      "id": "021",
+      "path": "cases/021-opener-quote-tab-provides-virtual-fence-indent.md",
+      "sourceSha256": "5e083ddef13b35f19e56b63ddb7f2106a1ed4180d94838af26d9d9991b468382",
+      "events": []
+    },
+    {
+      "id": "022",
+      "path": "cases/022-body-quote-tab-retains-virtual-content-spaces.md",
+      "sourceSha256": "ac9fed8f329effbfab1687bd9911ec6c45b760ebbf1f8936354b7986849eda09",
+      "events": [
+        {
+          "sequence": 111,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/022-body-quote-tab-retains-virtual-content-spaces.md",
+          "language": "math",
+          "source": "\t1"
+        }
+      ]
+    },
+    {
+      "id": "023",
+      "path": "cases/023-nested-quote-consumes-virtual-list-indentation.md",
+      "sourceSha256": "5fcac9e185cb57c0c1621b3235bf5c41a9c0c8773f9f4c7177a1d22530a5d905",
+      "events": [
+        {
+          "sequence": 115,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/023-nested-quote-consumes-virtual-list-indentation.md",
+          "language": "math",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "024",
+      "path": "cases/024-inline-quote-tab-retains-virtual-content-spaces.md",
+      "sourceSha256": "39a1681df51ca204f027f5cd05b65054453e6eb49e26b2d820572adcd85acd00",
+      "events": [
+        {
+          "sequence": 118,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/024-inline-quote-tab-retains-virtual-content-spaces.md",
+          "text": "#:1+ \t2"
+        }
+      ]
+    },
+    {
+      "id": "025",
+      "path": "cases/025-cr-line-endings.md",
+      "sourceSha256": "f3eb23df04ae10ee9a46a42d38349eef449754b7310c32034960a7fa0a523a32",
+      "events": [
+        {
+          "sequence": 123,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/025-cr-line-endings.md",
+          "language": "math",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "026",
+      "path": "cases/026-ordered-list.md",
+      "sourceSha256": "0014e80ecc868fdff9986ddde064841eb4c73a0875ba0a7db1344a7a4fc110ff",
+      "events": [
+        {
+          "sequence": 127,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/026-ordered-list.md",
+          "language": "math",
+          "source": "1\n2"
+        }
+      ]
+    },
+    {
+      "id": "027",
+      "path": "cases/027-collapsed-callout.md",
+      "sourceSha256": "7c0d3eff756b2b9a88c123c56832f370ae1366562fbd4138550a810fce88ff5c",
+      "events": [
+        {
+          "sequence": 135,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/027-collapsed-callout.md",
+          "text": "#: $x+1"
+        },
+        {
+          "sequence": 136,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/027-collapsed-callout.md",
+          "language": "math",
+          "source": "$x=1"
+        }
+      ]
+    },
+    {
+      "id": "028",
+      "path": "cases/028-inline-code.md",
+      "sourceSha256": "06611c2cf24163d4bcc6d242ed204f246089f06bfee490f55c0909ef1facc4eb",
+      "events": [
+        {
+          "sequence": 139,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/028-inline-code.md",
+          "text": "#:1+2"
+        }
+      ]
+    },
+    {
+      "id": "029",
+      "path": "cases/029-two-tick-inline.md",
+      "sourceSha256": "3a4da8b5f8f4935edbbe88e381a410147db8ee9880348f38e7d820bb69004995",
+      "events": [
+        {
+          "sequence": 142,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/029-two-tick-inline.md",
+          "text": "#: 1 + `literal` "
+        }
+      ]
+    },
+    {
+      "id": "030",
+      "path": "cases/030-three-tick-inline.md",
+      "sourceSha256": "81a005372fa44f08f6b367ef71431b5ae41c29956f210371cdda35a82710d533",
+      "events": [
+        {
+          "sequence": 145,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/030-three-tick-inline.md",
+          "text": "#:1+2"
+        }
+      ]
+    },
+    {
+      "id": "031",
+      "path": "cases/031-mismatched-inline.md",
+      "sourceSha256": "55ac2ddf8e75334405aea4266fc5acd97b7e2092a36a63a313a714c670d4abeb",
+      "events": [
+        {
+          "sequence": 148,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/031-mismatched-inline.md",
+          "text": "#:1+2"
+        }
+      ]
+    },
+    {
+      "id": "032",
+      "path": "cases/032-escaped-opener.md",
+      "sourceSha256": "7d8e8409acd57176f2dce2019debabae59b100f2bf1ef0d292ace607d642950a",
+      "events": []
+    },
+    {
+      "id": "033",
+      "path": "cases/033-one-paired-space.md",
+      "sourceSha256": "45b9fe745addc9b4ac52fd136b555e53440a2ba982453b9a644b5bd4fb43d644",
+      "events": [
+        {
+          "sequence": 154,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/033-one-paired-space.md",
+          "text": "#:1+2"
+        }
+      ]
+    },
+    {
+      "id": "034",
+      "path": "cases/034-two-paired-spaces.md",
+      "sourceSha256": "6006c0f9a0fe37d28e96d3715021a32d707bc1d5de881f3c4d4d1b50519294fa",
+      "events": [
+        {
+          "sequence": 157,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/034-two-paired-spaces.md",
+          "text": " #:1+2 "
+        }
+      ]
+    },
+    {
+      "id": "035",
+      "path": "cases/035-inline-newline.md",
+      "sourceSha256": "33567ca263f714c7beb6f6fb9a19ef31c49d05a5b450f4d6202874054b41f51a",
+      "events": [
+        {
+          "sequence": 160,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/035-inline-newline.md",
+          "text": "#:1 + 2"
+        }
+      ]
+    },
+    {
+      "id": "036",
+      "path": "cases/036-quote-inline-newline.md",
+      "sourceSha256": "e947f4a7b7cf22799bb599ba991c8cf10fd256c95f418fa3247bdd132b8015cb",
+      "events": [
+        {
+          "sequence": 163,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/036-quote-inline-newline.md",
+          "text": "#:1 + 2"
+        }
+      ]
+    },
+    {
+      "id": "037",
+      "path": "cases/037-lazy-quote-continuation.md",
+      "sourceSha256": "041d183d33f09fc59359d4598367f0fb90ce9db3c4a88472165e1ae7e913d566",
+      "events": [
+        {
+          "sequence": 166,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/037-lazy-quote-continuation.md",
+          "text": "#:1 + 2"
+        }
+      ]
+    },
+    {
+      "id": "038",
+      "path": "cases/038-list-inline-newline.md",
+      "sourceSha256": "68a851d25bf2c335bd5175654741108c982543cb42a6a6f267e8f19403ac70cf",
+      "events": [
+        {
+          "sequence": 169,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/038-list-inline-newline.md",
+          "text": "#:1 + 2"
+        }
+      ]
+    },
+    {
+      "id": "039",
+      "path": "cases/039-inline-crlf.md",
+      "sourceSha256": "2c9b91c571e6b1587433a698cbccaedfbc65c1605baea6d25aa6afd909c015a7",
+      "events": [
+        {
+          "sequence": 172,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/039-inline-crlf.md",
+          "text": "#:1 + 2"
+        }
+      ]
+    },
+    {
+      "id": "040",
+      "path": "cases/040-block-crlf.md",
+      "sourceSha256": "9ae0273cc4c3b0e9dd141cdeddd5cf55dc290a40ac6be4f2eff2be76f16e6fac",
+      "events": [
+        {
+          "sequence": 177,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/040-block-crlf.md",
+          "language": "math",
+          "source": "a=1\n\nb=2"
+        }
+      ]
+    },
+    {
+      "id": "041",
+      "path": "cases/041-frontmatter.md",
+      "sourceSha256": "3a6aa981f5706fc2f2c7806c61e0bd3a55dec08ddabad25349eb00cb807219d2",
+      "events": [
+        {
+          "sequence": 182,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/041-frontmatter.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "042",
+      "path": "cases/042-open-frontmatter.md",
+      "sourceSha256": "2e9345f8203397d40f4ddfa3e45ca863399d1e069689b521979133883163d801",
+      "events": [
+        {
+          "sequence": 186,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/042-open-frontmatter.md",
+          "text": "#:99"
+        },
+        {
+          "sequence": 187,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/042-open-frontmatter.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "043",
+      "path": "cases/043-bom-frontmatter.md",
+      "sourceSha256": "8be25b82974eebe3d4c4e02d8cc9e476d89b22c62cf752ce1e8cb2c68ced994d",
+      "events": [
+        {
+          "sequence": 192,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/043-bom-frontmatter.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "044",
+      "path": "cases/044-inline-percent-comment.md",
+      "sourceSha256": "c9658d43e167b27d75c7b58f4d8a8d79ea7fe79728e721d92d661fc3bb8ae7d4",
+      "events": [
+        {
+          "sequence": 195,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/044-inline-percent-comment.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "045",
+      "path": "cases/045-block-percent-comment.md",
+      "sourceSha256": "6058be3779c29666585b76335d445530a0028af69717ee78d57950e597f82b42",
+      "events": [
+        {
+          "sequence": 200,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/045-block-percent-comment.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "046",
+      "path": "cases/046-percent-inside-code.md",
+      "sourceSha256": "bc2f7c4d81f32bdb05e71e3c34800702b3d793cc23f89f142f65473870026279",
+      "events": [
+        {
+          "sequence": 205,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/046-percent-inside-code.md",
+          "language": "math",
+          "source": "\"%%\""
+        },
+        {
+          "sequence": 207,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/046-percent-inside-code.md",
+          "text": "#: \"%%\""
+        }
+      ]
+    },
+    {
+      "id": "047",
+      "path": "cases/047-unclosed-percent-comment.md",
+      "sourceSha256": "256b0026d7a396dbca59ad81a04b0c68cd5ff5fa0f25ee8dfaac0c16e92342b2",
+      "events": [
+        {
+          "sequence": 211,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/047-unclosed-percent-comment.md",
+          "text": "#:99"
+        },
+        {
+          "sequence": 214,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/047-unclosed-percent-comment.md",
+          "language": "math",
+          "source": "100"
+        }
+      ]
+    },
+    {
+      "id": "048",
+      "path": "cases/048-html-comment.md",
+      "sourceSha256": "14c88a16c9c55d161be17d31be5aae906de416853fdd50c44165cb42fcda2de1",
+      "events": [
+        {
+          "sequence": 218,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/048-html-comment.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "049",
+      "path": "cases/049-html-block.md",
+      "sourceSha256": "08575228bab76b7a015b3f83e8f837e3754b0e69f1abf6d01b8430ac8fc99d20",
+      "events": [
+        {
+          "sequence": 222,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/049-html-block.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "050",
+      "path": "cases/050-html-inline-element.md",
+      "sourceSha256": "3afefa8f73ef2cc7b25054854261cdf5d7f43dc8e774f7bf7ade69aba220ecea",
+      "events": [
+        {
+          "sequence": 225,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/050-html-inline-element.md",
+          "text": "#:99"
+        },
+        {
+          "sequence": 226,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/050-html-inline-element.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "051",
+      "path": "cases/051-html-nested-element.md",
+      "sourceSha256": "74aa5f6125a54cc2daba093134c2dbdd448fadea1b28fa6b9b85c26792b4baa2",
+      "events": [
+        {
+          "sequence": 229,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/051-html-nested-element.md",
+          "text": "#:99"
+        },
+        {
+          "sequence": 230,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/051-html-nested-element.md",
+          "text": "#:98"
+        },
+        {
+          "sequence": 231,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/051-html-nested-element.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "052",
+      "path": "cases/052-html-comment-cannot-close-its-outer-element.md",
+      "sourceSha256": "4de0f72c99200993b1b244d0e7da6f66eff91f47e8438c7d632976a48dc911ff",
+      "events": []
+    },
+    {
+      "id": "053",
+      "path": "cases/053-html-raw-code-element.md",
+      "sourceSha256": "83eb40af92021afad911ff12aadf018ad5638857dc20f9516ee44d64821f9954",
+      "events": [
+        {
+          "sequence": 237,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/053-html-raw-code-element.md",
+          "text": "#:99"
+        },
+        {
+          "sequence": 238,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/053-html-raw-code-element.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "054",
+      "path": "cases/054-embed.md",
+      "sourceSha256": "67e2585b90e77cb1b3506de3d11821d64464bb186a618393fa358fd60fc86a4f",
+      "events": [
+        {
+          "sequence": 241,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/054-embed.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "055",
+      "path": "cases/055-link-label.md",
+      "sourceSha256": "83462725b80e08c20af728d8bde4cada3b2fe3fe01c29f8900119c638554e749",
+      "events": [
+        {
+          "sequence": 247,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/055-link-label.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "056",
+      "path": "cases/056-image-alt.md",
+      "sourceSha256": "bdf3202cd38f3b53add97253afd5352bc5a06ed1b15abeb963e5114d6baf57f6",
+      "events": []
+    },
+    {
+      "id": "057",
+      "path": "cases/057-wiki-alias.md",
+      "sourceSha256": "463a9580fb847a27b355c46510fef6fdb29ad59319b42c4caecfabce34811791",
+      "events": []
+    },
+    {
+      "id": "058",
+      "path": "cases/058-embed-alias.md",
+      "sourceSha256": "9407c8b6a6ec367425158e8fb7ebf5235e749945546556fef923f31937863ceb",
+      "events": []
+    },
+    {
+      "id": "059",
+      "path": "cases/059-footnote.md",
+      "sourceSha256": "793c1da6edcb20fdec254ab1f2d059d2645fc894e0777f9fa6cef4cdd8c5408f",
+      "events": [
+        {
+          "sequence": 267,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/059-footnote.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "060",
+      "path": "cases/060-inline-footnote.md",
+      "sourceSha256": "ee9571bf814dc1d1ca9257f5b58b593c5609959fdb342d7df8364c1a08b72fa1",
+      "events": [
+        {
+          "sequence": 272,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/060-inline-footnote.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "061",
+      "path": "cases/061-table.md",
+      "sourceSha256": "13d759f1f765c78429c00d4d32e20e0dac112f804fdc837cedb93543c1e03110",
+      "events": [
+        {
+          "sequence": 278,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/061-table.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "062",
+      "path": "cases/062-inline-math.md",
+      "sourceSha256": "58613af3c5f12eded5447f081c1fd75dfc276dd4d7c2c2a289df9c6ce1254dc1",
+      "events": [
+        {
+          "sequence": 281,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/062-inline-math.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "063",
+      "path": "cases/063-single-dollar-math-cannot-cross-lf-paragraphs.md",
+      "sourceSha256": "e3714082ee5fdca2baa284f21f35246a08ca4832cee8671d3e7453b2bd5e3b6c",
+      "events": [
+        {
+          "sequence": 285,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/063-single-dollar-math-cannot-cross-lf-paragraphs.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "064",
+      "path": "cases/064-single-dollar-math-cannot-cross-cr-paragraphs.md",
+      "sourceSha256": "87e9ff3dbb07ec4b5bcaa82d0372ecb5cd957db3fc68b58ecc8d78a2a217d04a",
+      "events": [
+        {
+          "sequence": 290,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/064-single-dollar-math-cannot-cross-cr-paragraphs.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "065",
+      "path": "cases/065-single-dollar-math-cannot-cross-empty-quoted-paragraphs.md",
+      "sourceSha256": "4f1340d4204275d26ef300ed565afe0aefd866cd16577c614a8cb0763c3565f0",
+      "events": [
+        {
+          "sequence": 294,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/065-single-dollar-math-cannot-cross-empty-quoted-paragraphs.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "066",
+      "path": "cases/066-display-math.md",
+      "sourceSha256": "f5ddadb7566a80ae2953e7239b8b8628df2f5a9e2689d2fe7e956682539665ee",
+      "events": [
+        {
+          "sequence": 298,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/066-display-math.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "067",
+      "path": "cases/067-literal-entity.md",
+      "sourceSha256": "2992a08b8816e2218e9ed484df5138751c4388814ccdc544ade1f044bb66a3de",
+      "events": [
+        {
+          "sequence": 301,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/067-literal-entity.md",
+          "text": "#: \"&amp;\""
+        }
+      ]
+    },
+    {
+      "id": "068",
+      "path": "cases/068-empty-expression.md",
+      "sourceSha256": "40eab75e766d53cf98b61ea91d70b3788c45514cbc1f4e508a9c13e18981ccb3",
+      "events": [
+        {
+          "sequence": 304,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/068-empty-expression.md",
+          "text": "#:"
+        }
+      ]
+    },
+    {
+      "id": "069",
+      "path": "cases/069-table-escaped-pipe-retained-pending-host-extraction.md",
+      "sourceSha256": "42c1190fc48afdc4a0f4928ce0d38b5dbc289a316612a061121acf301cc4ab75",
+      "events": [
+        {
+          "sequence": 310,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/069-table-escaped-pipe-retained-pending-host-extraction.md",
+          "text": "#: \"a\\|b\""
+        }
+      ]
+    },
+    {
+      "id": "070",
+      "path": "cases/070-info-extra.md",
+      "sourceSha256": "45c6db8bdaf245cc4578d16a9edd2e8279c298c816a6d561c7ef99c339a23bef",
+      "events": [
+        {
+          "sequence": 315,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/070-info-extra.md",
+          "language": "math",
+          "source": "101"
+        }
+      ]
+    },
+    {
+      "id": "071",
+      "path": "cases/071-info-brace-attributes.md",
+      "sourceSha256": "0a5ab25a4ce291266cb8750a4d155b3fd8d88572bfa212c9254ed431d5409083",
+      "events": [
+        {
+          "sequence": 320,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/071-info-brace-attributes.md",
+          "language": "math",
+          "source": "102"
+        }
+      ]
+    },
+    {
+      "id": "072",
+      "path": "cases/072-info-tab-attributes.md",
+      "sourceSha256": "eeb76e6d023531805711be452ec76ead90569914e596613ac6883f12fd8d1d30",
+      "events": [
+        {
+          "sequence": 325,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/072-info-tab-attributes.md",
+          "language": "math",
+          "source": "103"
+        }
+      ]
+    },
+    {
+      "id": "073",
+      "path": "cases/073-info-trailing-whitespace.md",
+      "sourceSha256": "7f8f56a81813c13a2f93b8ca1e1a3980f7339b9bd7c93bb093f3168625623197",
+      "events": [
+        {
+          "sequence": 330,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/073-info-trailing-whitespace.md",
+          "language": "math",
+          "source": "104"
+        }
+      ]
+    },
+    {
+      "id": "074",
+      "path": "cases/074-info-uppercase-variant.md",
+      "sourceSha256": "5d86533d1cbd91aa29e6a4a283cf950ce7ef1ed8965f4a1c3fa649156e7a6dd8",
+      "events": [
+        {
+          "sequence": 334,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/074-info-uppercase-variant.md",
+          "language": "math",
+          "source": "105"
+        }
+      ]
+    },
+    {
+      "id": "075",
+      "path": "cases/075-info-wrong-language-prefix.md",
+      "sourceSha256": "96e8f7fe00b975887d3d26a53e35137419e8a3156b6530d66ae1d6a700aa6fa9",
+      "events": []
+    },
+    {
+      "id": "076",
+      "path": "cases/076-info-wrong-tex-case.md",
+      "sourceSha256": "e27697b1e35bf456ac7f33b23f21f15b160487f0f47e4a800f133c5acd51c434",
+      "events": [
+        {
+          "sequence": 343,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/076-info-wrong-tex-case.md",
+          "language": "math-tex",
+          "source": "107"
+        }
+      ]
+    },
+    {
+      "id": "077",
+      "path": "cases/077-unclosed-bare-fence.md",
+      "sourceSha256": "98a80a1b0e40db92235ecf0846ff872f95a8d38b8c1aa3fb11cef3940c4f577e",
+      "events": [
+        {
+          "sequence": 347,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/077-unclosed-bare-fence.md",
+          "language": "math",
+          "source": "108"
+        }
+      ]
+    },
+    {
+      "id": "078",
+      "path": "cases/078-unclosed-quote-container.md",
+      "sourceSha256": "834fd5f2bce3768dcec82887c4f725f21027a989d5e683c32101b818809a16d1",
+      "events": [
+        {
+          "sequence": 351,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/078-unclosed-quote-container.md",
+          "language": "math",
+          "source": "1+2\noutside `#:3`"
+        }
+      ]
+    },
+    {
+      "id": "079",
+      "path": "cases/079-unclosed-list-container.md",
+      "sourceSha256": "797f31d9909dcc0660d55bf940b740b3127ef227ce3889304ce2dbc99a6920e5",
+      "events": [
+        {
+          "sequence": 355,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/079-unclosed-list-container.md",
+          "language": "math",
+          "source": "109"
+        },
+        {
+          "sequence": 357,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/079-unclosed-list-container.md",
+          "text": "#:4"
+        }
+      ]
+    },
+    {
+      "id": "080",
+      "path": "cases/080-expanded-callout.md",
+      "sourceSha256": "91803d4aba5eb33beb3bbba19646e15212ad52accd41877579c9c3f1eac7886c",
+      "events": [
+        {
+          "sequence": 365,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/080-expanded-callout.md",
+          "text": "#: $x+1"
+        },
+        {
+          "sequence": 366,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/080-expanded-callout.md",
+          "language": "math",
+          "source": "$x=1"
+        }
+      ]
+    },
+    {
+      "id": "081",
+      "path": "cases/081-utf16-crlf-delimiters.md",
+      "sourceSha256": "1aa10feeaa98ad75d1f9c883a11bd45b257107167842f89805d7bb0cdf1d208e",
+      "events": [
+        {
+          "sequence": 372,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/081-utf16-crlf-delimiters.md",
+          "language": "math",
+          "source": "$x=2"
+        },
+        {
+          "sequence": 374,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/081-utf16-crlf-delimiters.md",
+          "text": "#: $x+1"
+        }
+      ]
+    },
+    {
+      "id": "082",
+      "path": "cases/082-footnote-before-body.md",
+      "sourceSha256": "4f19778b9d9ff2ef3da879f864a0cefe9e58407542b76452da175e62f199c5d5",
+      "events": [
+        {
+          "sequence": 378,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/082-footnote-before-body.md",
+          "text": "#:4"
+        }
+      ]
+    },
+    {
+      "id": "083",
+      "path": "cases/083-repeated-occurrences.md",
+      "sourceSha256": "16c7e1ed59c43a13580a55839bbdf0eaea92cb38311f2ccc5b88878fb3e4b932",
+      "events": [
+        {
+          "sequence": 383,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/083-repeated-occurrences.md",
+          "text": "#:1"
+        },
+        {
+          "sequence": 384,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/083-repeated-occurrences.md",
+          "text": "#:1"
+        },
+        {
+          "sequence": 387,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/083-repeated-occurrences.md",
+          "language": "math",
+          "source": "1"
+        },
+        {
+          "sequence": 390,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/083-repeated-occurrences.md",
+          "language": "math",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "084",
+      "path": "cases/084-whole-note-embed-twice.md",
+      "sourceSha256": "61cb8118fd7d421285e1da4632a6dadff5ac3846238f739acde48eaa9f104338",
+      "events": [
+        {
+          "sequence": 395,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/084-whole-note-embed-twice.md",
+          "text": "#:5"
+        }
+      ]
+    },
+    {
+      "id": "085",
+      "path": "cases/085-heading-embed.md",
+      "sourceSha256": "86ffc843d3716466982561dc515acc731aa8b348aab6a0d86dbd1bfefdb2c467",
+      "events": [
+        {
+          "sequence": 411,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/085-heading-embed.md",
+          "text": "#:6"
+        }
+      ]
+    },
+    {
+      "id": "086",
+      "path": "cases/086-code-wins-percent-html-wiki-math.md",
+      "sourceSha256": "4239e9f3c1963dda5c852c66224b815be8921b65feedb5c7a328ffffb24998f2",
+      "events": [
+        {
+          "sequence": 420,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/086-code-wins-percent-html-wiki-math.md",
+          "text": "#: \"%% <!-- [[ $\""
+        },
+        {
+          "sequence": 421,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/086-code-wins-percent-html-wiki-math.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "087",
+      "path": "cases/087-code-wins-html-tag.md",
+      "sourceSha256": "b35cf9aa21286df3b9624a50a3e8aa1fabe8a4ec4413df3e5f4d03c6f16ff35b",
+      "events": [
+        {
+          "sequence": 424,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/087-code-wins-html-tag.md",
+          "text": "#: \"<span>\""
+        },
+        {
+          "sequence": 425,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/087-code-wins-html-tag.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "088",
+      "path": "cases/088-masked-image-percent.md",
+      "sourceSha256": "eb026dd765bbd786926c1c2ae72df8c6ce972c92e2ecf0d3d3a4cd0f78afd9ed",
+      "events": [
+        {
+          "sequence": 428,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/088-masked-image-percent.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "089",
+      "path": "cases/089-masked-link-target-percent.md",
+      "sourceSha256": "7474f44830c87939f241b7325bb321c0cea7e238820219b65e5704f7967dd7d4",
+      "events": [
+        {
+          "sequence": 431,
+          "kind": "inline-code",
+          "origin": "reading",
+          "sourcePath": "cases/089-masked-link-target-percent.md",
+          "text": "#:1"
+        }
+      ]
+    },
+    {
+      "id": "090",
+      "path": "cases/090-registered-math.md",
+      "sourceSha256": "f51904d6015956d57a3483d816fe69d9cfd8820601e058af3aa578a8a73669e6",
+      "events": [
+        {
+          "sequence": 436,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/090-registered-math.md",
+          "language": "math",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "091",
+      "path": "cases/091-registered-math.md",
+      "sourceSha256": "6b237fe790461adebb1cf89d51e0e2d54bcb5ce03392fe45cf0d92c04a65dda7",
+      "events": [
+        {
+          "sequence": 441,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/091-registered-math.md",
+          "language": "math",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "092",
+      "path": "cases/092-registered-math-plain.md",
+      "sourceSha256": "7cc645bf4b759d3e5c8823d0361eb107d42c396ee4eff07b39764ba45044a082",
+      "events": [
+        {
+          "sequence": 446,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/092-registered-math-plain.md",
+          "language": "math-plain",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "093",
+      "path": "cases/093-registered-math-tex.md",
+      "sourceSha256": "99d981f713ee1f424374ae71bc5e7953b0b086092ffcef4f9a7ba36493ddb224",
+      "events": [
+        {
+          "sequence": 451,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/093-registered-math-tex.md",
+          "language": "math-tex",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "094",
+      "path": "cases/094-registered-math-tex.md",
+      "sourceSha256": "b33dbd16e4f98018049f2e2e5dd73920551da0adb2f1de7d66fe50f86ca104e3",
+      "events": [
+        {
+          "sequence": 456,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/094-registered-math-tex.md",
+          "language": "math-tex",
+          "source": "1"
+        }
+      ]
+    },
+    {
+      "id": "095",
+      "path": "cases/095-registered-math-highlight.md",
+      "sourceSha256": "8a3f9589b93db63c3e453185750a116dc62e0967ea09b04b2e675b65c19f0f45",
+      "events": [
+        {
+          "sequence": 461,
+          "kind": "block-handler",
+          "origin": "reading",
+          "sourcePath": "cases/095-registered-math-highlight.md",
+          "language": "math-highlight",
+          "source": "1"
+        }
+      ]
+    }
+  ]
+}

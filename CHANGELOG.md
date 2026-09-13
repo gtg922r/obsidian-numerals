@@ -7,12 +7,14 @@ All notable changes to this project will be documented in this file. The format 
 ### Added
 - Add an unpublished recovery usage guide covering source order, variable scope, metadata freshness, grouping, formatting and safe insertion. Keep the README stable guide distinct and document recovery-specific checks and release boundaries.
 - Add a disposable Linux CI harness that records official Obsidian Reading callbacks and Live Preview trees for 95 byte-preserved synthetic extraction fixtures, with verified native activity from each primary note, callback origins, support-note hashes, pinned inputs and bounded cancellation.
+- Add a host-independent whole-note source index, ordered evaluation service, and detached result snapshots for the recovery surface integration. Metadata seeds, reference dependencies, insertion provenance, and suggestion symbols share one captured generation.
 - Per-expression TeX rendering for Inline Numerals via the new `#$:` (result only) and `#$=:` (equation) trigger prefixes, which render with MathJax in both Live Preview and Reading mode. Both prefixes are configurable in settings. (Closes #161)
 - Block-level `@format` and `@decimalPlaces` directives for overriding result presentation without changing calculated values. (Closes #75, #140)
 - Currency-standard decimal places by default and optional configured-symbol display for pure currency results, including derived currency values. Configured-symbol display is the default when no valid saved preference exists; saved code/symbol choices are preserved. (Closes #160)
 
 ### Changed
 - Record accepted isolated host extraction evidence and completed stable documentation review in the recovery work ledger.
+- Pin the private standalone Markdown parser to `@lezer/markdown` 1.7.2 after accepted Obsidian 1.13.7 Linux extraction validation; bundle its common/highlight dependencies while preserving host CodeMirror boundaries.
 - Provide all settings through Obsidian 1.13 native searchable definitions. Currency changes use explicit Save/Cancel forms, preserve valid saved preferences, and validate complete settings with legacy migration and duplicate-trigger protection.
 - Pin Obsidian 1.13.1 typings and the 0.4.2 Obsidian linter; adopt native DOM helpers and keep their owning-document behavior.
 - Removed the hidden no-op `@createUnit` preprocessing stub; unsupported declarations and existing unit collisions remain visible errors.
@@ -29,7 +31,12 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Match accepted Obsidian fence language tokens, inline HTML boundaries and quoted content tabs in the standalone source index; normalize parser line endings while retaining original UTF-16 mappings; withhold ambiguous quoted fences with diagnostics and preserve physical source order. Record all 95 native Linux extraction cases with explicit conservative source policies.
+- Read complete insertion wrappers containing matrices, nested collections, quoted brackets, and escaped quotes; preserve their exact source spans and existing serialized values when reprocessing a block.
 - Give rendered blocks and Reading inline elements disposable occurrence ownership; refresh native/Dataview and missing-reference changes, initialize Source-mode subscriptions, cancel queued work on unload, and support popout Text/SVG click navigation.
+- Isolate note evaluation bindings by source generation while preserving defining-block function locals and current preceding dollar globals. Commit successful rows, stop failed blocks, and detach recorded results and previous-result payloads; native closure/object and runtime side effects remain outside binding rollback.
+- Keep native frontmatter authoritative over stale Dataview YAML, quarantine ambiguous projections, and bound pending metadata transitions. Independent verified results retain their own insertion eligibility.
+- Retain uncertainty from advanced native runtime effects, including public `typed` registry mutations, across note generations and attach live safety epochs to insertion eligibility; a fresh runtime clears this state without source replay.
 - Preserve exact normalized BigNumber currency-rate values and public Unit formatting flags when converting aliases to codes.
 - Preserve currency symbols used as native object keys and dotted property names while normalizing currency values and conversion targets.
 - Canonicalize currency aliases inside native mathjs ResultSets, preserving semicolon result entries and retained currency codes during insertion after a remap.
