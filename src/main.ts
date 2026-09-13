@@ -1,72 +1,44 @@
 import { NumeralsSuggestor } from "./NumeralsSuggestor";
-import { defaultCurrencyMap } from "./rendering/displayUtils";
-import {
-	createNumberFormatProfile,
-	createResultFormatter,
-	CurrencyRegistry,
-	ResultFormatter,
-} from "./formatting";
 import { processAndRenderNumeralsBlockFromSource } from "./rendering/orchestrator";
 import { handleNumeralsBlockClick } from "./rendering/editorNavigation";
 import { getMetadataForFileAtPath, addGlobalsFromScopeToPageCache } from "./processing/scope";
 import { createInlineNumeralsPostProcessor, createInlineLivePreviewExtension } from "./inline";
 import {
-	CurrencyType,
-	CurrencyDisplayMode,
-	CurrencyPrecisionMode,
-	NumeralsLayout,
 	NumeralsRenderStyle,
 	NumeralsSettings,
-	DEFAULT_SETTINGS,
 	NumeralsScope,
 	StringReplaceMap,
-	normalizeCurrencyFormattingSettings,
 } from "./numerals.types";
-import {
-	NumeralsSettingTab,
-	currencyCodesForDollarSign,
-	currencyCodesForYenSign,
-} from "./settings";
+import { NumeralsSettingTab } from "./settings";
+import { createCurrencyPreProcessors } from './settings/currencies';
+import { SettingsChange, SettingsController } from './settings/changes';
+import { NumeralsRuntimeContext, NumeralsSettingsRuntime } from './settings/runtimeState';
 import equal from 'fast-deep-equal';
 import {
 	Plugin,
-	renderMath,
+	Notice,
 	loadMathJax,
 	MarkdownPostProcessorContext,
 	MarkdownRenderChild,
 } from "obsidian";
 import { getDataviewApi } from './dataview';
 
-import * as math from 'mathjs';
-
-
-// Modify mathjs internal functions to allow for use of currency symbols
-const currencySymbols: string[] = defaultCurrencyMap.map(m => m.symbol);
-const isAlphaOriginal = math.parse.isAlpha.bind(math.parse);
-math.parse.isAlpha = function (c: string, cPrev: string, cNext: string) {
-	return isAlphaOriginal(c, cPrev, cNext) || currencySymbols.includes(c)
-};
-
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment,
-   @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call,
-   @typescript-eslint/no-unsafe-return -- mathjs internal API not typed */
-const isUnitAlphaOriginal = (math.Unit as any).isValidAlpha;
-(math.Unit as any).isValidAlpha =
-function (c: string) {
-	return isUnitAlphaOriginal(c) || currencySymbols.includes(c)
-};
-/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment,
-   @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call,
-   @typescript-eslint/no-unsafe-return */
-
 export default class NumeralsPlugin extends Plugin {
-	settings!: NumeralsSettings;
-	private currencyMap: CurrencyType[] = defaultCurrencyMap;
-	private preProcessors: StringReplaceMap[] = [];
-	private currencyRegistry = CurrencyRegistry.create([]);
-	private resultFormatter: ResultFormatter = createResultFormatter({
-		profile: createNumberFormatProfile(DEFAULT_SETTINGS.numberFormat),
-	});
+	private loadGeneration = 0;
+	private settingsController!: SettingsController;
+	private settingsRuntime!: NumeralsSettingsRuntime;
+
+	declare settings: NumeralsSettings;
+	get configurationError(): string | undefined { return this.settingsRuntime.configurationError; }
+	get currencyWarnings(): readonly string[] { return this.getRuntimeContext().currencyWarnings; }
+	get settingsGeneration(): number { return this.settingsController.settingsGeneration; }
+	get evaluationSettingsGeneration(): number { return this.settingsController.evaluationSettingsGeneration; }
+	getRuntimeContext(): NumeralsRuntimeContext { return this.settingsRuntime.context; }
+	subscribeSettingsChanges(listener: (change: SettingsChange) => void): () => void {
+		return this.settingsController.subscribe(listener);
+	}
+	private get preProcessors(): StringReplaceMap[] { return this.getRuntimeContext().preProcessors; }
+	private get resultFormatter() { return this.getRuntimeContext().formatter; }
 	public scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
 
 	/**
@@ -171,83 +143,18 @@ export default class NumeralsPlugin extends Plugin {
 		ctx.addChild(numeralsBlockChild);
 	}
 
-	private createCurrencyMap(
-			dollarCurrency: string,
-			yenCurrency: string,
-			customCurrency: CurrencyType | null
-		): CurrencyType[] {
-		let currencyMap: CurrencyType[] = defaultCurrencyMap.map(m => {
-			const currency = { ...m };
-			if (m.symbol === "$") {
-				if (Object.keys(currencyCodesForDollarSign).includes(dollarCurrency)) {
-					currency.currency = dollarCurrency;
-				}
-			} else if (m.symbol === "¥") {
-				if (Object.keys(currencyCodesForYenSign).includes(yenCurrency)) {
-					currency.currency = yenCurrency;
-				}
-			}
-			return currency;
-		});
-		if (customCurrency && customCurrency.symbol != "" && customCurrency.currency != "") {
-			const customCurrencyType: CurrencyType = {
-				name: customCurrency.name,
-				symbol: customCurrency.symbol,
-				unicode: customCurrency.unicode,
-				currency: customCurrency.currency,
-			};
-			currencyMap = currencyMap.map(m => m.symbol === customCurrencyType.symbol ? customCurrencyType : m);
-			if (!currencyMap.some(m => m.symbol === customCurrencyType.symbol)) {
-				currencyMap.push(customCurrencyType);
-			}
-		}
-		return currencyMap;
-	}
-
-	updateCurrencyMap() {
-		this.currencyMap = this.createCurrencyMap(
-			this.settings.dollarSymbolCurrency.currency,
-			this.settings.yenSymbolCurrency.currency,
-			this.settings.customCurrencySymbol
-		);
-		this.updatePreProcessors();
-		this.updateFormatting();
-	}
-
-	private updatePreProcessors() {
-		const currencyPreProcessors = this.currencyMap.map(m => {
-			return {currencySymbol: m.symbol, currencyCode: m.currency, regex: RegExp('\\' + m.symbol + '([\\d\\.]+)','g'), replaceStr: '$1 ' + m.currency}
-		});
-
-		this.preProcessors = [
-			...currencyPreProcessors
-		];
-	}
-
 	async onload() {
-		await this.loadSettings();
-		this.updateLocale();
-
-		// Load MathJax for TeX Rendering
+		const generation = ++this.loadGeneration;
+		await this.loadSettings(generation);
+		if (generation !== this.loadGeneration) return;
+		const controller = this.settingsController;
+		this.register(() => controller.dispose());
+		this.register(this.subscribeSettingsChanges(change => {
+			if (change.effects.has('evaluation')) this.scopeCache.clear();
+		}));
+		if (this.configurationError) new Notice(this.configurationError);
 		await loadMathJax();
-
-		this.updateCurrencyMap();
-
-		// Configure currency commands in MathJax
-		const configureCurrencyStr = this.currencyMap.map(m => '\\def\\' + m.name + '{\\unicode{' + m.unicode + '}}').join('\n');
-		renderMath(configureCurrencyStr, true);
-
-		// Create mathjs currency units (irreversible until mathjs supports unit removal)
-		for (const moneyType of this.currencyMap) {
-			if (moneyType.currency != '') {
-				try {
-					math.createUnit(moneyType.currency, {aliases:[moneyType.currency.toLowerCase(), moneyType.symbol]});
-				} catch {
-					// Unit already exists (e.g., plugin re-enabled without app restart)
-				}
-			}
-		}
-		this.updateFormatting();
+		if (generation !== this.loadGeneration) return;
 
 		// Register Markdown Code Block Processors
 		const priority = 100;
@@ -289,82 +196,28 @@ export default class NumeralsPlugin extends Plugin {
 	}
 
 	onunload() {
+		this.loadGeneration++;
 		this.scopeCache.clear();
+		this.settingsController?.dispose();
 	}
 
-	async loadSettings() {
-		const loadData = await this.loadData() as Partial<NumeralsSettings> & Record<string, unknown> | undefined;
-		let shouldSaveSettings = false;
-		if (loadData) {
-			if (normalizeCurrencyFormattingSettings(loadData)) {
-				console.warn('Numerals: Repaired invalid currency formatting settings');
-				shouldSaveSettings = true;
-			}
-
-			// Check for signature of old setting format, then port to new setting format
-			if (loadData.layoutStyle == undefined) {
-				const oldRenderStyleMap: Record<number, NumeralsLayout> = {
-					1: NumeralsLayout.TwoPanes,
-					2: NumeralsLayout.AnswerRight,
-					3: NumeralsLayout.AnswerBelow
-				};
-
-				loadData.layoutStyle = oldRenderStyleMap[loadData['renderStyle'] as number];
-				if (loadData.layoutStyle) {
-					delete loadData['renderStyle'];
-					shouldSaveSettings = true;
-				} else {
-					console.warn("Numerals: Error porting old layout style");
-				}
-
-			} else if ([0, 1, 2, 3].includes(loadData.layoutStyle as unknown as number)) {
-				// BP-1 Fix: was `in [0,1,2,3]` which checks array indices, not values
-				const oldLayoutStyleMap: Record<number, NumeralsLayout> = {
-					0: NumeralsLayout.TwoPanes,
-					1: NumeralsLayout.AnswerRight,
-					2: NumeralsLayout.AnswerBelow,
-					3: NumeralsLayout.AnswerInline,
-				};
-
-				loadData.layoutStyle = oldLayoutStyleMap[loadData.layoutStyle as unknown as number];
-				if (loadData.layoutStyle) {
-					shouldSaveSettings = true;
-				} else {
-					console.warn("Numerals: Error porting old layout style");
-				}
-			}
-		}
-
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadData);
-		if (shouldSaveSettings) {
-			await this.saveSettings();
-		}
+	private async loadSettings(generation: number): Promise<void> {
+		const data: unknown = await this.loadData();
+		if (generation !== this.loadGeneration) return;
+		this.settingsController?.dispose();
+		this.settingsRuntime = new NumeralsSettingsRuntime(createCurrencyPreProcessors);
+		this.settingsController = new SettingsController(data, this.settingsRuntime, settings => this.saveData(settings));
+		// Obsidian declares settings as a property; expose detached committed snapshots
+		// while all native and programmatic writes use the explicit save hook.
+		Object.defineProperty(this, 'settings', { configurable: true, get: () => this.settingsController.settings });
 	}
 
-	async saveSettings() {
-		await this.saveData(this.settings);
+	updateSettings(patch: Record<string, unknown>): Promise<void> {
+		return this.settingsController.update(patch);
 	}
 
-	updateLocale(): void {
-		this.updateFormatting();
-	}
-
-	updateFormatting(): void {
-		const customCurrencyCode = this.settings.customCurrencySymbol?.currency.trim();
-		const fractionDigitsByCode = customCurrencyCode
-			? new Map([[customCurrencyCode, this.settings.customCurrencyDecimalPlaces]])
-			: undefined;
-		this.currencyRegistry = CurrencyRegistry.create(this.currencyMap, {
-			fractionDigitsByCode,
-		});
-		this.resultFormatter = createResultFormatter({
-			profile: createNumberFormatProfile(this.settings.numberFormat),
-			currencies: this.currencyRegistry,
-			preProcessors: this.preProcessors,
-			currencyPrecisionMode: this.settings.currencyPrecisionMode ??
-				CurrencyPrecisionMode.CurrencyStandard,
-			currencyDisplayMode: this.settings.currencyDisplayMode ??
-				CurrencyDisplayMode.Code,
-		});
+	/** Programmatic callers use the same validated, serialized path as native controls. */
+	saveSettings(patch: Partial<NumeralsSettings> = this.settings): Promise<void> {
+		return this.updateSettings(patch);
 	}
 }

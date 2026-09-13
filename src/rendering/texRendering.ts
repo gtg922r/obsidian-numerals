@@ -1,5 +1,5 @@
 import { parseCrossNoteReferences } from '../processing/crossNoteResolver';
-import * as math from 'mathjs';
+import { getMathRuntime, MathJsInstance, MathNode } from '../mathRuntime';
 import { StringReplaceMap } from '../numerals.types';
 import {
 	texCurrencyReplacement,
@@ -14,7 +14,8 @@ import {
  */
 export function expressionToTeX(
 	processedExpression: string,
-	rawExpression = processedExpression
+	rawExpression = processedExpression,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	// Keep literal reference labels in TeX without printing internal evaluation symbols.
 	const references = parseCrossNoteReferences(processedExpression);
@@ -27,7 +28,7 @@ export function expressionToTeX(
 		labels.set(symbol, `\\text{${ref.fullMatch.replace(/[\\{}$&#%_^~]/g, character => escapes[character])}}`);
 		displaySource = displaySource.slice(0, ref.start) + symbol + displaySource.slice(ref.end);
 	}
-	const preprocessedTex = math.parse(displaySource).toTex({ handler: (node: math.MathNode) => {
+	const preprocessedTex = math.parse(displaySource).toTex({ handler: (node: MathNode) => {
 		if (math.isSymbolNode(node) && labels.has(node.name)) return node.name;
 		return undefined;
 	} });
@@ -52,11 +53,12 @@ export function expressionToTeX(
  */
 export function resultToTeX(
 	result: unknown,
-	preProcessors: StringReplaceMap[]
+	preProcessors: StringReplaceMap[],
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	let processedResult = math.format(
 		result,
-		getLocaleFormatter('en-US', { useGrouping: false })
+		getLocaleFormatter('en-US', { useGrouping: false }, math)
 	);
 
 	for (const processor of preProcessors) {

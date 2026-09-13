@@ -1,3 +1,4 @@
+import type { MathJsInstance } from 'mathjs';
 import type { MappedSource } from './processing/expressionScanner';
 import type { ReferenceDependency } from './processing/crossNoteResolver';
 /****************************************************
@@ -114,7 +115,7 @@ export const DEFAULT_SETTINGS: NumeralsSettings = {
 	suggestionsIncludeMathjsSymbols: 	false,
 	numberFormat: 						NumeralsNumberFormat.System,
 	currencyPrecisionMode: 			CurrencyPrecisionMode.CurrencyStandard,
-	currencyDisplayMode: 			CurrencyDisplayMode.Code,
+	currencyDisplayMode: 			CurrencyDisplayMode.Symbol,
 	customCurrencyDecimalPlaces: 	2,
 	forceProcessAllFrontmatter: 		false,
 	customCurrencySymbol: 				null,
@@ -186,8 +187,7 @@ export interface CurrencyType {
 	currency: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type mathjsFormat = number | math.FormatOptions | ((item: any) => string) | undefined;
+export type mathjsFormat = Parameters<MathJsInstance['format']>[1];
 
 export class NumeralsScope extends Map<string, unknown>{}
 

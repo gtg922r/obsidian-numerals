@@ -24,7 +24,8 @@ jest.mock(
 	{ virtual: true }
 );
 
-import * as math from 'mathjs';
+import { getMathRuntime } from '../src/mathRuntime';
+const math = getMathRuntime();
 import { renderMath } from 'obsidian';
 import { defaultCurrencyMap } from '../src/rendering/displayUtils';
 import {

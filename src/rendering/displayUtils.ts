@@ -1,6 +1,6 @@
 import { finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
-import * as math from 'mathjs';
-import { CurrencyType } from '../numerals.types';
+import { getMathRuntime, MathJsInstance } from '../mathRuntime';
+export { defaultCurrencyMap } from '../settings/currencies';
 
 const MAX_FIXED_FORMAT_LEADING_DECIMAL_ZEROES = 5;
 
@@ -76,38 +76,10 @@ export function unescapeSubscripts(input: string): string {
 }
 
 
-// TODO: Add a switch for only rendering input
-
-export const defaultCurrencyMap: CurrencyType[] = [
-	{	symbol: "$", unicode: "x024", 	name: "dollar", currency: "USD"},
-	{	symbol: "€", unicode: "x20AC",	name: "euro", 	currency: "EUR"},
-	{	symbol: "£", unicode: "x00A3",	name: "pound", 	currency: "GBP"},
-	{	symbol: "¥", unicode: "x00A5",	name: "yen", 	currency: "JPY"},
-	{	symbol: "₹", unicode: "x20B9",	name: "rupee", 	currency: "INR"}	
-];
-
-const currencyTexReplacements = defaultCurrencyMap.map(m => ({
-	regex: new RegExp('\\\\*\\' + m.symbol, 'g'),
-	replacement: '\\' + m.name + ' ',
-}));
-
-/**
- * Replaces currency symbols in a given TeX string with their corresponding TeX command.
- *
- * This function takes a TeX string as input, and replaces all occurrences of currency symbols
- * (e.g., "$", "€", "£", "¥", "₹") with their corresponding TeX command (e.g., "\dollar", "\euro",
- * "\pound", "\yen", "\rupee"). The mapping between symbols and commands is defined by the
- * `defaultCurrencyMap` array.
- *
- * @param input_tex - The input TeX string, potentially containing currency symbols.
- *
- * @returns The input string with all currency symbols replaced with their corresponding TeX command.
- */
-export function texCurrencyReplacement(input_tex:string) {
-	for (const { regex, replacement } of currencyTexReplacements) {
-		input_tex = input_tex.replace(regex, replacement);
-	}
-	return input_tex
+/** Literal Unicode output also supports custom and supplementary currency symbols. */
+export function texCurrencyReplacement(input: string): string {
+	return input.replace(/\\*(\p{Sc})/gu, (_match: string, symbol: string) =>
+		`\\unicode{x${symbol.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}} `);
 }
 
 
@@ -142,7 +114,8 @@ export async function mathjaxLoop(
  */
 export function getLocaleFormatter(
 	locale: Intl.LocalesArgument | undefined = undefined,
-	options: Intl.NumberFormatOptions | undefined = undefined
+	options: Intl.NumberFormatOptions | undefined = undefined,
+	math: MathJsInstance = getMathRuntime()
 ): (value: number) => string {
 	const defaultFormatter = new Intl.NumberFormat(locale, options);
 	const preciseFormatter = new Intl.NumberFormat(locale, {

@@ -50,7 +50,8 @@ import {
 
 // jest.mock('obsidian-dataview');
 
-import * as math from 'mathjs';
+import { getMathRuntime } from '../src/mathRuntime';
+const math = getMathRuntime();
 import { defaultCurrencyMap } from "../src/numeralsUtilities";
 import { MarkdownPostProcessorContext } from "obsidian";
 const currencyPreProcessors = defaultCurrencyMap.map(m => {

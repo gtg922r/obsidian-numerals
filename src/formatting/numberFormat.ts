@@ -1,4 +1,5 @@
-import * as math from 'mathjs';
+import type { BigNumber, MathJsInstance } from 'mathjs';
+import { getMathRuntime } from '../mathRuntime';
 import { NumeralsNumberFormat } from '../numerals.types';
 import { getLocaleFormatter } from '../rendering/displayUtils';
 import type {
@@ -23,7 +24,8 @@ export function isValidDecimalPlaces(value: number): boolean {
  */
 export function createNumberFormatProfile(
 	format: NumeralsNumberFormat,
-	systemLocale?: string
+	systemLocale?: string,
+	math: MathJsInstance = getMathRuntime()
 ): NumberFormatProfile {
 	const resolvedSystemLocale = new Intl.NumberFormat(systemLocale)
 		.resolvedOptions().locale;
@@ -34,7 +36,7 @@ export function createNumberFormatProfile(
 				format,
 				resolvedSystemLocale,
 				resolvedSystemLocale,
-				getLocaleFormatter(systemLocale)
+				getLocaleFormatter(systemLocale, undefined, math)
 			);
 		case NumeralsNumberFormat.Fixed:
 			return {
@@ -61,13 +63,13 @@ export function createNumberFormatProfile(
 				mathjsFormat: { notation: 'engineering' },
 			};
 		case NumeralsNumberFormat.Format_CommaThousands_PeriodDecimal:
-			return localeProfile(format, resolvedSystemLocale, 'en-US', getLocaleFormatter('en-US'));
+			return localeProfile(format, resolvedSystemLocale, 'en-US', getLocaleFormatter('en-US', undefined, math));
 		case NumeralsNumberFormat.Format_PeriodThousands_CommaDecimal:
-			return localeProfile(format, resolvedSystemLocale, 'de-DE', getLocaleFormatter('de-DE'));
+			return localeProfile(format, resolvedSystemLocale, 'de-DE', getLocaleFormatter('de-DE', undefined, math));
 		case NumeralsNumberFormat.Format_SpaceThousands_CommaDecimal:
-			return localeProfile(format, resolvedSystemLocale, 'fr-FR', getLocaleFormatter('fr-FR'));
+			return localeProfile(format, resolvedSystemLocale, 'fr-FR', getLocaleFormatter('fr-FR', undefined, math));
 		case NumeralsNumberFormat.Format_Indian:
-			return localeProfile(format, resolvedSystemLocale, 'en-IN', getLocaleFormatter('en-IN'));
+			return localeProfile(format, resolvedSystemLocale, 'en-IN', getLocaleFormatter('en-IN', undefined, math));
 		default:
 			return {
 				id: NumeralsNumberFormat.Fixed,
@@ -98,7 +100,8 @@ function localeProfile(
 /** Resolve an optional per-block number-format selection. */
 export function resolveNumberFormatProfile(
 	defaultProfile: NumberFormatProfile,
-	overrides?: ResultFormatOverrides
+	overrides?: ResultFormatOverrides,
+	math: MathJsInstance = getMathRuntime()
 ): NumberFormatProfile {
 	if (overrides?.numberFormat === undefined) {
 		return defaultProfile;
@@ -106,7 +109,7 @@ export function resolveNumberFormatProfile(
 
 	return createNumberFormatProfile(
 		overrides.numberFormat,
-		defaultProfile.systemLocale
+		defaultProfile.systemLocale, math
 	);
 }
 
@@ -120,16 +123,17 @@ export function resolveNumberFormatProfile(
 export function formatWithNumberFormatProfile(
 	value: unknown,
 	profile: NumberFormatProfile,
-	decimalPlaces?: number
+	decimalPlaces?: number,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	if (decimalPlaces === undefined || !isValidDecimalPlaces(decimalPlaces)) {
 		return math.format(value, profile.mathjsFormat);
 	}
 	if (math.isFraction(value)) {
-		return formatNumberWithProfile(Number(value.valueOf()), profile, decimalPlaces);
+		return formatNumberWithProfile(Number(value.valueOf()), profile, decimalPlaces, math);
 	}
 
-	const numberFormatter = createOverrideNumberFormatter(profile, decimalPlaces);
+	const numberFormatter = createOverrideNumberFormatter(profile, decimalPlaces, math);
 	return math.format(value, numberFormatter);
 }
 
@@ -140,28 +144,30 @@ export function formatWithNumberFormatProfile(
 export function formatNumberWithProfile(
 	value: number,
 	profile: NumberFormatProfile,
-	decimalPlaces: number
+	decimalPlaces: number,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	if (!isValidDecimalPlaces(decimalPlaces)) {
 		return math.format(value, profile.mathjsFormat);
 	}
 
-	return createOverrideNumberFormatter(profile, decimalPlaces)(value);
+	return createOverrideNumberFormatter(profile, decimalPlaces, math)(value);
 }
 
 function createOverrideNumberFormatter(
 	profile: NumberFormatProfile,
-	decimalPlaces: number
+	decimalPlaces: number,
+	math: MathJsInstance = getMathRuntime()
 ): (value: unknown) => string {
 	return (value: unknown): string => {
 		if (math.isBigNumber(value)) {
-			return formatBigNumberWithProfile(value, profile, decimalPlaces);
+			return formatBigNumberWithProfile(value, profile, decimalPlaces, math);
 		}
 		if (math.isFraction(value)) {
 			return formatNumberWithProfile(
 				Number(value.valueOf()),
 				profile,
-				decimalPlaces
+				decimalPlaces, math
 			);
 		}
 		if (typeof value !== 'number') {
@@ -177,11 +183,11 @@ function createOverrideNumberFormatter(
 
 		switch (profile.notation) {
 			case 'exponential':
-				return formatExponential(value, decimalPlaces);
+				return formatExponential(value, decimalPlaces, math);
 			case 'engineering':
-				return formatEngineering(value, decimalPlaces);
+				return formatEngineering(value, decimalPlaces, math);
 			case 'fixed':
-				return formatRoundedFixed(value, decimalPlaces);
+				return formatRoundedFixed(value, decimalPlaces, math);
 			case 'standard':
 			default:
 				return new Intl.NumberFormat(profile.locale, {
@@ -193,46 +199,49 @@ function createOverrideNumberFormatter(
 	};
 }
 
-function formatExponential(value: number, decimalPlaces: number): string {
+function formatExponential(value: number, decimalPlaces: number,
+	math: MathJsInstance = getMathRuntime()): string {
 	if (value === 0) {
-		return `${formatRoundedFixed(value, decimalPlaces)}e+0`;
+		return `${formatRoundedFixed(value, decimalPlaces, math)}e+0`;
 	}
 
 	let { coefficient, exponent } = decomposeNumber(value);
-	let formattedCoefficient = formatRoundedFixed(coefficient, decimalPlaces);
+	let formattedCoefficient = formatRoundedFixed(coefficient, decimalPlaces, math);
 
 	// Decimal rounding can promote 9.99 to 10.00; normalize the exponent.
 	if (Math.abs(Number(formattedCoefficient)) >= 10) {
 		exponent += 1;
 		coefficient /= 10;
-		formattedCoefficient = formatRoundedFixed(coefficient, decimalPlaces);
+		formattedCoefficient = formatRoundedFixed(coefficient, decimalPlaces, math);
 	}
 
 	return `${formattedCoefficient}e${exponent >= 0 ? '+' : ''}${exponent}`;
 }
 
-function formatEngineering(value: number, decimalPlaces: number): string {
+function formatEngineering(value: number, decimalPlaces: number,
+	math: MathJsInstance = getMathRuntime()): string {
 	if (value === 0) {
-		return `${formatRoundedFixed(value, decimalPlaces)}e+0`;
+		return `${formatRoundedFixed(value, decimalPlaces, math)}e+0`;
 	}
 
 	const scientific = decomposeNumber(value);
 	let exponent = Math.floor(scientific.exponent / 3) * 3;
 	let coefficient = scientific.coefficient *
 		Math.pow(10, scientific.exponent - exponent);
-	let formattedCoefficient = formatRoundedFixed(coefficient, decimalPlaces);
+	let formattedCoefficient = formatRoundedFixed(coefficient, decimalPlaces, math);
 
 	// Rounding can promote 999.99 to 1000.00; normalize it to the next group.
 	if (Math.abs(Number(formattedCoefficient)) >= 1000) {
 		exponent += 3;
 		coefficient /= 1000;
-		formattedCoefficient = formatRoundedFixed(coefficient, decimalPlaces);
+		formattedCoefficient = formatRoundedFixed(coefficient, decimalPlaces, math);
 	}
 
 	return `${formattedCoefficient}e${exponent >= 0 ? '+' : ''}${exponent}`;
 }
 
-function formatRoundedFixed(value: number, decimalPlaces: number): string {
+function formatRoundedFixed(value: number, decimalPlaces: number,
+	math: MathJsInstance = getMathRuntime()): string {
 	return math.format(value, {
 		notation: 'fixed',
 		precision: decimalPlaces,
@@ -251,9 +260,10 @@ function decomposeNumber(value: number): {
 }
 
 function formatBigNumberWithProfile(
-	value: math.BigNumber,
+	value: BigNumber,
 	profile: NumberFormatProfile,
-	decimalPlaces: number
+	decimalPlaces: number,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	if (!value.isFinite()) {
 		return math.format(value);
@@ -263,7 +273,7 @@ function formatBigNumberWithProfile(
 		case 'exponential':
 			return normalizeExponent(value.toExponential(decimalPlaces));
 		case 'engineering':
-			return formatBigNumberEngineering(value, decimalPlaces);
+			return formatBigNumberEngineering(value, decimalPlaces, math);
 		case 'fixed':
 			return value.toFixed(decimalPlaces);
 		case 'standard':
@@ -277,8 +287,9 @@ function formatBigNumberWithProfile(
 }
 
 function formatBigNumberEngineering(
-	value: math.BigNumber,
-	decimalPlaces: number
+	value: BigNumber,
+	decimalPlaces: number,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	if (value.isZero()) {
 		return `${value.toFixed(decimalPlaces)}e+0`;

@@ -55,7 +55,7 @@ export function extractComment(rawInput: string): {
  * ```
  */
 export function renderComment(element: HTMLElement, comment: string): void {
-	element.createEl("span", { cls: "numerals-inline-comment", text: comment });
+	element.createSpan({ cls: "numerals-inline-comment", text: comment });
 }
 
 /**

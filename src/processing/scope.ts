@@ -1,4 +1,4 @@
-import * as math from 'mathjs';
+import * as math from '../mathRuntime';
 import { App, TFile } from 'obsidian';
 import { NumeralsScope, StringReplaceMap } from '../numerals.types';
 import { isSupportedReferenceValue, cloneReferenceValue } from './referenceBindings';

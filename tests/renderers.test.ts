@@ -27,7 +27,8 @@ import {
 	RendererFactory,
 } from '../src/renderers';
 import { renderMath } from 'obsidian';
-import * as math from 'mathjs';
+import { getMathRuntime } from '../src/mathRuntime';
+const math = getMathRuntime();
 import {
 	LineRenderData,
 	RenderContext,

@@ -8,11 +8,11 @@ import {
 } from '../src/numerals.types';
 
 describe('currency formatting settings', () => {
-	it('uses currency-standard precision and code display by default', () => {
+	it('uses currency-standard precision and symbol display by default', () => {
 		expect(DEFAULT_SETTINGS.currencyPrecisionMode).toBe(
 			CurrencyPrecisionMode.CurrencyStandard
 		);
-		expect(DEFAULT_SETTINGS.currencyDisplayMode).toBe(CurrencyDisplayMode.Code);
+		expect(DEFAULT_SETTINGS.currencyDisplayMode).toBe(CurrencyDisplayMode.Symbol);
 		expect(DEFAULT_SETTINGS.customCurrencyDecimalPlaces).toBe(2);
 	});
 
@@ -72,7 +72,7 @@ describe('currency formatting settings', () => {
 		expect(normalizeCurrencyFormattingSettings(data)).toBe(true);
 		expect(data).toEqual({
 			currencyPrecisionMode: CurrencyPrecisionMode.CurrencyStandard,
-			currencyDisplayMode: CurrencyDisplayMode.Code,
+			currencyDisplayMode: CurrencyDisplayMode.Symbol,
 			customCurrencyDecimalPlaces: 4,
 			unrelated: true,
 		});

@@ -1,4 +1,5 @@
-import * as math from 'mathjs';
+import type { BigNumber, Complex, Fraction, MathJsInstance } from 'mathjs';
+import { getMathRuntime } from '../mathRuntime';
 import {
 	CurrencyDisplayMode,
 	CurrencyPrecisionMode,
@@ -24,6 +25,8 @@ import type {
 } from './types';
 
 export interface ResultFormatterConfig {
+	/** Engine retained with the raw results and currency definitions it created. */
+	runtime?: MathJsInstance;
 	profile: NumberFormatProfile;
 	/** Active currency definitions created by Numerals. */
 	currencies?: CurrencyRegistry;
@@ -43,6 +46,7 @@ export function createResultFormatter(
 }
 
 class DefaultResultFormatter implements ResultFormatter {
+	private readonly math: MathJsInstance;
 	private readonly profile: NumberFormatProfile;
 	private readonly preProcessors: StringReplaceMap[];
 	private readonly currencies: CurrencyRegistry | undefined;
@@ -50,17 +54,23 @@ class DefaultResultFormatter implements ResultFormatter {
 	private readonly currencyDisplayMode: CurrencyDisplayMode;
 
 	constructor(config: ResultFormatterConfig) {
+		if (config.runtime && config.currencies && config.runtime !== config.currencies.runtime) {
+			throw new Error('The currency registry and formatter must retain the same mathjs runtime.');
+		}
+		this.math = config.runtime ?? config.currencies?.runtime ?? getMathRuntime();
 		this.profile = config.profile;
 		this.preProcessors = [...(config.preProcessors ?? [])];
 		this.currencies = config.currencies;
 		this.currencyPrecisionMode = config.currencyPrecisionMode ??
 			CurrencyPrecisionMode.CurrencyStandard;
 		this.currencyDisplayMode = config.currencyDisplayMode ??
-			CurrencyDisplayMode.Code;
+			CurrencyDisplayMode.Symbol;
 	}
 
-	format(value: unknown, overrides?: ResultFormatOverrides): FormattedResult {
-		const profile = resolveNumberFormatProfile(this.profile, overrides);
+	format(rawValue: unknown, overrides?: ResultFormatOverrides): FormattedResult {
+		const math = this.math;
+		const value = this.currencies?.canonicalizeAliases(rawValue) ?? rawValue;
+		const profile = resolveNumberFormatProfile(this.profile, overrides, math);
 		const currency = this.currencies?.match(value);
 		if (currency) {
 			if (this.usesCurrencyPresentation(overrides)) {
@@ -75,7 +85,7 @@ class DefaultResultFormatter implements ResultFormatter {
 				canonical: `${formatCurrencyNumber(
 					currency.amount,
 					profile,
-					undefined
+					undefined, math
 				)} ${currency.definition.code}`,
 			};
 		}
@@ -96,20 +106,21 @@ class DefaultResultFormatter implements ResultFormatter {
 		profile: NumberFormatProfile,
 		overrides?: ResultFormatOverrides
 	): FormattedResult {
+		const math = this.math;
 		const text = formatWithNumberFormatProfile(
 			value,
 			profile,
-			overrides?.decimalPlaces
+			overrides?.decimalPlaces, math
 		);
 
 		const tex = overrides?.decimalPlaces === undefined &&
 			overrides?.numberFormat === undefined
-			? legacyResultToTeX(value, this.preProcessors)
+			? legacyResultToTeX(value, this.preProcessors, math)
 			: formatOverrideAsTeX(
 				value,
 				profile,
 				overrides?.decimalPlaces,
-				this.preProcessors
+				this.preProcessors, math
 			);
 
 		return {
@@ -125,6 +136,7 @@ class DefaultResultFormatter implements ResultFormatter {
 		profile: NumberFormatProfile,
 		overrides?: ResultFormatOverrides
 	): FormattedResult {
+		const math = this.math;
 		const decimalPlaces = overrides?.decimalPlaces ??
 			(this.currencyPrecisionMode === CurrencyPrecisionMode.CurrencyStandard
 				? currency.definition.fractionDigits
@@ -132,28 +144,28 @@ class DefaultResultFormatter implements ResultFormatter {
 		const numericText = formatCurrencyNumber(
 			currency.amount,
 			profile,
-			decimalPlaces
+			decimalPlaces, math
 		);
 		const text = this.currencyDisplayMode === CurrencyDisplayMode.Symbol
 			? placeConfiguredCurrencySymbol(
 				currency,
 				profile,
-				decimalPlaces
+				decimalPlaces, math
 			)
 			: `${numericText} ${currency.definition.code}`;
 
-		const nonLocalizedProfile = nonLocalizedNumberProfile(profile);
+		const nonLocalizedProfile = nonLocalizedNumberProfile(profile, math);
 		const canonicalNumber = formatCurrencyNumber(
 			currency.amount,
 			nonLocalizedProfile,
-			decimalPlaces
+			decimalPlaces, math
 		);
 		const canonical = `${canonicalNumber} ${currency.definition.code}`;
 		const tex = formatCurrencyTeX(
 			currency,
 			nonLocalizedProfile,
 			decimalPlaces,
-			this.currencyDisplayMode
+			this.currencyDisplayMode, math
 		);
 
 		return { text, tex, canonical };
@@ -163,23 +175,25 @@ class DefaultResultFormatter implements ResultFormatter {
 function formatCurrencyNumber(
 	value: number,
 	profile: NumberFormatProfile,
-	decimalPlaces: number | undefined
+	decimalPlaces: number | undefined,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	return decimalPlaces === undefined
-		? formatWithNumberFormatProfile(value, profile)
-		: formatNumberWithProfile(value, profile, decimalPlaces);
+		? formatWithNumberFormatProfile(value, profile, undefined, math)
+		: formatNumberWithProfile(value, profile, decimalPlaces, math);
 }
 
 function placeConfiguredCurrencySymbol(
 	currency: CurrencyMatch,
 	profile: NumberFormatProfile,
-	decimalPlaces: number | undefined
+	decimalPlaces: number | undefined,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	const negative = currency.amount < 0 || Object.is(currency.amount, -0);
 	const numericText = formatCurrencyNumber(
 		Math.abs(currency.amount),
 		profile,
-		decimalPlaces
+		decimalPlaces, math
 	);
 	const locale = profile.locale ?? profile.systemLocale;
 	const templateCurrency = /^[A-Za-z]{3}$/u.test(currency.definition.code)
@@ -224,7 +238,8 @@ function isNumericFormatPart(type: Intl.NumberFormatPartTypes): boolean {
 }
 
 function nonLocalizedNumberProfile(
-	profile: NumberFormatProfile
+	profile: NumberFormatProfile,
+	math: MathJsInstance
 ): NumberFormatProfile {
 	if (profile.notation !== 'standard') {
 		return profile;
@@ -234,7 +249,7 @@ function nonLocalizedNumberProfile(
 		...profile,
 		locale: 'en-US',
 		useGrouping: false,
-		mathjsFormat: getLocaleFormatter('en-US', { useGrouping: false }),
+		mathjsFormat: getLocaleFormatter('en-US', { useGrouping: false }, math),
 	};
 }
 
@@ -242,19 +257,20 @@ function formatCurrencyTeX(
 	currency: CurrencyMatch,
 	profile: NumberFormatProfile,
 	decimalPlaces: number | undefined,
-	displayMode: CurrencyDisplayMode
+	displayMode: CurrencyDisplayMode,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	if (displayMode === CurrencyDisplayMode.Symbol) {
 		const negative = currency.amount < 0 || Object.is(currency.amount, -0);
 		const numberTex = numberToTeX(
 			Math.abs(currency.amount),
 			profile,
-			decimalPlaces
+			decimalPlaces, math
 		);
 		return `${negative ? '-' : ''}${currency.definition.texCommand} ${numberTex}`;
 	}
 
-	const numberTex = numberToTeX(currency.amount, profile, decimalPlaces);
+	const numberTex = numberToTeX(currency.amount, profile, decimalPlaces, math);
 	return `${numberTex}~\\mathrm{${escapeTexRoman(currency.definition.code)}}`;
 }
 
@@ -264,10 +280,11 @@ function escapeTexRoman(value: string): string {
 
 function legacyResultToTeX(
 	value: unknown,
-	preProcessors: StringReplaceMap[]
+	preProcessors: StringReplaceMap[],
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	try {
-		return resultToTeX(value, preProcessors);
+		return resultToTeX(value, preProcessors, math);
 	} catch {
 		if (value === Number.POSITIVE_INFINITY) {
 			return '\\infty';
@@ -286,27 +303,28 @@ function formatOverrideAsTeX(
 	value: unknown,
 	profile: NumberFormatProfile,
 	decimalPlaces: number | undefined,
-	preProcessors: StringReplaceMap[]
+	preProcessors: StringReplaceMap[],
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	if (typeof value === 'number') {
-		return numberToTeX(value, profile, decimalPlaces);
+		return numberToTeX(value, profile, decimalPlaces, math);
 	}
 	if (math.isBigNumber(value)) {
-		return bigNumberToTeX(value, profile, decimalPlaces);
+		return bigNumberToTeX(value, profile, decimalPlaces, math);
 	}
 	if (math.isFraction(value)) {
-		return numberToTeX(Number(value.valueOf()), profile, decimalPlaces);
+		return numberToTeX(Number(value.valueOf()), profile, decimalPlaces, math);
 	}
 
 	if (math.isComplex(value)) {
-		return complexToTeX(value, profile, decimalPlaces);
+		return complexToTeX(value, profile, decimalPlaces, math);
 	}
 
 	const collectionTex = collectionToTeX(
 		value,
 		profile,
 		decimalPlaces,
-		preProcessors
+		preProcessors, math
 	);
 	if (collectionTex !== undefined) {
 		return collectionTex;
@@ -319,7 +337,7 @@ function formatOverrideAsTeX(
 			const numberTex = numericValueToTeX(
 				numericValue,
 				profile,
-				decimalPlaces
+				decimalPlaces, math
 			);
 			let unitExpression = `1 ${units}`;
 			unitExpression = applyPreProcessors(unitExpression, preProcessors);
@@ -334,8 +352,8 @@ function formatOverrideAsTeX(
 
 	let processedResult = formatWithNumberFormatProfile(
 		value,
-		texProfile(profile),
-		decimalPlaces
+		texProfile(profile, math),
+		decimalPlaces, math
 	);
 	processedResult = applyPreProcessors(processedResult, preProcessors);
 
@@ -344,41 +362,44 @@ function formatOverrideAsTeX(
 	} catch {
 		// Keep the fallback value-driven and non-localized. Some uncommon
 		// mathjs result types cannot be round-tripped through expression text.
-		return resultToTeX(value, preProcessors);
+		return resultToTeX(value, preProcessors, math);
 	}
 }
 
 function numericValueToTeX(
-	value: number | math.BigNumber | math.Fraction,
+	value: number | BigNumber | Fraction,
 	profile: NumberFormatProfile,
-	decimalPlaces: number | undefined
+	decimalPlaces: number | undefined,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	if (math.isBigNumber(value)) {
-		return bigNumberToTeX(value, profile, decimalPlaces);
+		return bigNumberToTeX(value, profile, decimalPlaces, math);
 	}
 	if (math.isFraction(value)) {
-		return numberToTeX(Number(value.valueOf()), profile, decimalPlaces);
+		return numberToTeX(Number(value.valueOf()), profile, decimalPlaces, math);
 	}
-	return numberToTeX(value, profile, decimalPlaces);
+	return numberToTeX(value, profile, decimalPlaces, math);
 }
 
 function numberToTeX(
 	value: number,
 	profile: NumberFormatProfile,
-	decimalPlaces: number | undefined
+	decimalPlaces: number | undefined,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	const specialValue = specialNumberToTeX(value);
 	if (specialValue !== undefined) {
 		return specialValue;
 	}
 
-	return numberStringToTeX(formatNumberForTeX(value, profile, decimalPlaces));
+	return numberStringToTeX(formatNumberForTeX(value, profile, decimalPlaces, math));
 }
 
 function bigNumberToTeX(
-	value: math.BigNumber,
+	value: BigNumber,
 	profile: NumberFormatProfile,
-	decimalPlaces: number | undefined
+	decimalPlaces: number | undefined,
+	math: MathJsInstance = getMathRuntime()
 ): string {
 	if (value.isNaN()) {
 		return '\\mathrm{NaN}';
@@ -389,8 +410,8 @@ function bigNumberToTeX(
 
 	return numberStringToTeX(formatWithNumberFormatProfile(
 		value,
-		texProfile(profile),
-		decimalPlaces
+		texProfile(profile, math),
+		decimalPlaces, math
 	));
 }
 
@@ -409,15 +430,16 @@ function specialNumberToTeX(value: number): string | undefined {
 }
 
 function complexToTeX(
-	value: math.Complex,
+	value: Complex,
 	profile: NumberFormatProfile,
-	decimalPlaces: number | undefined
+	decimalPlaces: number | undefined,
+	math: MathJsInstance = getMathRuntime()
 ): string {
-	const realTex = numberToTeX(value.re, profile, decimalPlaces);
+	const realTex = numberToTeX(value.re, profile, decimalPlaces, math);
 	const imaginaryTex = numberToTeX(
 		Math.abs(value.im),
 		profile,
-		decimalPlaces
+		decimalPlaces, math
 	);
 
 	if (value.im === 0) {
@@ -434,7 +456,8 @@ function collectionToTeX(
 	value: unknown,
 	profile: NumberFormatProfile,
 	decimalPlaces: number | undefined,
-	preProcessors: StringReplaceMap[]
+	preProcessors: StringReplaceMap[],
+	math: MathJsInstance = getMathRuntime()
 ): string | undefined {
 	let collection: unknown = value;
 	if (math.isMatrix(value)) {
@@ -455,13 +478,13 @@ function collectionToTeX(
 		rows = collectionItems;
 	} else {
 		const renderedItems = collectionItems.map((item) =>
-			formatOverrideAsTeX(item, profile, decimalPlaces, preProcessors)
+			formatOverrideAsTeX(item, profile, decimalPlaces, preProcessors, math)
 		);
 		return `\\left[${renderedItems.join(', ')}\\right]`;
 	}
 
 	const renderedRows = rows.map((row) => row.map((cell) =>
-		formatOverrideAsTeX(cell, profile, decimalPlaces, preProcessors)
+		formatOverrideAsTeX(cell, profile, decimalPlaces, preProcessors, math)
 	).join('&'));
 
 	return `\\begin{bmatrix}${renderedRows.join('\\\\')}\\end{bmatrix}`;
@@ -498,17 +521,18 @@ function applyPreProcessors(
 function formatNumberForTeX(
 	value: number,
 	profile: NumberFormatProfile,
-	decimalPlaces: number | undefined
+	decimalPlaces: number | undefined,
+	math: MathJsInstance = getMathRuntime()
 ): string {
-	const profileForTeX = texProfile(profile);
+	const profileForTeX = texProfile(profile, math);
 	if (decimalPlaces !== undefined) {
-		return formatNumberWithProfile(value, profileForTeX, decimalPlaces);
+		return formatNumberWithProfile(value, profileForTeX, decimalPlaces, math);
 	}
 
 	return math.format(value, profileForTeX.mathjsFormat);
 }
 
-function texProfile(profile: NumberFormatProfile): NumberFormatProfile {
+function texProfile(profile: NumberFormatProfile, math: MathJsInstance): NumberFormatProfile {
 	if (profile.notation !== 'standard') {
 		return profile;
 	}
@@ -517,7 +541,7 @@ function texProfile(profile: NumberFormatProfile): NumberFormatProfile {
 		...profile,
 		locale: 'en-US',
 		useGrouping: false,
-		mathjsFormat: getLocaleFormatter('en-US', { useGrouping: false }),
+		mathjsFormat: getLocaleFormatter('en-US', { useGrouping: false }, math),
 	};
 }
 

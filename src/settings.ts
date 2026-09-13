@@ -1,598 +1,112 @@
-///////////////////////////////////////////
-// Imports
-///////////////////////////////////////////
-
-import NumeralsPlugin from "./main";
-import { NumeralsSuggestor } from "./NumeralsSuggestor";
-import { htmlToElements } from "./rendering/displayUtils";
+import { App, Plugin, PluginSettingTab, SettingDefinitionItem } from 'obsidian';
 import {
-	CurrencyDisplayMode,
-	CurrencyPrecisionMode,
-	MAX_CURRENCY_DECIMAL_PLACES,
-	MIN_CURRENCY_DECIMAL_PLACES,
-	NumeralsRenderStyle,
-	NumeralsNumberFormat,
-	NumeralsLayout,
-} from "./numerals.types";
-
-import {
-	PluginSettingTab,
-	App,
-	Setting,
-	ButtonComponent, DropdownComponent, TextComponent
- } from "obsidian";
-
-///////////////////////////////////////////
-// Settings Enums and Interfaces
-///////////////////////////////////////////
-
-
-///////////////////////////////////////////
-// Settings Details
-///////////////////////////////////////////
+	CurrencyDisplayMode, CurrencyPrecisionMode, MAX_CURRENCY_DECIMAL_PLACES, MIN_CURRENCY_DECIMAL_PLACES,
+	NumeralsLayout, NumeralsNumberFormat, NumeralsRenderStyle, NumeralsSettings,
+} from './numerals.types';
+import { CurrencyMappingModal } from './settings/currencyModal';
+import { inlineTriggerKeys, settingError } from './settings/normalization';
+export { currencyCodesForDollarSign, currencyCodesForYenSign } from './settings/currencies';
 
 export const NumberalsNumberFormatSettingsStrings = {
-	[NumeralsNumberFormat.System]: `System Formatted: ${(100000.1).toLocaleString()}`,
-	[NumeralsNumberFormat.Fixed]: "Fixed: 100000.1",
-	[NumeralsNumberFormat.Exponential]: "Exponential: 1.000001e+5",
-	[NumeralsNumberFormat.Engineering]: "Engineering: 100.0001e+3",
-	[NumeralsNumberFormat.Format_CommaThousands_PeriodDecimal]: "Formatted: 100,000.1",
-	[NumeralsNumberFormat.Format_PeriodThousands_CommaDecimal]: "Formatted: 100.000,1",
-	[NumeralsNumberFormat.Format_SpaceThousands_CommaDecimal]: "Formatted: 100 000,1",
-	[NumeralsNumberFormat.Format_Indian]: "Formatted: 1,00,000.1",
-}
-
-export const currencyCodesForDollarSign: {[key:string]: string} = {
-	ARS: "Argentine Peso",
-	AUD: "Australian Dollar",
-    BBD: "Barbadian Dollar",
-    BMD: "Bermudian Dollar",
-    BND: "Brunei Dollar",
-    BSD: "Bahamian Dollar",
-	BZD: "Belize Dollar",
-    CAD: "Canadian Dollar",
-	CLP: "Chilean Peso",
-	COP: "Colombian Peso",
-    FJD: "Fijian Dollar",
-    GYD: "Guyanese Dollar",
-    HKD: "Hong Kong Dollar",
-    JMD: "Jamaican Dollar",
-    KYD: "Cayman Islands Dollar",
-    LRD: "Liberian Dollar",
-    MXN: "Mexican Peso",
-    NAD: "Namibian Dollar",
-    NZD: "New Zealand Dollar",
-    SBD: "Solomon Islands Dollar",
-    SGD: "Singapore Dollar",
-    SRD: "Surinamese Dollar",
-    TTD: "Trinidad and Tobago Dollar",
-    TWD: "New Taiwan Dollar",
-    USD: "United States Dollar",
-	UYU: "Uruguayan Peso",
-    XCD: "East Caribbean Dollar",
+	[NumeralsNumberFormat.System]: `System format: ${(100000.1).toLocaleString()}`,
+	[NumeralsNumberFormat.Fixed]: 'Fixed: 100000.1',
+	[NumeralsNumberFormat.Exponential]: 'Exponential: 1.000001e+5',
+	[NumeralsNumberFormat.Engineering]: 'Engineering: 100.0001e+3',
+	[NumeralsNumberFormat.Format_CommaThousands_PeriodDecimal]: 'Formatted: 100,000.1',
+	[NumeralsNumberFormat.Format_PeriodThousands_CommaDecimal]: 'Formatted: 100.000,1',
+	[NumeralsNumberFormat.Format_SpaceThousands_CommaDecimal]: 'Formatted: 100 000,1',
+	[NumeralsNumberFormat.Format_Indian]: 'Formatted: 1,00,000.1',
 };
 
-export const currencyCodesForYenSign: {[key:string]: string} = {
-    JPY: "Japanese Yen",
-    CNY: "Chinese Yuan",
-    KRW: "Korean Won",
-};
-
-function setButtonDisabled(button: ButtonComponent, disabled: boolean): void {
-	button.buttonEl.disabled = disabled;
+export interface NumeralsSettingsHost extends Plugin {
+	settings: NumeralsSettings;
+	readonly configurationError?: string;
+	readonly currencyWarnings?: readonly string[];
+	updateSettings(patch: Record<string, unknown>): Promise<void>;
 }
 
-function setButtonTooltip(button: ButtonComponent, tooltip: string): void {
-	button.buttonEl.title = tooltip;
-	button.buttonEl.setAttribute('aria-label', tooltip);
-}
-
-///////////////////////////////////////////
-// Settings Tab
-///////////////////////////////////////////
-
-/**
- * Settings Tab for the Numerals Plugin
- * 
- * @export
- * @class NumeralsSettingTab
- * @extends {PluginSettingTab}
- * @property {NumeralsPlugin} plugin
- */
+/** Obsidian 1.13 definitions are also the global settings search index. */
 export class NumeralsSettingTab extends PluginSettingTab {
 	icon = 'calculator';
-	plugin: NumeralsPlugin;
+	constructor(app: App, readonly plugin: NumeralsSettingsHost) { super(app, plugin); }
 
-	constructor(app: App, plugin: NumeralsPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
+	getControlValue(key: string): unknown { return this.plugin.settings[key as keyof NumeralsSettings]; }
+
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		// Overriding this hook replaces Obsidian's default mutation AND saveData.
+		await this.plugin.updateSettings({ [key]: value });
+		this.refreshDomState();
 	}
 
-	display(): void {
-		const {containerEl} = this;
-		const ownerDocument = containerEl.ownerDocument;
-		const ownerWindow = ownerDocument.defaultView ?? window;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-		.setHeading()
-		.setName('Layout and render settings');	
-
-		new Setting(containerEl)
-			.setName('Numerals layout style')
-			.setDesc('Layout of math blocks in live preview and reading mode')
-			.addDropdown(dropDown => {
-				dropDown.addOption(NumeralsLayout.TwoPanes, '2 panes');
-				dropDown.addOption(NumeralsLayout.AnswerRight, 'Answer to the right');
-				dropDown.addOption(NumeralsLayout.AnswerBelow, 'Answer below each line');
-				dropDown.addOption(NumeralsLayout.AnswerInline, 'Answer inline, beside input');				
-				dropDown.setValue(this.plugin.settings.layoutStyle);
-				dropDown.onChange(async (value) => {
-					const layoutStyleStr = value as keyof typeof NumeralsLayout;
-					this.plugin.settings.layoutStyle = NumeralsLayout[layoutStyleStr];
-					await this.plugin.saveSettings();
-				});
-			});		
-
-		new Setting(containerEl)
-			.setName('Default numerals rendering style')
-			.setDesc('Choose how the input and results are rendered by default. Note that you can specify the rendering style on a per block basis, by using `math-plain`, ``math-tex``, or ``math-highlight``')
-			.addDropdown(dropDown => {
-				dropDown.addOption(NumeralsRenderStyle.Plain, 'Plain text');
-				dropDown.addOption(NumeralsRenderStyle.TeX, 'TeX style'); // eslint-disable-line obsidianmd/ui/sentence-case
-				dropDown.addOption(NumeralsRenderStyle.SyntaxHighlight, 'Syntax highlighting of plain text');
-				dropDown.setValue(this.plugin.settings.defaultRenderStyle);
-				dropDown.onChange(async (value) => {
-					const renderStyleStr = value as keyof typeof NumeralsRenderStyle;
-					this.plugin.settings.defaultRenderStyle = NumeralsRenderStyle[renderStyleStr]
-					await this.plugin.saveSettings();
-				});
-			});
-
-		new Setting(containerEl)
-		.setHeading()
-		.setName('Auto-complete suggestion settings');		
-
-		new Setting(containerEl)
-			.setName('Provide auto-complete suggestions')
-			.setDesc('Enable auto-complete suggestions when inside a math codeblock. Will base suggestions on variables in current codeblock, as well as mathjs functions and constants if enabled below (disabling requires restart to take effect)')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.provideSuggestions)
-				.onChange(async (value) => {
-					this.plugin.settings.provideSuggestions = value;
-					if (value) {
-						this.plugin.registerEditorSuggest(new NumeralsSuggestor(this.plugin));
-					}
-					await this.plugin.saveSettings();
-				}));
-		new Setting(containerEl)
-			.setName('Include functions and constants in suggestions')
-			.setDesc('Auto-complete suggestions will include mathjs functions, constants, and physical constants.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.suggestionsIncludeMathjsSymbols)
-				.onChange(async (value) => {
-					this.plugin.settings.suggestionsIncludeMathjsSymbols = value;
-					await this.plugin.saveSettings();
-				}));	
-		new Setting(containerEl)
-			.setName('Enable greek character auto-complete')
-			.setDesc('Auto-complete suggestions for Greek characters by typing ":" and then greek letter name (e.g. `:alpha`).')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enableGreekAutoComplete)
-				.onChange(async (value) => {
-					this.plugin.settings.enableGreekAutoComplete = value;
-					await this.plugin.saveSettings();
-				}));							
-			
-		new Setting(containerEl)
-			.setHeading()
-			.setName('Styling settings');			
-
-		new Setting(containerEl)
-			.setName('Result indicator')
-			.setDesc('String to show preceeding the calculation result')
-			.addText(text => text
-				.setPlaceholder('" → "')
-				.setValue(this.plugin.settings.resultSeparator)
-				.onChange(async (value) => {
-					this.plugin.settings.resultSeparator = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Alternating row color')
-			.setDesc('Alternating rows are colored slightly differently to help differentiate between rows')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.alternateRowColor)
-				.onChange(async (value) => {
-					this.plugin.settings.alternateRowColor = value;
-					await this.plugin.saveSettings();
-				}));	
-
-		new Setting(containerEl)
-			.setName('Hide result on lines without result annotation')
-			.setDesc('If a math block uses result annotation (`=>`) on any line, hide the results for lines that are not annotated as a result. If off, results of non-annotated lines will be shown in faint text color.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.hideLinesWithoutMarkupWhenEmitting)
-				.onChange(async (value) => {
-					this.plugin.settings.hideLinesWithoutMarkupWhenEmitting = value;
-					await this.plugin.saveSettings();
-				}));			
-
-		// create new document fragment to be mult-line property text seperated by <br>
-		const resultAnnotationMarkupDesc = ownerDocument.createDocumentFragment();
-		resultAnnotationMarkupDesc.append('Result Annotation markup (`=>`) is used to indicate which line is the result of the calculation. It can be used on any line, and can be used multiple times in a single block. If used, the result of the last line with the markup will be shown in the result column. If not used, the result of the last line will be shown in the result column.');
-		
-		new Setting(containerEl)
-			.setName('Hide result annotation markup in input')
-			.setDesc('Result Annotation markup (`=>`) will be hidden in the input when rendering the math block')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.hideEmitterMarkupInInput)
-				.onChange(async (value) => {
-					this.plugin.settings.hideEmitterMarkupInInput = value;
-					await this.plugin.saveSettings();
-				}));					
-
-		// containerEl.createEl('h2', {text: 'Number Formatting'});
-		// Dropdown for number formatting locale setting
-		new Setting(containerEl)
-			.setHeading()
-			.setName("Number and currency formatting");
-		let customCurrencyDecimalPlacesDropDown: DropdownComponent | null = null;
-
-		new Setting(containerEl)
-			.setName('Rendered number format')
-			.setDesc(htmlToElements(`Choose how to format numbers in the results.<br>`
-				+ `<b>System Formatted:</b> Use your local system settings for number formatting (Currently <code>${navigator.language}</code>)<br>`
-				+ `<b>Fixed:</b> No thousands seperator and full precision.<br>`
-				+ `<b>Exponential:</b> Always use exponential notation.<br>`				
-				+ `<b>Engineering:</b> Exponential notation with exponent a multiple of 3.<br>`
-				+ `<b>Formatted:</b> Forces a specific type of formatted notation.<br><br>`								
-				+ `<i>Note:</i> <code>math-tex</code> mode will always use period as decimal seperator, regardless of locale.<br>`))
-			.addDropdown(dropDown => { 
-				// addOption for every option in NumberalsNumberFormatSettingsStrings
-				for (const settingName in NumberalsNumberFormatSettingsStrings) {
-					dropDown.addOption(settingName, NumberalsNumberFormatSettingsStrings[settingName as NumeralsNumberFormat]);
-				}
-
-				dropDown.setValue(this.plugin.settings.numberFormat);
-				dropDown.onChange(async (value) => {
-					const formatStyleStr = value as keyof typeof NumeralsNumberFormat;
-					this.plugin.settings.numberFormat = NumeralsNumberFormat[formatStyleStr];
-					await this.plugin.saveSettings();
-					this.plugin.updateLocale();
-				});
-			})
-
-		new Setting(containerEl)
-			.setName('Currency precision')
-			.setDesc('Choose whether pure currency results follow the rendered number format or use standard currency decimal places, such as 2 for GBP and 0 for JPY.') // eslint-disable-line obsidianmd/ui/sentence-case
-			.addDropdown(dropDown => {
-				dropDown.addOption(
-					CurrencyPrecisionMode.FollowNumberFormat,
-					'Use rendered number format'
-				);
-				dropDown.addOption(
-					CurrencyPrecisionMode.CurrencyStandard,
-					'Use currency standard'
-				);
-				dropDown.setValue(this.plugin.settings.currencyPrecisionMode);
-				dropDown.onChange(async (value) => {
-					const precisionMode = value as CurrencyPrecisionMode;
-					this.plugin.settings.currencyPrecisionMode = precisionMode;
-					await this.plugin.saveSettings();
-					this.plugin.updateFormatting();
-					customCurrencyDecimalPlacesDropDown?.setDisabled(
-						precisionMode !== CurrencyPrecisionMode.CurrencyStandard
-					);
-				});
-			});
-
-		new Setting(containerEl)
-			.setName('Currency display')
-			.setDesc('Choose whether pure currency results use their unit code or the symbol configured in Numerals. Compound units continue to use codes.') // eslint-disable-line obsidianmd/ui/sentence-case
-			.addDropdown(dropDown => {
-				dropDown.addOption(CurrencyDisplayMode.Code, 'Currency code (GBP)'); // eslint-disable-line obsidianmd/ui/sentence-case
-				dropDown.addOption(CurrencyDisplayMode.Symbol, 'Configured symbol (£)');
-				dropDown.setValue(this.plugin.settings.currencyDisplayMode);
-				dropDown.onChange(async (value) => {
-					this.plugin.settings.currencyDisplayMode = value as CurrencyDisplayMode;
-					await this.plugin.saveSettings();
-					this.plugin.updateFormatting();
-				});
-			});
-
-		new Setting(containerEl)
-			.setName('Custom currency decimal places')
-			.setDesc('Decimal places to use for a custom currency mapping. Standard currencies use their own currency-standard value.')
-			.addDropdown(dropDown => {
-				for (
-					let decimalPlaces = MIN_CURRENCY_DECIMAL_PLACES;
-					decimalPlaces <= MAX_CURRENCY_DECIMAL_PLACES;
-					decimalPlaces++
-				) {
-					const value = String(decimalPlaces);
-					dropDown.addOption(value, value);
-				}
-				dropDown.setValue(String(this.plugin.settings.customCurrencyDecimalPlaces));
-				dropDown.setDisabled(
-					this.plugin.settings.currencyPrecisionMode !== CurrencyPrecisionMode.CurrencyStandard
-				);
-				dropDown.onChange(async (value) => {
-					this.plugin.settings.customCurrencyDecimalPlaces = Number(value);
-					await this.plugin.saveSettings();
-					this.plugin.updateFormatting();
-				});
-				customCurrencyDecimalPlacesDropDown = dropDown;
-			});
-
-		new Setting(containerEl)
-			.setName('`$` symbol currency mapping')
-			.setDesc('Choose the currency the `$` symbol maps to (requires Obsidian reload to take effect)')
-				.addDropdown(dropDown => {
-					// addOption for every currency in currencyCodesForDollarSign
-					for (const currencyCode in currencyCodesForDollarSign) {
-						dropDown.addOption(currencyCode, `${currencyCode} (${currencyCodesForDollarSign[currencyCode]})`);
-					}
-					dropDown.setValue(this.plugin.settings.dollarSymbolCurrency.currency);
-					dropDown.onChange(async (value) => {
-						this.plugin.settings.dollarSymbolCurrency.currency = value;
-						await this.plugin.saveSettings();
-					});
-			});	
-			
-		new Setting(containerEl)
-			.setName('`¥` symbol currency mapping')
-			.setDesc('Choose the currency the `¥` symbol maps to (requires Obsidian reload to take effect)')
-				.addDropdown(dropDown => {
-					// addOption for every currency in currencyCodesForYenSign
-					for (const currencyCode in currencyCodesForYenSign) {
-						dropDown.addOption(currencyCode, `${currencyCode} (${currencyCodesForYenSign[currencyCode]})`);
-					}
-					dropDown.setValue(this.plugin.settings.yenSymbolCurrency.currency);
-					dropDown.onChange(async (value) => {
-						this.plugin.settings.yenSymbolCurrency.currency = value;
-						await this.plugin.saveSettings();
-					});
-				});
-
-				let currencySaveButton: ButtonComponent | null;
-				let currencySymbolInput: TextComponent | null;
-				let currencyCodeInput: TextComponent | null;
-				new Setting(containerEl)
-					.setName('Custom currency mapping')
-					.setDesc('Specify a custom currency. Note that this may be used for custom mapping of `$` and `¥`. Requires Obsidian reload to take effect')
-					.addText(text => { text
-						.setPlaceholder('Symbol')
-						.setValue(this.plugin.settings.customCurrencySymbol?.symbol ?? "")
-						.onChange(async (value) => {
-							if(
-								(
-									(value.length == 0 && !currencyCodeInput?.getValue())
-								||
-									(value.length >= 1 && currencyCodeInput?.getValue())
-								) && currencySaveButton) {
-								if (value.match(/^\p{Sc}$/u) || value.length == 0) {
-									setButtonDisabled(currencySaveButton, false);
-								currencySaveButton.buttonEl.removeClass('numerals-settings-btn-disabled', 'numerals-settings-btn-error');
-								currencySaveButton.buttonEl.addClass('numerals-settings-btn-ready');
-								currencySaveButton.setButtonText('Save');
-							} else {
-								setButtonDisabled(currencySaveButton, true);
-								currencySaveButton.buttonEl.removeClass('numerals-settings-btn-disabled', 'numerals-settings-btn-ready');
-								currencySaveButton.buttonEl.addClass('numerals-settings-btn-error');
-								currencySaveButton.setButtonText('Error');
-							}
-						} else if (currencySaveButton) {
-							setButtonDisabled(currencySaveButton, true);
-							currencySaveButton.buttonEl.removeClass('numerals-settings-btn-ready', 'numerals-settings-btn-error');
-							currencySaveButton.buttonEl.addClass('numerals-settings-btn-disabled');
-							currencySaveButton.setButtonText('Save');
-						}		
-					});					
-					text.inputEl.setAttribute("maxlength", "1");
-					text.inputEl.addClass('numerals-settings-currency-input', 'numerals-settings-currency-symbol');
-						currencySymbolInput = text;
-					})
-					.addText(text => { text
-						.setPlaceholder('Code')				
-						.setValue(this.plugin.settings.customCurrencySymbol?.currency ?? "")
-						.onChange(async (value) => {
-							if(
-								(
-									(value.length == 0 && !currencySymbolInput?.getValue())
-								||
-									(value.length >= 1 && currencySymbolInput?.getValue())
-								) && currencySaveButton) {
-								if (currencySymbolInput?.getValue().match(/^\p{Sc}$/u) || value.length == 0) {
-									setButtonDisabled(currencySaveButton, false);
-								currencySaveButton.buttonEl.removeClass('numerals-settings-btn-disabled', 'numerals-settings-btn-error');
-								currencySaveButton.buttonEl.addClass('numerals-settings-btn-ready');
-								currencySaveButton.setButtonText('Save');
-							} else {
-								setButtonDisabled(currencySaveButton, true);
-								currencySaveButton.buttonEl.removeClass('numerals-settings-btn-disabled', 'numerals-settings-btn-ready');
-								currencySaveButton.buttonEl.addClass('numerals-settings-btn-error');
-								currencySaveButton.setButtonText('Error');
-							}
-						} else if (currencySaveButton) {
-							setButtonDisabled(currencySaveButton, true);
-							currencySaveButton.buttonEl.removeClass('numerals-settings-btn-ready', 'numerals-settings-btn-error');
-							currencySaveButton.buttonEl.addClass('numerals-settings-btn-disabled');
-							currencySaveButton.setButtonText('Save');
-						}		
-					});				
-					text.inputEl.setAttribute("maxlength", "3");
-					text.inputEl.addClass('numerals-settings-currency-input', 'numerals-settings-currency-code');
-						currencyCodeInput = text;					
-					})		
-					.addButton(button => {
-						button
-						.setButtonText('Save')
-						.onClick(async (evt) => {
-							if (currencySymbolInput && currencyCodeInput) {
-								const currencySymbol = currencySymbolInput.getValue();
-								const currencyCode = currencyCodeInput.getValue();
-								if(currencySymbol.match(/^\p{Sc}$/u)) {
-									this.plugin.settings.customCurrencySymbol = {
-										symbol: currencySymbol,
-										currency: currencyCode,
-										unicode: "x" + currencySymbol
-															.charCodeAt(0)
-															.toString(16)
-															.toUpperCase()
-															.padStart(4, '0'),
-										name: "custom",
-									}
-								} else if (currencySymbol.length == 0) {
-									this.plugin.settings.customCurrencySymbol = null;
-								}
-								await this.plugin.saveSettings();
-								setButtonDisabled(button, true);
-								button.buttonEl.removeClass('numerals-settings-btn-ready');
-								button.buttonEl.addClass('numerals-settings-btn-disabled');
-								button.setButtonText('✓');
-								ownerWindow.setTimeout(() => {
-									button.setButtonText('Save');
-								}, 1000);
-								this.plugin.updateCurrencyMap();
-							}
-						});
-						setButtonDisabled(button, true);
-						setButtonTooltip(button, 'Save custom currency mapping');
-						button.buttonEl.addClass('numerals-settings-save-btn', 'numerals-settings-btn-disabled');				
-						currencySaveButton = button;
-									
-					});				
-			
-		new Setting(containerEl)
-		.setHeading()
-		.setName('Obsidian integration');	
-
-		new Setting(containerEl)
-			.setName('Always process all frontmatter')
-			.setDesc(htmlToElements(`Always process all frontmatter values and make them available as variables in <code>\`math\`</code> blocks<br>`
-				+ `<br><b><i>Note:</i></b> To process frontmatter values on a per file and/or per property basis, set a value for the <code>\`numerals\`</code> property in a file's frontmatter.`
-				+ ` Supported values are:<ul><li><code>all</code></li><li>specific property to process</li><li>a list/array of properties to process</li></ul><br>`))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.forceProcessAllFrontmatter)
-				.onChange(async (value) => {
-					this.plugin.settings.forceProcessAllFrontmatter = value;
-					await this.plugin.saveSettings();
-				}
-			));
-
-		new Setting(containerEl)
-			.setName('Enable cross-note references')
-			.setDesc(htmlToElements(
-				`Reference values from other notes using <code>[[note]].property</code> syntax in math blocks and inline expressions.<br>`
-				+ `The referenced note must have the property available via frontmatter or Dataview metadata.`
-			))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enableCrossNoteReferences)
-				.onChange(async (value) => {
-					this.plugin.settings.enableCrossNoteReferences = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setHeading()
-			.setName('Inline Numerals'); // eslint-disable-line obsidianmd/ui/sentence-case
-
-		new Setting(containerEl)
-			.setName('Enable Inline Numerals') // eslint-disable-line obsidianmd/ui/sentence-case
-			.setDesc(htmlToElements(
-				`Evaluate math expressions in inline code when prefixed with a trigger string.<br>`
-				+ `For example: <code>#: 3ft in inches</code> renders as the result, `
-				+ `and <code>#=: 3ft + 2ft</code> shows the equation and result.`
-			))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enableInlineNumerals)
-				.onChange(async (value) => {
-					this.plugin.settings.enableInlineNumerals = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Result-only trigger')
-			.setDesc(htmlToElements(
-				`Prefix for inline code that shows only the result.<br>`
-				+ `Example: <code>#: 3 + 2</code> renders as <b>5</b><br>`
-				+ `Must differ from the other trigger prefixes.`
-			))
-			.addText(text => text
-				.setPlaceholder('#:')
-				.setValue(this.plugin.settings.inlineResultTrigger)
-				.onChange(async (value) => {
-					this.plugin.settings.inlineResultTrigger = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Equation trigger')
-			.setDesc(htmlToElements(
-				`Prefix for inline code that shows input and result.<br>`
-				+ `Example: <code>#=: 3 + 2</code> renders as <b>3 + 2 = 5</b><br>`
-				+ `Must differ from the other trigger prefixes.`
-			))
-			.addText(text => text
-				.setPlaceholder('#=:')
-				.setValue(this.plugin.settings.inlineEquationTrigger)
-				.onChange(async (value) => {
-					this.plugin.settings.inlineEquationTrigger = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('TeX result trigger') // eslint-disable-line obsidianmd/ui/sentence-case
-			.setDesc(htmlToElements(
-				`Prefix for inline code that renders only the result with TeX (MathJax).<br>`
-				+ `Example: <code>#$: sqrt(2)/2</code> renders the result as typeset math<br>`
-				+ `Must differ from the other trigger prefixes.`
-			))
-			.addText(text => text
-				.setPlaceholder('#$:')
-				.setValue(this.plugin.settings.inlineTexResultTrigger)
-				.onChange(async (value) => {
-					this.plugin.settings.inlineTexResultTrigger = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('TeX equation trigger') // eslint-disable-line obsidianmd/ui/sentence-case
-			.setDesc(htmlToElements(
-				`Prefix for inline code that renders the expression and result with TeX (MathJax).<br>`
-				+ `Example: <code>#$=: sqrt(2)/2</code> renders as typeset math like <b>√2⁄2 = 0.7071</b><br>`
-				+ `Must differ from the other trigger prefixes.`
-			))
-			.addText(text => text
-				.setPlaceholder('#$=:')
-				.setValue(this.plugin.settings.inlineTexEquationTrigger)
-				.onChange(async (value) => {
-					this.plugin.settings.inlineTexEquationTrigger = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Equation separator')
-			.setDesc('String shown between the expression and result in equation mode')
-			.addText(text => text
-				.setPlaceholder(' = ')
-				.setValue(this.plugin.settings.inlineEquationSeparator)
-				.onChange(async (value) => {
-					this.plugin.settings.inlineEquationSeparator = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Provide auto-complete suggestions in Inline Numerals') // eslint-disable-line obsidianmd/ui/sentence-case
-			.setDesc('Show auto-complete suggestions for variables, functions, and constants when editing Inline Numerals expressions') // eslint-disable-line obsidianmd/ui/sentence-case
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.provideInlineSuggestions)
-				.onChange(async (value) => {
-					this.plugin.settings.provideInlineSuggestions = value;
-					await this.plugin.saveSettings();
-				}));
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		const triggerNames = ['Result-only trigger', 'Equation trigger', 'TeX result trigger', 'TeX equation trigger'];
+		return [
+			...(this.plugin.configurationError ? [{ name: 'Currency configuration needs attention', desc: this.plugin.configurationError }] : []),
+			...(this.plugin.currencyWarnings ?? []).map(desc => ({ name: 'Currency alias', desc })),
+			{ name: 'Layout', desc: 'Choose the arrangement of expressions and results.', control: {
+				type: 'dropdown', key: 'layoutStyle', options: {
+					[NumeralsLayout.TwoPanes]: 'Two panes', [NumeralsLayout.AnswerRight]: 'Answer to the right',
+					[NumeralsLayout.AnswerBelow]: 'Answer below each line', [NumeralsLayout.AnswerInline]: 'Answer beside input',
+				},
+			} },
+			{ name: 'Default rendering style', desc: 'Choose how math blocks render by default.', control: {
+				type: 'dropdown', key: 'defaultRenderStyle', options: {
+					[NumeralsRenderStyle.Plain]: 'Plain text', [NumeralsRenderStyle.TeX]: 'TeX',
+					[NumeralsRenderStyle.SyntaxHighlight]: 'Syntax highlighting',
+				},
+			} },
+			{ type: 'group', heading: 'Appearance', items: [
+				{ name: 'Result indicator', desc: 'Show this text before a calculation result.', control: { type: 'text', key: 'resultSeparator' } },
+				{ name: 'Alternating row color', desc: 'Use alternating colors to distinguish rows.', control: { type: 'toggle', key: 'alternateRowColor' } },
+				{ name: 'Hide unannotated results', desc: 'Hide other results when a block uses result annotations.', control: { type: 'toggle', key: 'hideLinesWithoutMarkupWhenEmitting' } },
+				{ name: 'Hide result annotation markup', desc: 'Hide the => marker in rendered input.', control: { type: 'toggle', key: 'hideEmitterMarkupInInput' } },
+			] },
+			{ type: 'group', heading: 'Number and currency formatting', items: [
+				{ name: 'Rendered number format', desc: 'Choose the notation used for displayed numbers.', control: { type: 'dropdown', key: 'numberFormat', options: NumberalsNumberFormatSettingsStrings } },
+				{ name: 'Currency precision', desc: 'Choose the decimal-place policy for pure currency results.', control: {
+					type: 'dropdown', key: 'currencyPrecisionMode', options: {
+						[CurrencyPrecisionMode.CurrencyStandard]: 'Use currency standard',
+						[CurrencyPrecisionMode.FollowNumberFormat]: 'Use rendered number format',
+					},
+				} },
+				{ name: 'Currency display', desc: 'Choose codes or symbols for pure currency results.', control: {
+					type: 'dropdown', key: 'currencyDisplayMode', options: {
+						[CurrencyDisplayMode.Code]: 'Currency code', [CurrencyDisplayMode.Symbol]: 'Configured symbol',
+					},
+				} },
+				{ name: 'Custom currency decimal places', desc: 'Set standard precision for the custom currency.', control: {
+					type: 'number', key: 'customCurrencyDecimalPlaces', min: MIN_CURRENCY_DECIMAL_PLACES, max: MAX_CURRENCY_DECIMAL_PLACES, step: 1,
+					validate: value => settingError(this.plugin.settings, 'customCurrencyDecimalPlaces', value),
+					disabled: () => this.plugin.settings.currencyPrecisionMode !== CurrencyPrecisionMode.CurrencyStandard,
+				} },
+				...(['dollarSymbolCurrency', 'yenSymbolCurrency', 'customCurrencySymbol'] as const).map(key => ({
+					name: key === 'customCurrencySymbol' ? 'Custom currency mapping' : `${key === 'dollarSymbolCurrency' ? '$' : '¥'} currency mapping`,
+					desc: this.plugin.settings[key] ? `${this.plugin.settings[key].symbol} → ${this.plugin.settings[key].currency}` : 'Add a custom symbol and currency code.',
+					aliases: [key, 'Currency symbol'],
+					action: () => new CurrencyMappingModal(this.app, key, this.plugin.settings, async patch => {
+						await this.plugin.updateSettings(patch);
+						this.update();
+					}).open(),
+				})),
+			] },
+			{ type: 'group', heading: 'Metadata', items: [
+				{ name: 'Always process all frontmatter', desc: 'Make every frontmatter property available to calculations.', control: { type: 'toggle', key: 'forceProcessAllFrontmatter' } },
+				{ name: 'Enable cross-note references', desc: 'Read note properties with [[note]].property syntax.', control: { type: 'toggle', key: 'enableCrossNoteReferences' } },
+			] },
+			{ type: 'group', heading: 'Inline calculations', items: [
+				{ name: 'Enable inline calculations', desc: 'Evaluate inline code that begins with a configured trigger.', control: { type: 'toggle', key: 'enableInlineNumerals' } },
+				...inlineTriggerKeys.map((key, index) => ({ name: triggerNames[index],
+					desc: 'Set a distinct trigger or leave empty to disable this mode.', aliases: [key],
+					control: { type: 'text' as const, key, validate: (value: string) => settingError(this.plugin.settings, key, value) },
+				})),
+				{ name: 'Equation separator', desc: 'Show this text between the inline expression and result.', control: { type: 'text', key: 'inlineEquationSeparator' } },
+			] },
+			{ type: 'group', heading: 'Suggestions', items: [
+				{ name: 'Suggest in math blocks', desc: 'Show completions while editing math blocks.', control: { type: 'toggle', key: 'provideSuggestions' } },
+				{ name: 'Include functions and constants', desc: 'Include mathjs functions and constants in suggestions.', control: { type: 'toggle', key: 'suggestionsIncludeMathjsSymbols' } },
+				{ name: 'Suggest Greek characters', desc: 'Complete Greek character names after a colon.', control: { type: 'toggle', key: 'enableGreekAutoComplete' } },
+				{ name: 'Suggest in inline calculations', desc: 'Show completions while editing inline calculations.', control: { type: 'toggle', key: 'provideInlineSuggestions' } },
+			] },
+		];
 	}
 }

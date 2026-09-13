@@ -1,5 +1,5 @@
 import { App, TFile } from 'obsidian';
-import * as math from 'mathjs';
+import * as math from '../mathRuntime';
 import { NumeralsSettings, StringReplaceMap } from '../numerals.types';
 import { replaceStringsInTextFromMap } from './preprocessor';
 import { getScopeFromFrontmatter, removeCanonicalizedDuplicates } from './scope';
