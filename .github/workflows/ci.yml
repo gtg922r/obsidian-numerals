@@ -1,0 +1,59 @@
+name: Recovery checks
+
+on:
+  pull_request:
+    branches: [chore/recovery-1.11]
+  push:
+    branches: [chore/recovery-1.11]
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Reviewed tag to validate and package
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node 24
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0, Node 24
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Validate reviewed release source
+        if: inputs.release_tag != ''
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: node scripts/check-release.mjs --tag "$RELEASE_TAG" --reviewed
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run typecheck:tests
+      - run: npm run typecheck:scripts
+      - run: npm test -- --runInBand
+      - run: npm run test:toolchain
+      - run: npm run build
+      - run: npm run symbols:check
+      - run: npm run build:reproducible
+      - run: npm run release:check
+      - name: Package validated BRAT assets
+        if: inputs.release_tag != ''
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: node scripts/prepare-release-artifacts.mjs "$RELEASE_TAG"
+      - name: Upload validated artifacts
+        if: inputs.release_tag != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numerals-${{ github.sha }}
+          path: release/numerals/
+          if-no-files-found: error
+          retention-days: 7

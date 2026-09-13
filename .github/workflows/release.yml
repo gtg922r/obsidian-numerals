@@ -1,55 +1,113 @@
-name: Build And Release obsidian plugin
+name: BRAT prerelease
 
 on:
   push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-      - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
-
-env:
-  PLUGIN_NAME: numerals # Change this to the name of your plugin-id folder
+    tags: ["*"]
 
 permissions:
-  attestations: write
-  contents: write
-  id-token: write
-  artifact-metadata: write
+  contents: read
+
+# Serialize retries for a tag. An existing release fails the publish job.
+concurrency:
+  group: brat-prerelease-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  validate:
+    if: github.repository == 'gtg922r/obsidian-numerals'
+    uses: ./.github/workflows/ci.yml
+    with:
+      release_tag: ${{ github.ref_name }}
 
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22.x"
-      - name: Build
-        run: |
-          npm install
-          npm run build --if-present
-          node scripts/prepare-release-artifacts.mjs ${{ github.ref_name }}
-      - name: Attest release artifacts
-        uses: actions/attest@v4
-        with:
-          subject-path: |
-            release/${{ env.PLUGIN_NAME }}/main.js
-            release/${{ env.PLUGIN_NAME }}/manifest.json
-            release/${{ env.PLUGIN_NAME }}/styles.css
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      # This privileged job never checks out or executes project/PR code.
+      - name: Refuse to modify an existing release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/$GH_REPO/releases?per_page=100" --jq '.[].tag_name' > "$RUNNER_TEMP/release-tags.txt"
+          if grep -Fxq -- "$RELEASE_TAG" "$RUNNER_TEMP/release-tags.txt"; then
+            echo "Release already exists; use a new candidate version. No assets or release state will be replaced."
+            exit 1
+          fi
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: false
-          prerelease: true
-          body: |
-            # Numerals ${{ github.ref_name }}
-            -
-          files: |
-            release/${{ env.PLUGIN_NAME }}/main.js
-            release/${{ env.PLUGIN_NAME }}/manifest.json
-            release/${{ env.PLUGIN_NAME }}/styles.css
+          name: numerals-${{ github.sha }}
+          path: release/numerals
+      - name: Attest validated assets
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2, Node 24
+        with:
+          # Storage records apply to organization registries; this is a personal plugin repository.
+          create-storage-record: false
+          subject-path: |
+            release/numerals/main.js
+            release/numerals/manifest.json
+            release/numerals/styles.css
+      - name: Reserve, upload and publish a new BRAT draft
+        id: prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          VALIDATED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          verify_tag() {
+            gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" > "$RUNNER_TEMP/tag-ref.json"
+            for ((depth=0; depth<8; depth++)); do
+              kind=$(jq -er '.object.type' "$RUNNER_TEMP/tag-ref.json")
+              sha=$(jq -er '.object.sha | select(test("^[0-9a-f]{40}$"))' "$RUNNER_TEMP/tag-ref.json")
+              if [[ "$kind" == commit ]]; then
+                if [[ "$sha" != "$VALIDATED_SHA" ]]; then
+                  echo "Tag no longer points to the validated commit."
+                  return 1
+                fi
+                return 0
+              fi
+              [[ "$kind" == tag ]] || return 1
+              gh api "repos/$GH_REPO/git/tags/$sha" > "$RUNNER_TEMP/tag-ref.json"
+            done
+            echo "Tag indirection exceeds the supported limit."
+            return 1
+          }
+          verify_tag
+          integration_sha=$(gh api "repos/$GH_REPO/git/ref/heads/chore/recovery-1.11" --jq '.object.sha')
+          [[ "$integration_sha" == "$VALIDATED_SHA" ]] || { echo "Integration tip changed."; exit 1; }
+
+          jq -n --arg tag "$RELEASE_TAG" --arg sha "$VALIDATED_SHA" '{tag_name: $tag, target_commitish: $sha, name: $tag, draft: true, prerelease: true, make_latest: "false", generate_release_notes: true}' > "$RUNNER_TEMP/draft.json"
+          gh api --method POST "repos/$GH_REPO/releases" --input "$RUNNER_TEMP/draft.json" > "$RUNNER_TEMP/created-release.json"
+          release_id=$(jq -er --arg tag "$RELEASE_TAG" 'select(.draft == true and .prerelease == true and .tag_name == $tag) | .id | select(type == "number" and . > 0 and . == floor)' "$RUNNER_TEMP/created-release.json")
+          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
+
+          # Every upload addresses the newly reserved ID. POST rejects duplicate
+          # asset names; no tag rediscovery, deletion, replacement or clobber.
+          for asset in main.js manifest.json styles.css; do
+            gh api --method POST "https://uploads.github.com/repos/$GH_REPO/releases/$release_id/assets?name=$asset" -H "Content-Type: application/octet-stream" --input "release/numerals/$asset" > "$RUNNER_TEMP/upload-$asset.json"
+          done
+
+          gh api "repos/$GH_REPO/releases/$release_id" > "$RUNNER_TEMP/draft-state.json"
+          jq -e --arg tag "$RELEASE_TAG" --argjson id "$release_id" '.id == $id and .tag_name == $tag and .draft == true and .prerelease == true' "$RUNNER_TEMP/draft-state.json"
+          gh api --paginate --slurp "repos/$GH_REPO/releases/$release_id/assets?per_page=100" > "$RUNNER_TEMP/assets.json"
+          jq -e '[.[][] | .name] | sort == ["main.js", "manifest.json", "styles.css"]' "$RUNNER_TEMP/assets.json"
+          for asset in main.js manifest.json styles.css; do
+            size=$(wc -c < "release/numerals/$asset")
+            digest="sha256:$(sha256sum "release/numerals/$asset" | cut -d ' ' -f1)"
+            jq -e --arg name "$asset" --arg digest "$digest" --argjson size "$size" '[.[][] | select(.name == $name and .state == "uploaded" and .size == $size and .digest == $digest)] | length == 1' "$RUNNER_TEMP/assets.json"
+          done
+
+          # Recheck the tag before exposing the complete draft to BRAT.
+          verify_tag
+          jq -n --arg sha "$VALIDATED_SHA" '{draft: false, prerelease: true, make_latest: "false", target_commitish: $sha}' > "$RUNNER_TEMP/publish.json"
+          gh api --method PATCH "repos/$GH_REPO/releases/$release_id" --input "$RUNNER_TEMP/publish.json" > "$RUNNER_TEMP/published-release.json"
+          jq -e --argjson id "$release_id" '.id == $id and .draft == false and .prerelease == true' "$RUNNER_TEMP/published-release.json"

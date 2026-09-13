@@ -5,13 +5,14 @@
     "inlineSources": true,
     "module": "ESNext",
     "target": "ES2018",
-    "allowJs": true,
     "strict": true,
     "moduleResolution": "node",
     "importHelpers": true,
     "isolatedModules": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"],
     "lib": [
       "DOM",
       "ES5",
@@ -20,6 +21,7 @@
     ]
   },
   "include": [
-    "**/*.ts"
-  ]
+    "src/**/*.ts"
+  ],
+  "exclude": ["node_modules", "**/worktrees/**", "**/.worktrees/**", "**/.codex/**", "**/.git/**"]
 }

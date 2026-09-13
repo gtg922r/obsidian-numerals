@@ -5,7 +5,7 @@ import obsidianmd from "eslint-plugin-obsidianmd";
 
 export default defineConfig([
   // Ignore non-source files
-  { ignores: ["__mocks__/**", "tests/**", "scripts/**", "src/**/*.test.ts"] },
+  { ignores: ["__mocks__/**", "tests/**", "scripts/**", "src/**/*.test.ts", "**/worktrees/**", "**/.worktrees/**", "**/.codex/**", "**/.git/**"] },
 
   ...obsidianmd.configs.recommended,
   {

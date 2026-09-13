@@ -1,57 +1,30 @@
-import { readFileSync } from "fs";
-import { execSync } from "child_process";
+import { execFileSync } from 'node:child_process';
+import { assertCleanWorktree, assertReleaseAbsent, assertReviewedCommit, git, readCandidate, RECOVERY_BRANCH } from './release-policy.mjs';
 
-function readPackageVersion() {
-    const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
-    const version = packageJson.version;
-
-    if (!/^\d+\.\d+\.\d+$/.test(version)) {
-        throw new Error(`Beta releases use production-shaped versions like 1.10.0. Found: ${version}`);
+try {
+    const { version } = readCandidate();
+    assertCleanWorktree();
+    if (git('branch', '--show-current') !== RECOVERY_BRANCH) {
+        throw new Error(`Only the owner on ${RECOVERY_BRANCH} may create a recovery prerelease tag.`);
     }
-
-    return version;
-}
-
-function assertCleanWorktree() {
-    const status = execSync("git status --porcelain", { encoding: "utf8" }).trim();
-    if (status) {
-        throw new Error("Commit or stash changes before creating a beta release tag.");
+    git('fetch', '--no-tags', 'origin',
+        `+refs/heads/${RECOVERY_BRANCH}:refs/remotes/origin/${RECOVERY_BRANCH}`,
+        '+refs/heads/master:refs/remotes/origin/master');
+    const reviewedHead = assertReviewedCommit();
+    if (git('tag', '--list', version) || git('ls-remote', '--tags', 'origin', `refs/tags/${version}`)) {
+        throw new Error(`Tag ${version} already exists; never move tags. Bump the candidate version.`);
     }
+    assertReleaseAbsent(version, 'gtg922r/obsidian-numerals');
+    execFileSync('npm', ['ci'], { stdio: 'inherit' });
+    execFileSync('npm', ['run', 'check'], { stdio: 'inherit' });
+    assertCleanWorktree();
+    readCandidate(version);
+    if (git('rev-parse', 'HEAD') !== reviewedHead) throw new Error('HEAD changed during validation.');
+    git('tag', version, reviewedHead);
+    // A failed push leaves the local tag for owner inspection; never force/replace it.
+    execFileSync('git', ['push', 'origin', `refs/tags/${version}:refs/tags/${version}`], { stdio: 'inherit' });
+    console.log(`Pushed ${version}. GitHub Actions will create a BRAT prerelease with make_latest:false.`);
+} catch (error) {
+    console.error(`Prerelease stopped: ${error.message}`);
+    process.exitCode = 1;
 }
-
-async function releaseBeta() {
-    try {
-        console.log("🚀 Starting beta release process...");
-
-        const currentVersion = readPackageVersion();
-
-        console.log(`📦 Preparing beta release: ${currentVersion}`);
-        console.log("🔎 Checking working tree...");
-        assertCleanWorktree();
-
-        console.log("🔨 Building project...");
-        execSync("npm run build", { stdio: "inherit" });
-
-        console.log("🏷️  Creating and pushing beta git tag...");
-        execSync(`git tag ${currentVersion}`, { stdio: "inherit" });
-        execSync(`git push origin ${currentVersion}`, { stdio: "inherit" });
-
-        // Get current branch name for PR URL
-        const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
-
-        console.log(`✅ Beta release tag pushed: ${currentVersion}`);
-        console.log("🚀 GitHub Actions will build a published prerelease for BRAT.");
-        console.log(`📦 Release page: https://github.com/gtg922r/obsidian-numerals/releases/tag/${currentVersion}`);
-
-        // Only show PR link if not on master branch
-        if (currentBranch !== 'master') {
-            console.log(`📋 Create PR: https://github.com/gtg922r/obsidian-numerals/compare/master...${currentBranch}?quick_pull=1&title=Beta%20Release%20${currentVersion}&body=Beta%20release%20for%20version%20${currentVersion}`);
-        }
-
-    } catch (error) {
-        console.error("❌ Beta release failed:", error.message);
-        process.exit(1);
-    }
-}
-
-releaseBeta(); 
