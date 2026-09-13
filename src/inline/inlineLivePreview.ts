@@ -1,7 +1,7 @@
 import { EditorView, ViewPlugin, type ViewUpdate, Decoration, type DecorationSet, WidgetType } from '@codemirror/view';
-import { type EditorSelection, type EditorState, type Range, StateEffect } from '@codemirror/state';
+import { type EditorSelection, type EditorState, type Range, StateEffect, StateField } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
-import { editorInfoField, editorLivePreviewField } from 'obsidian';
+import { editorInfoField, editorLivePreviewField, type Editor, type TFile } from 'obsidian';
 import { NumeralsRenderStyle, InlineNumeralsMode } from '../numerals.types';
 import type { FormattedResult } from '../formatting';
 import { SourceRegistry, type SurfaceSource } from '../host/sourceRegistry';
@@ -93,15 +93,45 @@ export class InlineNumeralsWidget extends WidgetType {
  }
 }
 
-const refreshSnapshot = StateEffect.define<null>();
 const isLivePreview = (state: EditorState) => state.field(editorLivePreviewField, false) === true;
+
+interface InlineProjection {
+ readonly document: EditorState['doc'];
+ readonly editor?: Editor;
+ readonly file?: TFile;
+ readonly path?: string;
+ readonly ranges: DecorationSet;
+ readonly signal: AbortSignal;
+}
+const refreshSnapshot = StateEffect.define<InlineProjection>();
+
+/** Pure presentation carrier. Direct decorations may replace source line breaks;
+ * viewport-dependent ViewPlugin decorations may not. Keep unmasked full-note
+ * ranges so selection and mode transitions never need another evaluation. */
+const inlineProjection = StateField.define<{projection?: InlineProjection; decorations: DecorationSet}>({
+ create: () => ({decorations: Decoration.none}),
+ update(value, transaction) {
+  let projection = transaction.docChanged ? undefined : value.projection;
+  const state = transaction.state, info = state.field(editorInfoField, false);
+  const matches = (candidate: InlineProjection) => !candidate.signal.aborted && candidate.document === state.doc &&
+   candidate.editor === info?.editor && candidate.file === (info?.file ?? undefined) && candidate.path === info?.file?.path;
+  if (projection && !matches(projection)) projection = undefined;
+  // An old queued effect must not replace a newer valid projection, including
+  // empty/unmapped projections. Every publication carries the same identity guard.
+  for (const effect of transaction.effects) if (effect.is(refreshSnapshot) && matches(effect.value)) projection = effect.value;
+  return {projection, decorations: projection && isLivePreview(state)
+   ? projection.ranges.update({filter: (from, to) => !selectionOverlapsRange(state.selection, from, to)}) : Decoration.none};
+ },
+ provide: field => EditorView.decorations.from(field, value => value.decorations),
+});
 
 /** The full note is evaluated independently of viewport and selection. This adapter only projects it. */
 export function createInlineLivePreviewExtension(registry: SourceRegistry) {
  return ViewPlugin.fromClass(class {
-  decorations: DecorationSet = Decoration.none;
+  get decorations(): DecorationSet { return this.destroyed ? Decoration.none : this.view.state.field(inlineProjection).decorations; }
   private readonly input = new TrustedInputRoot();
   private source?: SurfaceSource;
+  private sourceId?: string;
   private stopSource = () => {};
   private stopRegistry: () => void;
   private destroyed = false;
@@ -111,23 +141,28 @@ export function createInlineLivePreviewExtension(registry: SourceRegistry) {
   constructor(private readonly view: EditorView) {
    this.stopRegistry = registry.subscribe(() => { if (!registry.active) this.destroy(); else this.changed(); });
    // Initialization may precede DOM attachment; layout reconciliation will prove it later.
-   this.bind(); this.rebuild();
+   this.bind(); this.schedule();
   }
   observe(event: Event): void { this.input.observe(event, this.view); }
   update(update: ViewUpdate): void {
    const root = this.input.consume(update);
-   this.bind();
-   if (update.docChanged && this.source?.editor) registry.sourceChanged(this.source.editor, root);
-   if (update.docChanged || update.selectionSet || update.viewportChanged ||
+   const rebound = this.bind();
+   if (update.docChanged && this.source?.editor) registry.sourceChanged(this.source.editor, root && !rebound);
+   if (rebound || update.docChanged || update.viewportChanged ||
     isLivePreview(update.startState) !== isLivePreview(update.state) ||
-    update.transactions.some(transaction => transaction.effects.some(effect => effect.is(refreshSnapshot)))) this.rebuild();
+    syntaxTree(update.startState) !== syntaxTree(update.state)) this.schedule();
   }
-  private bind(): void {
+  private bind(): boolean {
    const source = registry.fromCodeMirror(this.view, this.view.state.field(editorInfoField, false));
-   if (source?.identity === this.source?.identity) return;
-   this.stopSource(); this.input.clear(); this.source = source;
+   const sourceId = source && registry.coordinator.current(source.identity)?.sourceId;
+   // A reused Editor may own a replacement session/TFile even at the same path.
+   // An ordinary text invalidation temporarily hides current(); it is not a new attachment.
+   if (source?.identity === this.source?.identity && source?.path === this.source?.path &&
+    (sourceId === undefined || sourceId === this.sourceId)) return false;
+   this.stopSource(); this.input.clear(); this.source = source; this.sourceId = sourceId;
    this.stopSource = source ? registry.coordinator.subscribe(source.identity, () => this.changed()) : () => {};
    this.refreshLifetime();
+   return true;
   }
   private refreshLifetime(): void {
    const state = this.source && registry.coordinator.current(this.source.identity)?.state;
@@ -140,21 +175,27 @@ export function createInlineLivePreviewExtension(registry: SourceRegistry) {
    this.queued = true;
    void Promise.resolve().then(() => {
     this.queued = false;
-    if (!this.destroyed) this.view.dispatch({effects: refreshSnapshot.of(null)});
+    if (!this.destroyed) {
+     this.bind();
+     const projection = this.project();
+     if (!this.destroyed) this.view.dispatch({effects: refreshSnapshot.of(projection)});
+    }
    });
   }
-  private rebuild(): void {
+  private project(): InlineProjection {
    this.refreshLifetime();
-   this.decorations = Decoration.none;
-   if (!this.source || !isLivePreview(this.view.state)) return;
-   const current = registry.coordinator.current(this.source.identity);
-   if (!current || !current.settings.enableInlineNumerals || current.index.source.text !== this.view.state.doc.toString()) return;
+   const source = this.source, signal = this.lifetime.signal;
+   const state = this.view.state, info = state.field(editorInfoField, false);
+   const empty: InlineProjection = {document: state.doc, editor: info?.editor, file: info?.file ?? undefined,
+    path: info?.file?.path, ranges: Decoration.none, signal};
+   if (!source?.editor || !info?.file) return empty;
+   const current = registry.coordinator.current(source.identity);
+   if (!current || !current.settings.enableInlineNumerals || current.index.source.text !== state.doc.toString()) return empty;
    const snapshot = current.state.status === 'ready' ? current.state.snapshot : undefined;
-   const runtime = snapshot && registry.coordinator.renderContext(this.source.identity, snapshot);
+   const runtime = snapshot && registry.coordinator.renderContext(source.identity, snapshot);
    const decorations: Range<Decoration>[] = [];
    for (const calculation of current.index.calculations) {
-    if (calculation.kind !== 'inline' || !this.view.visibleRanges.some(range => range.from < calculation.span.end && range.to > calculation.span.start) ||
-     selectionOverlapsRange(this.view.state.selection, calculation.span.start, calculation.span.end)) continue;
+    if (calculation.kind !== 'inline') continue;
     const result = snapshot?.calculations.find(item => item.calculationId === calculation.id);
     let error = result?.diagnostic?.message ?? (current.state.status === 'error' ? current.state.message :
      !snapshot ? 'Updating calculation…' : !result ? snapshot.diagnostics[0]?.message ?? 'Calculation unavailable.' : undefined);
@@ -172,18 +213,23 @@ export function createInlineLivePreviewExtension(registry: SourceRegistry) {
     }
     // Syntax metadata controls appearance only; all values/order come from the full-note snapshot.
     const widget = new InlineNumeralsWidget(formatted, calculation.mode === 'equation' ? InlineNumeralsMode.Equation : InlineNumeralsMode.ResultOnly,
-     calculation.expression.text, current.settings.inlineEquationSeparator, Boolean(error), inheritedFormatting(this.view.state, calculation.opener.end),
-     style, inputTeX, error, this.lifetime.signal);
+     calculation.expression.text, current.settings.inlineEquationSeparator, Boolean(error), inheritedFormatting(state, calculation.opener.end),
+     style, inputTeX, error, signal);
     decorations.push(Decoration.replace({widget}).range(calculation.span.start, calculation.span.end));
    }
-   this.decorations = Decoration.set(decorations, true);
+   const latest = registry.coordinator.current(source.identity);
+   if (this.source !== source || this.view.state !== state || signal.aborted || latest?.state !== current.state ||
+    latest.index !== current.index || latest.settings !== current.settings ||
+    registry.fromCodeMirror(this.view, info)?.identity !== source.identity) return empty;
+   return {document: state.doc, editor: source.editor, file: info.file, path: source.path,
+    ranges: Decoration.set(decorations, true), signal};
   }
   destroy(): void {
    if (this.destroyed) return;
-   this.destroyed = true; this.lifetime.abort(); this.input.clear(); this.stopSource(); this.stopRegistry(); this.decorations = Decoration.none;
+   this.destroyed = true; this.lifetime.abort(); this.input.clear(); this.stopSource(); this.stopRegistry();
   }
  }, {
-  decorations: plugin => plugin.decorations,
+  provide: () => inlineProjection,
   eventObservers: {
    input(event) { this.observe(event); },
    paste(event) { this.observe(event); },

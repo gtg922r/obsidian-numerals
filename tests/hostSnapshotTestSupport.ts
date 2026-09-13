@@ -1,6 +1,6 @@
 import type { Editor } from 'obsidian';
 import { all, create } from 'mathjs';
-import { SnapshotCoordinator, type SourceOwner, type SnapshotConfiguration } from '../src/host/snapshotCoordinator';
+import { SnapshotCoordinator, type SourceOwner, type SnapshotConfiguration, type CoordinatorInputs } from '../src/host/snapshotCoordinator';
 import { createDefaultSettings } from '../src/settings/normalization';
 import { createNumberFormatProfile, createResultFormatter } from '../src/formatting';
 import { sourceLineAt, sourceLineStarts } from '../src/evaluation/sourceIndex';
@@ -27,7 +27,7 @@ export function snapshotFixture(source: string) {
 		return {line, ch: offset - starts[line]};
 	}} as unknown as Editor;
 	const owner: SourceOwner = {identity: editor, editor, file: () => file, text: () => text, attached: () => attached};
-	const capture = jest.fn(() => ({parseYaml}));
+	const capture = jest.fn<ReturnType<CoordinatorInputs['capture']>, Parameters<CoordinatorInputs['capture']>>(() => ({parseYaml}));
 	const coordinator = new SnapshotCoordinator({configuration: () => configuration, capture});
 	coordinator.attach(owner);
 	return {coordinator, editor, owner, engine, capture, transaction,
