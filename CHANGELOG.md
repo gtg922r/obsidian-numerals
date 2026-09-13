@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. The format 
 - Currency-standard decimal places by default and optional configured-symbol display for pure currency results, including derived currency values. Currency-code display remains the default. (Closes #160)
 
 ### Changed
+- Disable legacy tag publication and beta/production release commands on stable maintenance. BRAT prereleases use the separately reviewed recovery branch; stable 1.10.2 distribution remains unchanged.
 - Run stable maintenance pull requests on Node 24 with locked installs, separate strict production/test/script typechecks, Jest, lint, symbol checks, reproducible builds and guards preserving stable metadata and plugin source. Exclude nested worktrees from development checks.
 - Centralized block, inline, TeX, and result-insertion formatting behind one result-formatting pipeline so evaluation always retains raw mathjs values.
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.

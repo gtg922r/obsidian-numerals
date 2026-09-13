@@ -326,15 +326,7 @@ node scripts/check-stable-maintenance.mjs
 
 ### Versioning
 
-Update the version number in `package.json`:
-
-```bash
-npm run version:patch
-npm run version:minor
-npm run version:major
-```
-
-These commands only update `package.json`. Stable release metadata is updated by the production release script.
+Stable maintenance preserves `package.json`, `package-lock.json`, `manifest.json` and `versions.json` byte-for-byte at their existing 1.10.2 state. Do not run version-bump commands here. Candidate version changes belong on `chore/recovery-1.11` and must follow that branch's reviewed procedure.
 
 ### Mathjs Symbol Suggestions
 
@@ -356,19 +348,9 @@ Review the generated diff and adjust explicit exclusions in `scripts/mathjs-symb
 
 ### Releases
 
-Create a pre-release for BRAT users:
+Publication from this stable maintenance branch is disabled. The tag workflow and `npm run release`, `npm run release:beta` and `npm run release:production` fail without publishing or updating metadata.
 
-```bash
-npm run release:beta
-```
-
-Promote a tested version to the stable Obsidian release channel:
-
-```bash
-npm run release
-```
-
-Production releases update `manifest.json` and `versions.json`, build the project, commit stable release metadata, and promote the matching GitHub release. GitHub Actions generates release assets from the tag, including a tag-matched `manifest.json`, and creates GitHub Artifact Attestations for uploaded files.
+Only the owner may prepare BRAT prereleases from the reviewed `chore/recovery-1.11` branch, using its own validation and publication workflow. Stable remains 1.10.2; production promotion, moving existing tags and replacing published assets are prohibited. Keep this branch's publication-denial files separate from the recovery publisher.
 
 ## Related
 

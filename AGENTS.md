@@ -94,11 +94,11 @@ npm run lint
 
 ## Versioning & releases
 
-- Use `npm run version:patch|minor|major` to bump version in `package.json`
-- Beta releases use production-shaped version tags like `1.10.0` (no `-beta` suffix). `npm run release:beta` tags the current `package.json` version and GitHub Actions publishes a GitHub prerelease for BRAT users.
-- Production releases promote the tested prerelease: `npm run release` updates stable `manifest.json` and `versions.json`, then the matching GitHub release should be flipped from prerelease to full release.
-- Do not reintroduce `manifest-beta.json`; modern BRAT installs beta builds from GitHub release assets.
-- GitHub Actions generates release assets from the tag, including a tag-matched `manifest.json`, and creates GitHub Artifact Attestations for the uploaded files.
+- This is stable maintenance: keep `package.json`, `package-lock.json`, `manifest.json`, `versions.json` and plugin source unchanged from stable 1.10.2. Do not run version-bump commands here.
+- The tag workflow and beta/production release entrypoints unconditionally refuse publication. Do not re-enable them or add bypass flags.
+- Only the owner may publish BRAT prereleases from the reviewed `chore/recovery-1.11` checkout using that branch's accepted guards. Never promote stable, move existing tags or replace published assets.
+- Do not copy these branch-specific publication-denial files into the recovery branch or weaken its publisher.
+- Do not reintroduce `manifest-beta.json`; modern BRAT uses GitHub release assets.
 
 ## Security, privacy, and compliance
 
