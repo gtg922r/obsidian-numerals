@@ -328,7 +328,7 @@ describe('formatter consumers', () => {
 			index: 0,
 			rawInput: 'total = 1234.5 GBP',
 			processedInput: 'total = 1234.5 GBP',
-			result: value,
+			formattedResult: formatted,
 			isEmpty: false,
 			isEmitter: false,
 			isHidden: false,
@@ -337,9 +337,7 @@ describe('formatter consumers', () => {
 		const context: RenderContext = {
 			renderStyle: NumeralsRenderStyle.Plain,
 			settings: DEFAULT_SETTINGS,
-			formatter,
-			formatOverrides: {},
-			preProcessors: [],
+			signal: new AbortController().signal,
 		};
 		const plainContainer = document.createElement('div');
 		const texContainer = document.createElement('div');

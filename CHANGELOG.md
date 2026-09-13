@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Added
 - Upload the three checked candidate files from ordinary recovery CI as a separate acceptance artifact named by the actual tested commit, without requiring a tag or publishing a release.
+- Add **Update stored results**, an explicit one-shot command for the current editor, plus a compact architecture map and recovery surface/insertion contracts.
 - Add an unpublished recovery usage guide covering source order, variable scope, metadata freshness, grouping, formatting and safe insertion. Keep the README stable guide distinct and document recovery-specific checks and release boundaries.
 - Add a disposable Linux CI harness that records official Obsidian Reading callbacks and Live Preview trees for 95 byte-preserved synthetic extraction fixtures, with verified native activity from each primary note, callback origins, support-note hashes, pinned inputs and bounded cancellation.
 - Add a host-independent whole-note source index, ordered evaluation service, and detached result snapshots for the recovery surface integration. Metadata seeds, reference dependencies, insertion provenance, and suggestion symbols share one captured generation.
@@ -15,6 +16,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Changed
 - Record accepted source evaluation, verified CI acceptance artifacts, default development-dependency remediation and stable/recovery documentation in the work ledger; define bounded automatic insertion and an explicit stored-result update action without changing source freshness or stable publication.
+- Render blocks, Reading inline code and Live Preview from one complete source-ordered snapshot per proved editor generation; selection, scrolling, mode changes and presentation settings project retained results without rerunning math.
+- Replace automatic whole-line insertion with one guarded whole-note transaction per independently initiated input cycle, preserving exact directive spans and requiring an explicit command after metadata feedback or ambiguous input.
 - Pin the private standalone Markdown parser to `@lezer/markdown` 1.7.2 after accepted Obsidian 1.13.7 Linux extraction validation; bundle its common/highlight dependencies while preserving host CodeMirror boundaries.
 - Provide all settings through Obsidian 1.13 native searchable definitions. Currency changes use explicit Save/Cancel forms, preserve valid saved preferences, and validate complete settings with legacy migration and duplicate-trigger protection.
 - Pin Obsidian 1.13.1 typings and the 0.4.2 Obsidian linter; adopt native DOM helpers and keep their owning-document behavior.
@@ -34,6 +37,8 @@ All notable changes to this project will be documented in this file. The format 
 ### Fixed
 - Resolve captured cross-note metadata in one private batch with actual dependency provenance, independent typed copies, and preserved raw nested-property/array semantics; avoid repeated sampling, missing-reference side effects and stale-cache authority.
 - Copy declarative metadata through own data properties throughout arrays, plain objects and native Matrix/ResultSet contents, preventing provider accessors or iterators from executing during capture while preserving shared and cyclic values.
+- Keep repeated/partial Reading callbacks, raw HTML code and conservative footnote bindings tied to indexed source occurrences; reject table-cell, embed and stale/detached editor capabilities while sharing proved detached callback mathematics.
+- Cancel stale capture and MathJax work, retain reentrant surface invalidations, restore inline formatting classes and visible formatting diagnostics, and keep settings accessible when MathJax fails.
 - Match accepted Obsidian fence language tokens, inline HTML boundaries and quoted content tabs in the standalone source index; normalize parser line endings while retaining original UTF-16 mappings; withhold ambiguous quoted fences with diagnostics and preserve physical source order. Record all 95 native Linux extraction cases with explicit conservative source policies.
 - Read complete insertion wrappers containing matrices, nested collections, quoted brackets, and escaped quotes; preserve their exact source spans and existing serialized values when reprocessing a block.
 - Give rendered blocks and Reading inline elements disposable occurrence ownership; refresh native/Dataview and missing-reference changes, initialize Source-mode subscriptions, cancel queued work on unload, and support popout Text/SVG click navigation.

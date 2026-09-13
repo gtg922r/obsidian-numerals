@@ -1,4 +1,4 @@
-import { finishRenderMath, renderMath, sanitizeHTMLToDom } from 'obsidian';
+import { sanitizeHTMLToDom } from 'obsidian';
 import { getMathRuntime, MathJsInstance } from '../mathRuntime';
 export { defaultCurrencyMap } from '../settings/currencies';
 
@@ -93,18 +93,6 @@ export function htmlToElements(html: string): DocumentFragment {
 	const sanitizedHTML = sanitizeHTMLToDom(html);
 	return sanitizedHTML;
   }
-
-export async function mathjaxLoop(
-	container: HTMLElement,
-	value: string,
-	displayMode = true
-): Promise<void> {
-	const html = renderMath(value, displayMode);
-	await finishRenderMath();
-
-	// container.empty();
-	container.append(html);
-}
 
 /**
  * Return a function that formats a number according to the given locale

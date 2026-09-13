@@ -2,8 +2,7 @@
  * Tests for InlineNumeralsWidget and Live Preview helpers.
  *
  * Tests the DOM output, equality logic, formatting class extraction,
- * and selection overlap checking. The ViewPlugin itself requires a
- * real CM6 EditorView and cannot be meaningfully unit-tested.
+ * and selection overlap checking. The ViewPlugin is exercised with real CM6 EditorViews in inlineHostLifecycle.test.ts.
  */
 
 jest.mock('obsidian', () => ({
@@ -176,9 +175,8 @@ describe('InlineNumeralsWidget', () => {
 			expect(el.querySelector('.numerals-inline-value')?.textContent).toBe('5 ft');
 		});
 
-		it('should fall back to plain text when MathJax rendering fails asynchronously', async () => {
-			// mathjaxLoop is async, so a renderMath failure is a promise
-			// rejection — the renderer must catch it and fall back to text.
+		it('shows an owned diagnostic when MathJax rendering fails', async () => {
+			// Synchronous MathJax failure is contained by the owned async renderer.
 			(renderMath as jest.Mock).mockImplementationOnce(() => {
 				throw new Error('MathJax unavailable');
 			});
@@ -189,13 +187,13 @@ describe('InlineNumeralsWidget', () => {
 			const el = widget.toDOM();
 			await Promise.resolve();
 
-			expect(el.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('36');
+			expect(el.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toContain('MathJax unavailable');
 		});
 
 		it('should render equation TeX mode with MathJax input and value spans', async () => {
 			const widget = new InlineNumeralsWidget(
 				formatted('12', '12'), InlineNumeralsMode.Equation, 'sqrt(144)', ' = ', false,
-				[], NumeralsRenderStyle.TeX, 'sqrt(144)'
+				[], NumeralsRenderStyle.TeX, '\\sqrt{144}'
 			);
 			const el = widget.toDOM();
 			await Promise.resolve();
@@ -229,7 +227,8 @@ describe('InlineNumeralsWidget', () => {
 			const el = widget.toDOM();
 
 			expect(el.classList.contains('numerals-inline-error')).toBe(true);
-			expect(el.textContent).toBe('bad expression');
+			expect(el.textContent).toContain('bad expression');
+			expect(el.textContent).toContain('Unable to evaluate');
 			expect(el.querySelector('.numerals-inline-value')).toBeNull();
 		});
 

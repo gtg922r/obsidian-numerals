@@ -1,199 +1,11 @@
-import { ReferenceEvaluationError, ReferenceDependency, parseCrossNoteReferences } from '../processing/crossNoteResolver';
-import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
-import { NumeralsSettings, NumeralsScope, StringReplaceMap, InlineNumeralsMode, InlineEvaluationResult, NumeralsRenderStyle } from '../numerals.types';
-import type { FormattedResult, ResultFormatter } from '../formatting';
-import { getMetadataForFileAtPath, getScopeFromFrontmatter } from '../processing/scope';
+import { type MarkdownPostProcessorContext, MarkdownRenderChild, type MarkdownSectionInformation } from 'obsidian';
+import { type NumeralsSettings, InlineNumeralsMode } from '../numerals.types';
 import { getInlineTriggers, parseInlineExpression } from './inlineParser';
-import { evaluateInlineExpression } from './inlineEvaluator';
-import { affectsOccurrence, HostEventHub, HostEventSource } from '../host/events';
-import { renderInlineInputContent, renderInlineValueContent } from './inlineRenderer';
-
-/**
- * Write `$`-prefixed globals to the shared scope cache.
- * This makes inline-defined globals visible to subsequent code blocks
- * and inline expressions in later sections.
- */
-function addGlobalsToScopeCache(
-	scopeCache: Map<string, NumeralsScope>,
-	sourcePath: string,
-	globals: Map<string, unknown>
-): void {
-	let pageScope = scopeCache.get(sourcePath);
-	if (!pageScope) {
-		pageScope = new NumeralsScope();
-		scopeCache.set(sourcePath, pageScope);
-	}
-	for (const [key, value] of globals) {
-		pageScope.set(key, value);
-	}
-}
-
-/**
- * Render an Inline Numerals result into a container element.
- *
- * Replaces the content of the given element with the evaluated result.
- * In Equation mode, shows "input = result". In ResultOnly mode, shows just the result.
- *
- * @param codeEl - The <code> element to render into
- * @param expression - The raw expression text (trigger already stripped)
- * @param mode - Whether to show result-only or equation style
- * @param renderStyle - Whether to render as plain text or TeX (from the matched trigger)
- * @param result - The formatted result string
- * @param settings - Plugin settings (for separator string)
- */
-function renderInlineResult(
-	codeEl: HTMLElement,
-	expression: string,
-	mode: InlineNumeralsMode,
-	renderStyle: NumeralsRenderStyle,
-	result: InlineEvaluationResult,
-	formattedResult: FormattedResult,
-	settings: NumeralsSettings,
-): void {
-	codeEl.empty();
-	codeEl.addClass('numerals-inline');
-
-	// TeX-rendered spans strip the code chrome so they read as native inline math
-	if (renderStyle === NumeralsRenderStyle.TeX) {
-		codeEl.addClass('numerals-inline-tex');
-	}
-
-	if (mode === InlineNumeralsMode.Equation) {
-		codeEl.addClass('numerals-inline-equation');
-		const inputEl = codeEl.createSpan({ cls: 'numerals-inline-input' });
-		renderInlineInputContent(
-			inputEl,
-			expression,
-			result.processedExpression,
-			renderStyle
-		);
-		codeEl.createSpan({ cls: 'numerals-inline-separator', text: settings.inlineEquationSeparator });
-		const valueEl = codeEl.createSpan({ cls: 'numerals-inline-value' });
-		renderInlineValueContent(
-			valueEl,
-			formattedResult,
-			renderStyle
-		);
-	} else {
-		codeEl.addClass('numerals-inline-result');
-		const valueEl = codeEl.createSpan({ cls: 'numerals-inline-value' });
-		renderInlineValueContent(
-			valueEl,
-			formattedResult,
-			renderStyle
-		);
-	}
-}
-
-/**
- * Render an error state for an inline expression.
- *
- * Shows the original expression in an error style so the user can see
- * what they typed and fix it.
- *
- * @param codeEl - The <code> element to render the error into
- * @param expression - The raw expression that failed
- */
-function renderInlineError(
-	codeEl: HTMLElement,
-	expression: string
-): void {
-	codeEl.empty();
-	codeEl.addClass('numerals-inline', 'numerals-inline-error');
-	codeEl.createSpan({ text: expression });
-}
-
-/**
- * Mutable reference to the previous inline evaluation result.
- * Used to thread `@prev` values through sequential inline expression processing.
- */
-interface PrevResultRef {
-	value: unknown;
-}
-
-interface InlineProcessingResult {
-	referencedPaths: string[];
-	dependencies: ReferenceDependency[];
-}
-
-/**
- * Process a single <code> element for inline Numerals.
- *
- * After evaluation, any `$`-prefixed variable assignments are:
- * 1. Written to the `scopeCache` for cross-section/cross-block visibility
- * 2. Injected into the shared `scope` for same-section inline→inline visibility
- *
- * @param codeEl - The inline <code> element
- * @param scope - The variable scope to evaluate against (also updated with globals)
- * @param settings - Plugin settings
- * @param formatter - Shared result formatter
- * @param preProcessors - String replacement preprocessors
- * @param prevResultRef - Mutable ref tracking the previous inline result (for @prev support)
- * @param scopeCache - Shared scope cache for note-global variables
- * @param sourcePath - File path for scopeCache keying
- */
-function processInlineCodeElement(
-	codeEl: HTMLElement,
-	text: string,
-	scope: NumeralsScope,
-	settings: NumeralsSettings,
-	formatter: ResultFormatter,
-	preProcessors: StringReplaceMap[],
-	prevResultRef: PrevResultRef,
-	scopeCache: Map<string, NumeralsScope>,
-	sourcePath: string,
-	app: App
-): InlineProcessingResult {
-	const parsed = parseInlineExpression(text, getInlineTriggers(settings));
-
-	if (!parsed) return { referencedPaths: [], dependencies: [] };
-
-	codeEl.dataset.numeralsInlineSource = text;
-
-	try {
-		const result = evaluateInlineExpression(
-			parsed.expression,
-			scope,
-			preProcessors,
-			prevResultRef.value,
-			app,
-			sourcePath,
-			settings,
-		);
-		const formattedResult = formatter.format(result.raw);
-		prevResultRef.value = result.raw;
-
-		// Propagate $-prefixed globals for note-wide visibility
-		if (result.globals.size > 0) {
-			for (const [key, value] of result.globals) {
-				// Update shared scope for same-section inline→inline visibility
-				scope.set(key, value);
-			}
-			// Write to scopeCache for cross-section/cross-block visibility
-			addGlobalsToScopeCache(scopeCache, sourcePath, result.globals);
-		}
-
-		renderInlineResult(
-			codeEl,
-			parsed.expression,
-			parsed.mode,
-			parsed.renderStyle,
-			result,
-			formattedResult,
-			settings
-		);
-		return { referencedPaths: result.referencedPaths, dependencies: result.dependencies };
-	} catch (error: unknown) {
-		prevResultRef.value = undefined;
-		renderInlineError(codeEl, parsed.expression);
-		codeEl.title = error instanceof Error ? error.message : 'Unable to evaluate this calculation.';
-		return { referencedPaths: error instanceof ReferenceEvaluationError ? error.referencedPaths : [],
-			dependencies: error instanceof ReferenceEvaluationError ? error.dependencies :
-				parseCrossNoteReferences(parsed.expression).map(reference => ({ ...reference, sourcePath, status: 'missing-note' as const })),
-		};
-	}
-}
-
+import { renderInlinePresentation } from './inlineRenderer';
+import { SourceRegistry, observedContextContainer } from '../host/sourceRegistry';
+import { SurfaceSubscription } from '../host/surfaceSubscription';
+import { bindReadingCodes } from '../host/occurrenceBinding';
+import { inputPresentation } from '../host/presentation';
 
 const inlineClasses = ['numerals-inline', 'numerals-inline-tex', 'numerals-inline-equation', 'numerals-inline-result', 'numerals-inline-error'];
 
@@ -202,9 +14,9 @@ class InlineOccurrence extends MarkdownRenderChild {
 	source: string;
 	readonly originalTitle: string;
 	readonly ownershipPath: string;
-	dependencies: InlineProcessingResult = { referencedPaths: [], dependencies: [] };
 	disposed = false;
 	private renderedNodes: Node[] | undefined;
+	private limitation?: HTMLElement;
 
 	constructor(readonly code: HTMLElement, readonly context: MarkdownPostProcessorContext,
 		readonly refresh: () => void, private readonly released: () => void) {
@@ -241,7 +53,16 @@ class InlineOccurrence extends MarkdownRenderChild {
 		delete this.code.dataset.numeralsInlineSource;
 	}
 
+	showLimitation(message: string): void {
+		this.limitation?.remove();
+		const element = this.code.ownerDocument.createElement('span');
+		element.className = 'numerals-inline-error';
+		element.textContent = ` (${message})`;
+		this.code.after(element); this.limitation = element;
+	}
+
 	restore(): void {
+		this.limitation?.remove(); this.limitation = undefined;
 		if (!this.renderedNodes) return;
 		if (this.ownsPresentation()) this.code.textContent = this.source;
 		this.clearOwnership();
@@ -257,96 +78,138 @@ class InlineOccurrence extends MarkdownRenderChild {
 	onunload(): void { this.dispose(); }
 }
 
+
 export interface InlinePostProcessor {
-	(el: HTMLElement, ctx: MarkdownPostProcessorContext): void;
-	dispose(): void;
+ (el: HTMLElement, ctx: MarkdownPostProcessorContext): void;
+ dispose(): void;
 }
 
-/** Reading occurrences subscribe even while disabled or waiting for missing references. */
-export function createInlineNumeralsPostProcessor(
-	app: App, getSettings: () => NumeralsSettings, getFormatter: () => ResultFormatter,
-	getPreProcessors: () => StringReplaceMap[], scopeCache: Map<string, NumeralsScope>,
-	hostEvents?: HostEventSource,
-): InlinePostProcessor {
-	const ownedEvents = hostEvents ? undefined : new HostEventHub(app);
-	const events = hostEvents ?? ownedEvents!;
-	const occurrences = new WeakMap<HTMLElement, InlineOccurrence>();
-	const active = new Set<InlineOccurrence>();
-	let disposed = false;
+interface ReadingSection {
+ readonly root: HTMLElement;
+ readonly context: MarkdownPostProcessorContext;
+ readonly sourcePath: string;
+ readonly items: Set<InlineOccurrence>;
+ subscription: SurfaceSubscription;
+}
 
-	const processor = (el: HTMLElement, ctx: MarkdownPostProcessorContext): void => {
-		if (disposed) return;
-		const codes = [...(el.matches('code') ? [el] : []), ...Array.from(el.querySelectorAll<HTMLElement>('code'))]
-			.filter(code => !code.closest('pre'));
-		// Find ownership before inspecting text: existing code DOM contains rendered results.
-		const refresh = new Set<() => void>();
-		const newCodes = codes.filter(code => {
-			const existing = occurrences.get(code);
-			if (!existing) return true;
-			if (existing.context === ctx && existing.ownershipPath === ctx.sourcePath) {
-				if (existing.reconcileSource()) refresh.add(existing.refresh);
-				return false;
-			}
-			// The former host child must never unload the replacement owner.
-			existing.dispose();
-			return true;
-		});
-		for (const rerender of refresh) rerender();
-		if (!newCodes.length) return;
-		const section: InlineOccurrence[] = [];
-		let sourcePath = ctx.sourcePath, pending = false;
-		let unsubscribe = () => {};
-		const render = () => {
-			pending = false;
-			if (disposed || !section.length) return;
-			const settings = getSettings();
-			const items = section.filter(occurrence => !occurrence.disposed);
-			for (const occurrence of items) { occurrence.reconcileSource(); occurrence.restore(); }
-			if (!settings.enableInlineNumerals || !items.some(occurrence => parseInlineExpression(occurrence.source, getInlineTriggers(settings)))) return;
-			try {
-				const preProcessors = getPreProcessors();
-				const metadata = getMetadataForFileAtPath(sourcePath, app, scopeCache);
-				const { scope } = getScopeFromFrontmatter(metadata, undefined, settings.forceProcessAllFrontmatter, preProcessors);
-				const previous: PrevResultRef = { value: undefined };
-				const formatter = getFormatter();
-				for (const occurrence of items) {
-					occurrence.dependencies = processInlineCodeElement(occurrence.code, occurrence.source, scope, settings, formatter,
-						preProcessors, previous, scopeCache, sourcePath, app);
-					if (parseInlineExpression(occurrence.source, getInlineTriggers(settings))) occurrence.markRendered();
-				}
-			} catch (error) {
-				for (const occurrence of items) {
-					if (!parseInlineExpression(occurrence.source, getInlineTriggers(settings))) continue;
-					renderInlineError(occurrence.code, occurrence.source);
-					occurrence.code.title = error instanceof Error ? error.message : 'Unable to render this calculation.';
-					occurrence.markRendered();
-				}
-			}
-		};
-		for (const code of newCodes) {
-			const occurrence = new InlineOccurrence(code, ctx, render, () => {
-				active.delete(occurrence); occurrences.delete(code);
-				section.splice(section.indexOf(occurrence), 1);
-				if (!section.length) { pending = false; unsubscribe(); }
-			});
-			occurrences.set(code, occurrence); active.add(occurrence); section.push(occurrence);
-			ctx.addChild(occurrence);
-		}
-		unsubscribe = events.subscribe(event => {
-			if (event.kind === 'unload') { processor.dispose(); return; }
-			if (!section.some(occurrence => affectsOccurrence(event, sourcePath, occurrence.dependencies.dependencies, occurrence.dependencies.referencedPaths))) return;
-			if (event.kind === 'rename' && event.oldPath === sourcePath) sourcePath = event.newPath;
-			if (pending || disposed) return;
-			pending = true;
-			void Promise.resolve().then(() => { if (pending) render(); });
-		});
-		render();
-	};
-	processor.dispose = () => {
-		if (disposed) return;
-		disposed = true;
-		for (const occurrence of [...active]) occurrence.dispose();
-		ownedEvents?.dispose();
-	};
-	return processor;
+const sectionKey = (section: MarkdownSectionInformation | null) => JSON.stringify(section);
+const codeNodes = (root: HTMLElement) => [...(root.matches('code') ? [root] : []),
+ ...Array.from(root.querySelectorAll<HTMLElement>('code'))].filter(code => !code.closest('pre'));
+
+/** A physical section is observed in full, even when the callback covers one subtree. */
+function sectionRoot(code: HTMLElement, callback: HTMLElement, context: MarkdownPostProcessorContext): HTMLElement {
+ const footnote = code.closest<HTMLElement>('section.footnotes > ol > li');
+ if (footnote) return footnote;
+ const key = sectionKey(context.getSectionInfo(code));
+ let root = callback.matches('code') ? callback.parentElement ?? callback : callback;
+ const boundary = observedContextContainer(context);
+ // Detached callback roots can be assembled before insertion. Connected contexts
+ // supply the limit; without one, only the supplied subtree/parent is evidence.
+ if (!root.isConnected || boundary?.contains(root)) {
+  while (root.parentElement && root.parentElement !== boundary &&
+   sectionKey(context.getSectionInfo(root.parentElement)) === key) root = root.parentElement;
+ }
+ return root;
+}
+
+/** Own original code DOM and project exact indexed occurrences from the target's complete note. */
+export function createInlineNumeralsPostProcessor(registry: SourceRegistry, getSettings: () => NumeralsSettings): InlinePostProcessor {
+ const occurrences = new WeakMap<HTMLElement, InlineOccurrence>();
+ const contexts = new WeakMap<MarkdownPostProcessorContext, Map<HTMLElement, ReadingSection>>();
+ const active = new Set<ReadingSection>();
+ let disposed = false;
+ const processor = (el: HTMLElement, ctx: MarkdownPostProcessorContext): void => {
+  if (disposed) return;
+  let sections = contexts.get(ctx);
+  if (!sections) { sections = new Map(); contexts.set(ctx, sections); }
+  const refresh = new Set<ReadingSection>();
+  const candidates = new Set(codeNodes(el));
+  for (const code of candidates) {
+   const root = sectionRoot(code, el, ctx);
+   let group = sections.get(root);
+   if (group && group.sourcePath !== ctx.sourcePath) {
+    for (const item of [...group.items]) {
+     if (root.contains(item.code)) candidates.add(item.code);
+     item.dispose();
+    }
+    group = undefined;
+   }
+   if (!group) {
+    const items = new Set<InlineOccurrence>();
+    const subscription = new SurfaceSubscription(registry, root, ctx, (source, current, signal) => {
+     for (const item of items) { item.reconcileSource(); item.restore(); }
+     const settings = current?.settings ?? getSettings();
+     if (!settings.enableInlineNumerals) return;
+     const snapshot = current?.state.status === 'ready' ? current.state.snapshot : undefined;
+     const runtime = source && snapshot && registry.coordinator.renderContext(source.identity, snapshot);
+     const physical = new Map<string, {section: MarkdownSectionInformation | null; codes: HTMLElement[]}>();
+     for (const node of codeNodes(root)) {
+      const section = ctx.getSectionInfo(node), key = sectionKey(section);
+      if (!physical.has(key)) physical.set(key, {section, codes: []});
+      physical.get(key)!.codes.push(node);
+     }
+     for (const observed of physical.values()) {
+      const sources = observed.codes.map(node => occurrences.get(node)?.source ?? node.innerText ?? node.textContent ?? '');
+      const bindings = current && bindReadingCodes(current.index, observed.section, sources,
+       root.matches('section.footnotes > ol > li') ? {lineDelta: root.getAttribute('data-line'),
+        bodyId: root.getAttribute('data-footnote-id'), docId: ctx.docId} : undefined);
+      for (const [ordinal, code] of observed.codes.entries()) {
+       const item = occurrences.get(code);
+       if (!item || !items.has(item)) continue;
+       const parsed = parseInlineExpression(item.source, getInlineTriggers(settings));
+       if (!parsed) continue;
+       // A proved non-calculation is ordinary or raw HTML code. An unproved
+       // occurrence retains its original DOM and gets a local, honest limitation.
+       if (!bindings) {
+        item.showLimitation(source?.diagnostic ?? (!current ? 'Updating calculation…' :
+         'Calculation source identity is incomplete or ambiguous in this rendered section.'));
+        continue;
+       }
+       const indexed = bindings[ordinal];
+       if (!indexed) continue;
+       const result = snapshot?.calculations.find(calculation => calculation.calculationId === indexed.id);
+       let error = result?.diagnostic?.message ?? (current?.state.status === 'pending' ? 'Updating calculation…' :
+        current?.state.status === 'error' ? current.state.message : !result ? snapshot?.diagnostics[0]?.message ?? 'Calculation is unavailable.' : undefined);
+       let formatted = {text: '', tex: '', canonical: ''}, inputTeX: string | undefined;
+       if (result && snapshot && runtime && !error) {
+        const output = snapshot.format(result.calculationId, 0);
+        if ('diagnostic' in output) error = output.diagnostic.message;
+        else formatted = output.value;
+        if (parsed.mode === InlineNumeralsMode.Equation) {
+         try { inputTeX = inputPresentation(result.rows[0]?.processedInput ?? '', parsed.expression, parsed.renderStyle, runtime.engine).inputTeX; }
+         catch (failure: unknown) { error = failure instanceof Error ? failure.message : String(failure); }
+        }
+       }
+       renderInlinePresentation(item.code, {rawExpression: parsed.expression, mode: parsed.mode,
+        renderStyle: parsed.renderStyle, formattedResult: formatted, inputTeX, error, separator: settings.inlineEquationSeparator}, signal);
+       item.markRendered();
+      }
+     }
+    }, message => { for (const item of items) { item.restore(); item.showLimitation(message); } });
+    group = {root, context: ctx, sourcePath: ctx.sourcePath, items, subscription}; sections.set(root, group); active.add(group);
+   }
+   const existing = occurrences.get(code);
+   if (existing && group.items.has(existing) && existing.ownershipPath === ctx.sourcePath) {
+    existing.reconcileSource(); refresh.add(group); continue;
+   }
+   existing?.dispose();
+   const owned = group;
+   const occurrence = new InlineOccurrence(code, ctx, () => owned.subscription.refresh(), () => {
+    owned.items.delete(occurrence);
+    if (occurrences.get(code) === occurrence) occurrences.delete(code);
+    if (!owned.items.size) {
+     owned.subscription.dispose(); active.delete(owned);
+     if (sections?.get(root) === owned) sections.delete(root);
+    }
+   });
+   occurrences.set(code, occurrence); group.items.add(occurrence); ctx.addChild(occurrence); refresh.add(group);
+  }
+  for (const group of refresh) group.subscription.refresh();
+ };
+ processor.dispose = () => {
+  if (disposed) return;
+  disposed = true;
+  for (const group of [...active]) for (const item of [...group.items]) item.dispose();
+ };
+ return processor;
 }

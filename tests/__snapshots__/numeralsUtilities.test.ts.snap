@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Extended Snapshot 1: Default Settings 1`] = `
+exports[`numeralsUtilities: renderFixture end-to-end tests Extended Snapshot 1: Default Settings 1`] = `
 <div
   class="numerals-block numerals-panes numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
 >
@@ -941,7 +941,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 </div>
 `;
 
-exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Extended Snapshot 2: Answer Right 1`] = `
+exports[`numeralsUtilities: renderFixture end-to-end tests Extended Snapshot 2: Answer Right 1`] = `
 <div
   class="numerals-block numerals-answer-right numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
 >
@@ -1882,7 +1882,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 </div>
 `;
 
-exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Extended Snapshot 3: Answer Below 1`] = `
+exports[`numeralsUtilities: renderFixture end-to-end tests Extended Snapshot 3: Answer Below 1`] = `
 <div
   class="numerals-block numerals-answer-below numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
 >
@@ -2823,7 +2823,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 </div>
 `;
 
-exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Extended Snapshot 4: Answer Inline 1`] = `
+exports[`numeralsUtilities: renderFixture end-to-end tests Extended Snapshot 4: Answer Inline 1`] = `
 <div
   class="numerals-block numerals-answer-inline numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
 >
@@ -3764,7 +3764,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 </div>
 `;
 
-exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Extended Snapshot 5: Mixed Settings 1`] = `
+exports[`numeralsUtilities: renderFixture end-to-end tests Extended Snapshot 5: Mixed Settings 1`] = `
 <div
   class="numerals-block numerals-answer-right numerals-plain numerals-emitters-present"
 >
@@ -4705,7 +4705,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 </div>
 `;
 
-exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Snapshot 1: simple math block with units, emitters, result insertion 1`] = `
+exports[`numeralsUtilities: renderFixture end-to-end tests Snapshot 1: simple math block with units, emitters, result insertion 1`] = `
 <div
   class="numerals-block numerals-panes numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
 >
@@ -4787,7 +4787,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 </div>
 `;
 
-exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests Snapshot 2: simple math block with test of locale formatting 1`] = `
+exports[`numeralsUtilities: renderFixture end-to-end tests Snapshot 2: simple math block with test of locale formatting 1`] = `
 <div
   class="numerals-block numerals-panes numerals-plain numerals-alt-row-color"
 >
@@ -4884,7 +4884,7 @@ exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end t
 </div>
 `;
 
-exports[`numeralsUtilities: processAndRenderNumeralsBlockFromSource end-to-end tests simple math block with currency and emitter with snapshot 1`] = `
+exports[`numeralsUtilities: renderFixture end-to-end tests simple math block with currency and emitter with snapshot 1`] = `
 <div
   class="numerals-block numerals-panes numerals-plain numerals-alt-row-color numerals-emitters-present numerals-hide-non-emitters"
 >

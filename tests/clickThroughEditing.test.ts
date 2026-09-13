@@ -1,241 +1,89 @@
-import { App, MarkdownPostProcessorContext, MarkdownView } from 'obsidian';
-import {
-	findEditorForPath,
-	getTextOffsetFromPoint,
-	handleNumeralsBlockClick,
-	sourceChForRenderedOffset,
-} from '../src/rendering/editorNavigation';
+import { MarkdownView, type Editor, type MarkdownPostProcessorContext, type WorkspaceLeaf } from 'obsidian';
+import { registeredSnapshotFixture as fixture } from './sourceRegistryTestSupport';
+import { flushSnapshots as flush } from './hostSnapshotTestSupport';
+import { installHostDom } from './hostTestSupport';
+import { BlockSurface } from '../src/host/blockSurface';
+import { NumeralsRenderStyle } from '../src/numerals.types';
 
-type MockEditor = {
-	getLine: jest.Mock;
-	setCursor: jest.Mock;
-	focus: jest.Mock;
-};
+jest.mock('obsidian', () => jest.requireActual('./snapshotHostMock'));
+beforeAll(installHostDom);
 
-function createMarkdownLeaf(path: string, editor: MockEditor) {
-	return {
-		view: Object.assign(Object.create(MarkdownView.prototype), {
-			file: { path },
-			editor,
-		}),
-	};
+function surface(source = 'intro\r\n> ~~~~math\r\n> 2 + 3 =>\r\n> ~~~~') {
+ const host = fixture(source);
+ Object.assign(host.editor, {setCursor: jest.fn(), focus: jest.fn()});
+ const element = host.view.containerEl.createDiv();
+ const context = {sourcePath: host.file.path, getSectionInfo: () => ({text: source, lineStart: 1, lineEnd: 3})} as unknown as MarkdownPostProcessorContext;
+ const controller = new BlockSurface(element, context, '2 + 3 =>', NumeralsRenderStyle.Plain, host.registry, host.app, jest.fn());
+ controller.refresh();
+ const destroy = () => {controller.dispose(); host.destroy();};
+ return {...host, element, context, controller, destroy};
 }
 
-function createMockElement(tag: string = 'div'): HTMLElement {
-	const el = document.createElement(tag);
-	(el as any).createEl = function(
-		this: HTMLElement,
-		tagName: string,
-		options?: { text?: string; cls?: string | string[] }
-	) {
-		const child = createMockElement(tagName);
-		if (options?.text) child.textContent = options.text;
-		if (options?.cls) {
-			const classes = Array.isArray(options.cls) ? options.cls : [options.cls];
-			classes.forEach((className) => child.classList.add(className));
-		}
-		this.appendChild(child);
-		return child;
-	};
-	return el;
-}
-
-describe('click-through editor navigation', () => {
-	it('should find the editor for the requested source path', () => {
-		const wrongEditor: MockEditor = {
-			getLine: jest.fn(),
-			setCursor: jest.fn(),
-			focus: jest.fn(),
-		};
-		const rightEditor: MockEditor = {
-			getLine: jest.fn(),
-			setCursor: jest.fn(),
-			focus: jest.fn(),
-		};
-		const app = {
-			workspace: {
-				iterateAllLeaves: jest.fn((callback: (leaf: unknown) => void) => {
-					callback(createMarkdownLeaf('other.md', wrongEditor));
-					callback(createMarkdownLeaf('source.md', rightEditor));
-				}),
-			},
-		} as unknown as App;
-
-		expect(findEditorForPath(app, 'source.md')).toBe(rightEditor);
-	});
-
-	it('should return undefined when no matching editor is open', () => {
-		const editor: MockEditor = {
-			getLine: jest.fn(),
-			setCursor: jest.fn(),
-			focus: jest.fn(),
-		};
-		const app = {
-			workspace: {
-				iterateAllLeaves: jest.fn((callback: (leaf: unknown) => void) => {
-					callback(createMarkdownLeaf('other.md', editor));
-				}),
-			},
-		} as unknown as App;
-
-		expect(findEditorForPath(app, 'source.md')).toBeUndefined();
-	});
-
-	it('should map rendered offsets to exact source positions when rendered text exists in source', () => {
-		expect(sourceChForRenderedOffset('total = apples + oranges =>', 'total = apples + oranges ', 8)).toBe(8);
-	});
-
-	it('should clamp rendered offsets when source mapping is approximate', () => {
-		expect(sourceChForRenderedOffset('@[profit::100] = sales - costs', 'profit = sales - costs', 100)).toBe(30);
-	});
-
-	it('should map cleaned insertion directive text back to editable source positions', () => {
-		const sourceLine = '@[profit::100] = sales - costs';
-		const renderedInputText = 'profit = sales - costs';
-
-		expect(sourceChForRenderedOffset(sourceLine, renderedInputText, 0)).toBe(2);
-		expect(sourceChForRenderedOffset(sourceLine, renderedInputText, 6)).toBe(8);
-		expect(sourceChForRenderedOffset(sourceLine, renderedInputText, 9)).toBe(17);
-	});
-
-	it('should read a text offset from a DOM caret position', () => {
-		const input = document.createElement('span');
-		input.textContent = 'apples + oranges';
-		document.body.appendChild(input);
-		const textNode = input.firstChild as Text;
-		Object.defineProperty(document, 'caretPositionFromPoint', {
-			configurable: true,
-			value: jest.fn(() => ({ offsetNode: textNode, offset: 6 })),
-		});
-
-		expect(getTextOffsetFromPoint(input, 10, 20)).toBe(6);
-
-		Reflect.deleteProperty(document, 'caretPositionFromPoint');
-		input.remove();
-	});
-
-	it('should focus the source editor at the clicked input character', () => {
-		const editor: MockEditor = {
-			getLine: jest.fn(() => 'apples + oranges'),
-			setCursor: jest.fn(),
-			focus: jest.fn(),
-		};
-		const app = {
-			workspace: {
-				iterateAllLeaves: jest.fn((callback: (leaf: unknown) => void) => {
-					callback(createMarkdownLeaf('source.md', editor));
-				}),
-			},
-		} as unknown as App;
-		const ctx = {
-			sourcePath: 'source.md',
-			getSectionInfo: jest.fn(() => ({ lineStart: 10 })),
-		} as unknown as MarkdownPostProcessorContext;
-		const block = createMockElement('div');
-		const line = block.createEl('div', { cls: 'numerals-line' });
-		line.dataset.sourceLine = '2';
-		const input = line.createEl('span', { cls: 'numerals-input', text: 'apples + oranges' });
-		line.createEl('span', { cls: 'numerals-result', text: ' -> 15' });
-		const textNode = input.firstChild as Text;
-		Object.defineProperty(document, 'caretPositionFromPoint', {
-			configurable: true,
-			value: jest.fn(() => ({ offsetNode: textNode, offset: 6 })),
-		});
-
-		const event = new MouseEvent('click', { clientX: 10, clientY: 20, bubbles: true });
-		Object.defineProperty(event, 'target', { value: input });
-
-		handleNumeralsBlockClick(event, ctx, block, app);
-
-		expect(editor.setCursor).toHaveBeenCalledWith({ line: 13, ch: 6 });
-		expect(editor.focus).toHaveBeenCalled();
-
-		Reflect.deleteProperty(document, 'caretPositionFromPoint');
-	});
-
-	it('should place the cursor at end of source line when clicking the result area', () => {
-		const editor: MockEditor = {
-			getLine: jest.fn(() => 'apples + oranges'),
-			setCursor: jest.fn(),
-			focus: jest.fn(),
-		};
-		const app = {
-			workspace: {
-				iterateAllLeaves: jest.fn((callback: (leaf: unknown) => void) => {
-					callback(createMarkdownLeaf('source.md', editor));
-				}),
-			},
-		} as unknown as App;
-		const ctx = {
-			sourcePath: 'source.md',
-			getSectionInfo: jest.fn(() => ({ lineStart: 10 })),
-		} as unknown as MarkdownPostProcessorContext;
-		const block = createMockElement('div');
-		const line = block.createEl('div', { cls: 'numerals-line' });
-		line.dataset.sourceLine = '2';
-		line.createEl('span', { cls: 'numerals-input', text: 'apples + oranges' });
-		const result = line.createEl('span', { cls: 'numerals-result', text: ' -> 15' });
-
-		const event = new MouseEvent('click', { clientX: 10, clientY: 20, bubbles: true });
-		Object.defineProperty(event, 'target', { value: result });
-
-		handleNumeralsBlockClick(event, ctx, block, app);
-
-		expect(editor.setCursor).toHaveBeenCalledWith({ line: 13, ch: 16 });
-		expect(editor.focus).toHaveBeenCalled();
-	});
-
-	it('should no-op when the clicked line has no source line index', () => {
-		const editor: MockEditor = {
-			getLine: jest.fn(() => 'apples + oranges'),
-			setCursor: jest.fn(),
-			focus: jest.fn(),
-		};
-		const app = {
-			workspace: {
-				iterateAllLeaves: jest.fn((callback: (leaf: unknown) => void) => {
-					callback(createMarkdownLeaf('source.md', editor));
-				}),
-			},
-		} as unknown as App;
-		const ctx = {
-			sourcePath: 'source.md',
-			getSectionInfo: jest.fn(() => ({ lineStart: 10 })),
-		} as unknown as MarkdownPostProcessorContext;
-		const block = createMockElement('div');
-		const line = block.createEl('div', { cls: 'numerals-line' });
-		const input = line.createEl('span', { cls: 'numerals-input', text: 'apples + oranges' });
-		const event = new MouseEvent('click', { clientX: 10, clientY: 20, bubbles: true });
-		Object.defineProperty(event, 'target', { value: input });
-
-		handleNumeralsBlockClick(event, ctx, block, app);
-
-		expect(editor.setCursor).not.toHaveBeenCalled();
-		expect(editor.focus).not.toHaveBeenCalled();
-	});
+it('navigates through physical CRLF/container mapping without fence arithmetic', async () => {
+ const host = surface(); await flush();
+ host.element.querySelector('.numerals-result')!.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+ expect(host.editor.setCursor).toHaveBeenCalledWith({line: 2, ch: 2});
+ expect(host.editor.focus).toHaveBeenCalledTimes(1); host.destroy();
 });
 
-describe('navigation across document realms', () => {
-	it.each(['text', 'svg'])('handles a foreign-document %s target without editing note text', kind => {
-		const iframe = document.createElement('iframe'); document.body.appendChild(iframe);
-		const doc = iframe.contentDocument!, win = doc.defaultView!;
-		const block = doc.createElement('div'), line = doc.createElement('div');
-		line.className = 'numerals-line'; line.dataset.sourceLine = '2'; block.appendChild(line); doc.body.appendChild(block);
-		const input = doc.createElement('span'); input.className = 'numerals-input'; input.textContent = '2 + 3'; line.appendChild(input);
-		let target: Node = input.firstChild!;
-		if (kind === 'svg') {
-			const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
-			target = doc.createElementNS('http://www.w3.org/2000/svg', 'path'); svg.appendChild(target); line.appendChild(svg);
-		}
-		const range = doc.createRange(); range.setStart(input.firstChild!, 2); range.collapse(true);
-		Object.defineProperty(doc, 'caretRangeFromPoint', { value: jest.fn(() => range), configurable: true });
-		const editor = { getLine: jest.fn(() => '2 + 3'), setCursor: jest.fn(), focus: jest.fn(), setLine: jest.fn(), transaction: jest.fn() };
-		const app = { workspace: { iterateAllLeaves: (visit: (leaf: unknown) => void) => visit(createMarkdownLeaf('source.md', editor)) } } as unknown as App;
-		const ctx = { sourcePath: 'source.md', getSectionInfo: () => ({ lineStart: 3 }) } as unknown as MarkdownPostProcessorContext;
-		const event = new win.MouseEvent('click', { clientX: 10, clientY: 20 }); Object.defineProperty(event, 'target', { value: target });
-		handleNumeralsBlockClick(event, ctx, block, app);
-		expect(editor.setCursor).toHaveBeenCalledWith({ line: 6, ch: kind === 'text' ? 2 : 5 });
-		expect(editor.focus).toHaveBeenCalledTimes(1); expect(editor.setLine).not.toHaveBeenCalled(); expect(editor.transaction).not.toHaveBeenCalled();
-		iframe.remove();
-	});
+it('never focuses another pane just because its file path matches', async () => {
+ const host = surface();
+ const otherEditor = {getValue: host.text, offsetToPos: host.editor.offsetToPos, transaction: jest.fn(), setCursor: jest.fn(), focus: jest.fn()} as unknown as Editor;
+ const view = Object.assign(new MarkdownView({} as WorkspaceLeaf), {editor: otherEditor, file: host.file});
+ document.body.append(view.containerEl); host.leaves.unshift({view} as unknown as WorkspaceLeaf); host.registry.reconcile(); await flush();
+ host.element.querySelector('.numerals-input')!.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+ expect(host.editor.focus).toHaveBeenCalledTimes(1); expect(otherEditor.focus).not.toHaveBeenCalled();
+ view.containerEl.remove(); host.destroy();
+});
+
+it('discards navigation when the source, attachment or current snapshot changed', async () => {
+ const host = surface(); await flush();
+ const click = () => host.element.querySelector('.numerals-input')!.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+ host.setText(host.text() + '\nnew bytes'); click(); expect(host.editor.setCursor).not.toHaveBeenCalled();
+ host.setText(host.text().replace('\nnew bytes', '')); host.view.containerEl.remove(); click();
+ expect(host.editor.setCursor).not.toHaveBeenCalled(); host.destroy();
+});
+
+it('keeps a same-file embed read-only and offers explicit target navigation', async () => {
+ const host = surface(); host.controller.dispose();
+ Object.assign(host.app.workspace, {openLinkText: jest.fn().mockResolvedValue(undefined)});
+ const embed = host.view.containerEl.createDiv({cls: 'markdown-embed'}), element = embed.createDiv();
+ const controller = new BlockSurface(element, host.context, '2 + 3 =>', NumeralsRenderStyle.Plain, host.registry, host.app, jest.fn());
+ controller.refresh(); await flush();
+ element.querySelector('.numerals-input')!.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+ expect(host.editor.setCursor).not.toHaveBeenCalled();
+ element.querySelector('button')!.click(); expect(host.app.workspace.openLinkText).toHaveBeenCalledWith(host.file.path, host.file.path);
+ controller.dispose(); host.destroy();
+});
+
+it('does not navigate from ambiguous section evidence or after occurrence disposal', async () => {
+ const host = surface(); host.context.getSectionInfo = () => null; host.controller.refresh(); await flush();
+ host.element.dispatchEvent(new MouseEvent('click', {bubbles: true})); expect(host.editor.setCursor).not.toHaveBeenCalled();
+ host.controller.dispose(); host.element.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+ expect(host.editor.setCursor).not.toHaveBeenCalled(); host.destroy();
+});
+
+it('accepts native Text and SVG click targets using the rendered owner document', async () => {
+ const host = surface(); await flush();
+ host.element.querySelector('.numerals-input')!.firstChild!.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+ const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); host.element.querySelector('.numerals-result')!.appendChild(svg);
+ svg.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+ expect(host.editor.setCursor).toHaveBeenCalledTimes(2); expect(host.editor.setCursor).toHaveBeenLastCalledWith({line: 2, ch: 2}); host.destroy();
+});
+
+it('navigates mapped Text targets from an iframe-owned render document without global constructor assumptions', async () => {
+ const iframe = document.body.appendChild(document.createElement('iframe')), doc = iframe.contentDocument!, win = doc.defaultView!;
+ const prototype = Object.getPrototypeOf(Object.getPrototypeOf(doc.createElement('div'))) as object;
+ for (const name of ['createEl', 'createDiv', 'createSpan', 'empty', 'addClass', 'toggleClass', 'setText']) {
+  Object.defineProperty(prototype, name, Object.getOwnPropertyDescriptor(HTMLElement.prototype, name)!);
+ }
+ const host = fixture('```math\n2 + 3\n```'); Object.assign(host.editor, {setCursor: jest.fn(), focus: jest.fn()});
+ host.view.containerEl.remove(); const container = doc.body.appendChild(doc.createElement('div'));
+ Object.assign(host.view, {containerEl: container}); host.registry.reconcile();
+ const element = container.createDiv(), ctx = {sourcePath: host.file.path,
+  getSectionInfo: () => ({text: host.text(), lineStart: 0, lineEnd: 2})} as unknown as MarkdownPostProcessorContext;
+ const block = new BlockSurface(element, ctx, '2 + 3', NumeralsRenderStyle.Plain, host.registry, host.app, jest.fn());
+ block.refresh(); await flush();
+ element.querySelector('.numerals-input')!.firstChild!.dispatchEvent(new win.MouseEvent('click', {bubbles: true}));
+ expect(host.editor.setCursor).toHaveBeenCalledWith({line: 1, ch: 0}); block.dispose(); host.destroy(); iframe.remove();
 });

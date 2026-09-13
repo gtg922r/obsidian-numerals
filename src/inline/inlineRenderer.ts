@@ -1,60 +1,44 @@
-import { NumeralsRenderStyle } from '../numerals.types';
+import { InlineNumeralsMode, NumeralsRenderStyle } from '../numerals.types';
 import type { FormattedResult } from '../formatting';
-import { mathjaxLoop } from '../rendering/displayUtils';
-import { expressionToTeX } from '../rendering/texRendering';
+import { renderOwnedMath } from '../rendering/mathLifecycle';
 
-function createSpan(parent: HTMLElement, className: string): HTMLElement {
-	const span = parent.createSpan({ cls: className });
-	return span;
+export interface InlinePresentation {
+ readonly rawExpression: string;
+ readonly mode: InlineNumeralsMode;
+ readonly renderStyle: NumeralsRenderStyle;
+ readonly formattedResult: FormattedResult;
+ readonly inputTeX?: string;
+ readonly separator: string;
+ readonly error?: string;
 }
 
-function renderTexOrText(
-	container: HTMLElement,
-	text: string,
-	renderStyle: NumeralsRenderStyle,
-	toTex: () => string
-): void {
-	if (renderStyle !== NumeralsRenderStyle.TeX) {
-		container.textContent = text;
-		return;
-	}
-
-	try {
-		const tex = toTex();
-		const texElement = createSpan(container, 'numerals-tex');
-		// mathjaxLoop is async, so a MathJax failure surfaces as a rejection
-		// that the surrounding try/catch cannot see — fall back to plain text.
-		void mathjaxLoop(texElement, tex, false).catch(() => {
-			texElement.textContent = text;
-		});
-	} catch {
-		container.textContent = text;
-	}
+export function renderInlineInputContent(container: HTMLElement, rawExpression: string, inputTeX: string | undefined,
+ renderStyle: NumeralsRenderStyle, signal: AbortSignal): void {
+ if (renderStyle === NumeralsRenderStyle.TeX && inputTeX !== undefined) renderOwnedMath(container.createSpan({cls: 'numerals-tex'}), inputTeX, signal, false);
+ else container.textContent = rawExpression;
 }
 
-export function renderInlineInputContent(
-	container: HTMLElement,
-	rawExpression: string,
-	processedExpression: string,
-	renderStyle: NumeralsRenderStyle
-): void {
-	renderTexOrText(
-		container,
-		rawExpression,
-		renderStyle,
-		() => expressionToTeX(processedExpression, rawExpression)
-	);
+export function renderInlineValueContent(container: HTMLElement, result: FormattedResult,
+ renderStyle: NumeralsRenderStyle, signal: AbortSignal): void {
+ if (renderStyle === NumeralsRenderStyle.TeX) renderOwnedMath(container.createSpan({cls: 'numerals-tex'}), result.tex, signal, false);
+ else container.textContent = result.text;
 }
 
-export function renderInlineValueContent(
-	container: HTMLElement,
-	formattedResult: FormattedResult,
-	renderStyle: NumeralsRenderStyle
-): void {
-	renderTexOrText(
-		container,
-		formattedResult.text,
-		renderStyle,
-		() => formattedResult.tex
-	);
+export function renderInlinePresentation(container: HTMLElement, data: InlinePresentation, signal: AbortSignal): void {
+ container.replaceChildren();
+ container.classList.add('numerals-inline');
+ container.classList.toggle('numerals-inline-tex', data.renderStyle === NumeralsRenderStyle.TeX);
+ if (data.error) {
+  container.classList.add('numerals-inline-error');
+  container.textContent = data.rawExpression;
+  container.createSpan({cls: 'numerals-error-message', text: ` (${data.error})`});
+  return;
+ }
+ if (data.mode === InlineNumeralsMode.Equation) {
+  container.classList.add('numerals-inline-equation');
+  renderInlineInputContent(container.createSpan({cls: 'numerals-inline-input'}), data.rawExpression,
+   data.inputTeX, data.renderStyle, signal);
+  container.createSpan({cls: 'numerals-inline-separator', text: data.separator});
+ } else container.classList.add('numerals-inline-result');
+ renderInlineValueContent(container.createSpan({cls: 'numerals-inline-value'}), data.formattedResult, data.renderStyle, signal);
 }

@@ -1,3 +1,4 @@
+import { createResultFormatter, createNumberFormatProfile } from '../src/formatting';
 /**
  * Unit tests for line preparation functions introduced in Phase 2 refactoring.
  * Tests extraction functions for comments, input cleaning, and line data preparation.
@@ -14,6 +15,8 @@ import {
 	DEFAULT_SETTINGS,
 	numeralsBlockInfo,
 } from '../src/numerals.types';
+
+const formatter = createResultFormatter({profile: createNumberFormatProfile(DEFAULT_SETTINGS.numberFormat)});
 
 describe('Line Preparation Functions', () => {
 	describe('extractComment', () => {
@@ -192,14 +195,14 @@ describe('Line Preparation Functions', () => {
 		it('should prepare data for normal line', () => {
 			const rawRows = ['2 + 2'];
 			const inputs = ['2 + 2'];
-			const results = [4];
+			const results = [4].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
 			expect(lineData.index).toBe(0);
 			expect(lineData.rawInput).toBe('2 + 2');
 			expect(lineData.processedInput).toBe('2 + 2');
-			expect(lineData.result).toBe(4);
+			expect(lineData.formattedResult).toEqual(formatter.format(4));
 			expect(lineData.isEmpty).toBe(false);
 			expect(lineData.isEmitter).toBe(false);
 			expect(lineData.isHidden).toBe(false);
@@ -209,7 +212,7 @@ describe('Line Preparation Functions', () => {
 		it('should prepare data for line with comment', () => {
 			const rawRows = ['2 + 2 # sum'];
 			const inputs = ['2 + 2'];
-			const results = [4];
+			const results = [4].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
@@ -220,19 +223,19 @@ describe('Line Preparation Functions', () => {
 		it('should identify empty line', () => {
 			const rawRows = [''];
 			const inputs = [''];
-			const results = [undefined];
+			const results = [undefined].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
 			expect(lineData.isEmpty).toBe(true);
-			expect(lineData.result).toBeUndefined();
+			expect(lineData.formattedResult).toBeUndefined();
 		});
 
 		it('should identify emitter line', () => {
 			blockInfo.emitter_lines = [0];
 			const rawRows = ['2 + 2 =>'];
 			const inputs = ['2 + 2'];
-			const results = [4];
+			const results = [4].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
@@ -244,7 +247,7 @@ describe('Line Preparation Functions', () => {
 			blockInfo.hidden_lines = [0];
 			const rawRows = ['@hideRows'];
 			const inputs = [''];
-			const results = [undefined];
+			const results = [undefined].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
@@ -257,7 +260,7 @@ describe('Line Preparation Functions', () => {
 
 			const rawRows = ['intermediate = 10', 'result = 20 =>'];
 			const inputs = ['intermediate = 10', 'result = 20'];
-			const results = [10, 20];
+			const results = [10, 20].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData0 = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 			const lineData1 = prepareLineData(1, rawRows, inputs, results, blockInfo, settings);
@@ -272,7 +275,7 @@ describe('Line Preparation Functions', () => {
 
 			const rawRows = ['result = 42 =>'];
 			const inputs = ['result = 42'];
-			const results = [42];
+			const results = [42].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
@@ -282,7 +285,7 @@ describe('Line Preparation Functions', () => {
 		it('should clean insertion directive from raw input', () => {
 			const rawRows = ['@[profit::100] = sales - costs'];
 			const inputs = ['profit = sales - costs'];
-			const results = [100];
+			const results = [100].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
@@ -295,7 +298,7 @@ describe('Line Preparation Functions', () => {
 
 			const rawRows = ['result = 42 => # final answer'];
 			const inputs = ['result = 42'];
-			const results = [42];
+			const results = [42].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
@@ -306,7 +309,7 @@ describe('Line Preparation Functions', () => {
 		it('should handle missing index in rawRows', () => {
 			const rawRows: string[] = [];
 			const inputs = [''];
-			const results = [undefined];
+			const results = [undefined].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
@@ -317,7 +320,7 @@ describe('Line Preparation Functions', () => {
 		it('should handle missing index in inputs', () => {
 			const rawRows = ['2 + 2'];
 			const inputs: string[] = [];
-			const results = [4];
+			const results = [4].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
@@ -327,7 +330,7 @@ describe('Line Preparation Functions', () => {
 		it('should prepare data for comment-only line', () => {
 			const rawRows = ['# This is a heading'];
 			const inputs = ['# This is a heading'];
-			const results = [undefined];
+			const results = [undefined].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 
@@ -347,7 +350,7 @@ describe('Line Preparation Functions', () => {
 				'result = x * 2 => # final',
 			];
 			const inputs = ['# Header', 'x = 10', 'result = x * 2'];
-			const results = [undefined, 10, 20];
+			const results = [undefined, 10, 20].map(value => value === undefined ? undefined : formatter.format(value));
 
 			const lineData0 = prepareLineData(0, rawRows, inputs, results, blockInfo, settings);
 			const lineData1 = prepareLineData(1, rawRows, inputs, results, blockInfo, settings);
@@ -359,13 +362,13 @@ describe('Line Preparation Functions', () => {
 
 			// Line 1: Normal line with comment
 			expect(lineData1.isEmpty).toBe(false);
-			expect(lineData1.result).toBe(10);
+			expect(lineData1.formattedResult).toEqual(formatter.format(10));
 			expect(lineData1.comment).toBe('# intermediate');
 			expect(lineData1.isEmitter).toBe(false);
 
 			// Line 2: Emitter line with comment
 			expect(lineData2.isEmpty).toBe(false);
-			expect(lineData2.result).toBe(20);
+			expect(lineData2.formattedResult).toEqual(formatter.format(20));
 			expect(lineData2.comment).toBe('# final');
 			expect(lineData2.isEmitter).toBe(true);
 			expect(lineData2.rawInput).toBe('result = x * 2');

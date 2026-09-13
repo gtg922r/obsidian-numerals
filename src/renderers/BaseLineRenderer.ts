@@ -89,10 +89,7 @@ export abstract class BaseLineRenderer implements ILineRenderer {
 	): void {
 		const formattedResult =
 			context.settings.resultSeparator +
-			context.formatter.format(
-				lineData.result,
-				context.formatOverrides
-			).text;
+			(lineData.formattedResult?.text ?? '');
 		resultElement.setText(formattedResult);
 	}
 }

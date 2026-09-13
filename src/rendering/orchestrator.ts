@@ -1,292 +1,23 @@
-import { App, MarkdownPostProcessorContext } from 'obsidian';
-import { NumeralsLayout, NumeralsRenderStyle, NumeralsSettings, NumeralsError, NumeralsBlockResult, NumeralsScope, StringReplaceMap, ProcessedBlock, EvaluationResult, RenderContext } from '../numerals.types';
-import type { ResultFormatOverrides, ResultFormatter } from '../formatting';
+import { NumeralsLayout, NumeralsRenderStyle, type NumeralsSettings, type LineRenderData, type RenderContext } from '../numerals.types';
 import { RendererFactory } from '../renderers';
-import { getScopeFromFrontmatter } from '../processing/scope';
-import { preProcessBlockForNumeralsDirectives } from '../processing/preprocessor';
-import { evaluateMathFromSourceStrings } from '../processing/evaluator';
-import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
-import { prepareLineData } from './linePreparation';
-import { findEditorForPath } from './editorNavigation';
 
-/**
- * Renders error information into the container element.
- *
- * Creates a formatted error display showing the input that caused the error
- * and the error message with appropriate styling.
- *
- * @param container - HTML element to render the error into
- * @param evaluationResult - Evaluation result containing error information
- */
-export function renderError(
-	container: HTMLElement,
-	evaluationResult: EvaluationResult
-): void {
-	const line = container.createDiv({cls: ["numerals-error-line", "numerals-line"]});
-	line.createSpan({ text: evaluationResult.errorInput, cls: "numerals-input"});
-	const resultElement = line.createSpan({cls: "numerals-result" });
-	resultElement.createSpan({cls:"numerals-error-name", text: evaluationResult.errorMsg!.name + ":"});
-	resultElement.createSpan({cls:"numerals-error-message", text: evaluationResult.errorMsg!.message});
+export function renderDiagnostic(container: HTMLElement, message: string, input = ''): void {
+ const line = container.createDiv({cls: ['numerals-error-line', 'numerals-line']});
+ if (input) line.createSpan({cls: 'numerals-input', text: input});
+ line.createSpan({cls: 'numerals-error-message', text: message});
 }
 
-/**
- * Renders a complete Numerals block using the Strategy Pattern.
- *
- * This function orchestrates the rendering of all lines in a Numerals block.
- * It uses the RendererFactory to create the appropriate renderer based on the
- * render style, then iterates through all lines, preparing data and delegating
- * rendering to the strategy implementation.
- *
- * Hidden lines (based on @hide directive or emitter visibility settings) are
- * skipped during rendering. Each visible line gets a container div with appropriate
- * CSS classes, and the renderer handles the actual content rendering.
- *
- * @param container - HTML element to render the block into
- * @param evaluationResult - Results from evaluating the block
- * @param processedBlock - Preprocessed block data including raw rows and metadata
- * @param context - Rendering configuration and settings
- */
-export function renderNumeralsBlock(
-	container: HTMLElement,
-	evaluationResult: EvaluationResult,
-	processedBlock: ProcessedBlock,
-	context: RenderContext
-): void {
-	const renderer = RendererFactory.createRenderer(context.renderStyle);
-
-	for (let i = 0; i < evaluationResult.inputs.length; i++) {
-		const lineData = prepareLineData(
-			i,
-			processedBlock.rawRows,
-			evaluationResult.inputs,
-			evaluationResult.results,
-			processedBlock.blockInfo,
-			context.settings
-		);
-
-		if (lineData.isHidden) {
-			continue;
-		}
-
-		const lineContainer = container.createDiv({cls: "numerals-line"});
-		lineContainer.dataset.sourceLine = String(lineData.index);
-		if (lineData.isEmitter) {
-			lineContainer.toggleClass("numerals-emitter", true);
-		}
-
-		renderer.renderLine(lineContainer, lineData, context);
-	}
-
-	if (evaluationResult.errorMsg) {
-		renderError(container, evaluationResult);
-	}
-}
-
-/**
- * Handles result insertion side effects by updating source lines in the editor.
- *
- * This function modifies the editor content to insert calculated results into
- * the source using the @[variable::result] syntax. This is a side effect that
- * writes back to the document.
- *
- * The insertion uses the format: @[variableName::calculatedValue]
- * where calculatedValue is the formatted result from evaluation.
- *
- * @param results - Array of evaluated results
- * @param insertionLines - Array of line indices that have insertion directives
- * @param formatter - Shared result formatter
- * @param ctx - Markdown post processor context (provides section info)
- * @param app - Obsidian App instance (provides editor access)
- * @param el - The HTML element being rendered (used to get section info)
- *
- * @example
- * ```typescript
- * // Source line: @[profit] = sales - costs
- * // After evaluation with result=100:
- * // Updated to: @[profit::100] = sales - costs
- *
- * handleResultInsertions(
- *   [100],
- *   [0],
- *   numberFormat,
- *   ctx,
- *   app,
- *   el
- * );
- * ```
- *
- * @remarks
- * This function has side effects:
- * - Modifies editor content via `editor.setLine()`
- * - Uses setTimeout to defer the modification
- * - Only modifies lines where the value has actually changed
- */
-export function handleResultInsertions(
-	results: unknown[],
-	insertionLines: number[],
-	formatter: ResultFormatter,
-	formatOverrides: ResultFormatOverrides,
-	ctx: MarkdownPostProcessorContext,
-	app: App,
-	el: HTMLElement
-): void {
-	for (const i of insertionLines) {
-		const sectionInfo = ctx.getSectionInfo(el);
-		const lineStart = sectionInfo?.lineStart;
-
-		if (lineStart === undefined) {
-			continue;
-		}
-
-		// H-2 Fix: Find the editor for the specific file instead of using getActiveViewOfType,
-		// which can target the wrong editor in split panes.
-		const editor = findEditorForPath(app, ctx.sourcePath);
-		if (!editor) {
-			continue;
-		}
-
-		// Skip if result doesn't exist (evaluation stopped early due to error)
-		if (i >= results.length || results[i] === undefined) {
-			continue;
-		}
-
-		const curLine = lineStart + i + 1;
-		const sourceLine = editor.getLine(curLine);
-		const insertionValue = formatter.format(results[i], formatOverrides).canonical;
-
-		// Replace @[variable] or @[variable::oldValue] with @[variable::newValue]
-		const modifiedSource = sourceLine.replace(
-			/(@\s*\[)([^\]:]+)(::([^\]]*))?(\].*)$/gm,
-			`$1$2::${insertionValue}$5`
-		);
-
-		// Only update if the line actually changed
-		if (modifiedSource !== sourceLine) {
-			const targetEditor = editor;
-			const ownerWindow = el.ownerDocument.defaultView ?? window;
-			ownerWindow.setTimeout(() => {
-				targetEditor.setLine(curLine, modifiedSource);
-			}, 0);
-		}
-	}
-}
-
-/**
- * Renders a Numerals block from a given source string, using provided metadata and settings.  
- *   
- * This function takes a source string, which represents a block of Numerals code, and processes it   
- * to generate a rendered Numerals block. The block is appended to a given HTML element. The function   
- * also uses provided metadata and settings to control the rendering process.  
- *  
- * @param el - The HTML element to which the rendered Numerals block is appended.  
- * @param source - The source string representing the Numerals block to be rendered.  
- * @param metadata - An object containing metadata that is used during the rendering process. This   
- * metadata can include information about the Numerals block, such as frontmatter keys and values.  
- * @param type - A NumeralsRenderStyle value that specifies the rendering style to be used for the   
- * Numerals block.  
- * @param settings - A NumeralsSettings object that provides settings for the rendering process. These   
- * settings can control aspects such as the layout style, whether to alternate row colors, and whether   
- * to hide lines without markup when emitting.  
- * @param formatter - Shared formatter used for all result output.
- * @param preProcessors - An array of StringReplaceMap objects that specify text replacements to be   
- * made in the source string before it is processed.  
- * @param app - The Obsidian App instance.
- *  
- * @returns void  
- *
- */  
-export function processAndRenderNumeralsBlockFromSource(
-	el: HTMLElement,
-	source: string,
-	ctx: MarkdownPostProcessorContext,
-	metadata: {[key: string]: unknown} | undefined,
-	type: NumeralsRenderStyle | undefined,
-	settings: NumeralsSettings,
-	formatter: ResultFormatter,
-	preProcessors: StringReplaceMap[],
-	app: App
-): NumeralsBlockResult {
-
-	// Phase 1: Determine render style
-	const blockRenderStyle: NumeralsRenderStyle = type ?? settings.defaultRenderStyle;
-
-	// Phase 4: Build scope
-	const { scope, warnings } = getScopeFromFrontmatter(
-		metadata,
-		undefined,
-		settings.forceProcessAllFrontmatter,
-		preProcessors
-	);
-
-
-	// Phase 1.5: Resolve cross-note references (before other preprocessing)
-	const crossNoteResult = resolveCrossNoteReferences(
-		source, app, ctx.sourcePath, settings, preProcessors, scope
-	);
-
-
-	// Phase 2: Preprocess (using cross-note resolved source)
-	const processedBlock = preProcessBlockForNumeralsDirectives(crossNoteResult.sourceMap, preProcessors);
-	if (processedBlock.invalidFormatDirectives.length > 0) {
-		applyBlockStyles({ el, settings, blockRenderStyle });
-		const directiveError = processedBlock.invalidFormatDirectives[0];
-		renderError(el, {
-			results: [],
-			inputs: [],
-			errorMsg: new NumeralsError('Formatting Directive Error', directiveError.message),
-			errorInput: directiveError.source,
-		});
-		return { scope: new NumeralsScope(), referencedPaths: crossNoteResult.referencedPaths, dependencies: crossNoteResult.dependencies };
-	}
-
-	// Phase 3: Apply block styles
-	applyBlockStyles({
-		el,
-		settings,
-		blockRenderStyle,
-		hasEmitters: processedBlock.blockInfo.emitter_lines.length > 0,
-	});
-
-
-	// Phase 5: Evaluate
-	const evaluationResult = evaluateMathFromSourceStrings(
-		processedBlock.processedSource,
-		scope,
-		processedBlock.transparentLineIndexes,
-		{ originalRows: processedBlock.rawRows, resolution: crossNoteResult, sourceMap: processedBlock.sourceMap },
-	);
-
-	// Phase 6: Handle side effects (result insertions)
-	handleResultInsertions(
-		evaluationResult.results,
-		processedBlock.blockInfo.insertion_lines,
-		formatter,
-		processedBlock.formatOverrides,
-		ctx,
-		app,
-		el
-	);
-
-	// Phase 7: Render
-	const renderContext: RenderContext = {
-		renderStyle: blockRenderStyle,
-		settings,
-		formatter,
-		formatOverrides: processedBlock.formatOverrides,
-		preProcessors,
-	};
-
-	renderNumeralsBlock(el, evaluationResult, processedBlock, renderContext);
-
-	// Phase 8: Render warnings (frontmatter errors, cross-note resolution warnings, etc.)
-	const allWarnings = [...crossNoteResult.warnings, ...warnings];
-	for (const warning of allWarnings) {
-		const warningEl = el.createDiv({ cls: 'numerals-warning' });
-		warningEl.createSpan({ cls: 'numerals-warning-message', text: warning });
-	}
-
-	return { scope, referencedPaths: crossNoteResult.referencedPaths, dependencies: crossNoteResult.dependencies };
-
+/** DOM-only strategy orchestration. Mathematical input preparation belongs to the snapshot owner. */
+export function renderNumeralsBlock(container: HTMLElement, lines: readonly LineRenderData[], context: RenderContext): void {
+ const renderer = RendererFactory.createRenderer(context.renderStyle);
+ for (const line of lines) {
+  if (line.isHidden) continue;
+  const element = container.createDiv({cls: 'numerals-line'});
+  element.dataset.sourceLine = String(line.index);
+  element.toggleClass('numerals-emitter', line.isEmitter);
+  try { renderer.renderLine(element, line, context); }
+  catch (error: unknown) { renderDiagnostic(element, error instanceof Error ? error.message : String(error), line.rawInput); }
+ }
 }
 
 export const numeralsLayoutClasses = {
@@ -326,12 +57,10 @@ export function applyBlockStyles({
 	hasEmitters?: boolean
 }) {
 	el.toggleClass("numerals-block", true);
-	el.toggleClass(numeralsLayoutClasses[settings.layoutStyle], true);
-	el.toggleClass(numeralsRenderStyleClasses[blockRenderStyle], true);			
+	for (const className of Object.values(numeralsLayoutClasses)) el.toggleClass(className, className === numeralsLayoutClasses[settings.layoutStyle]);
+	for (const className of Object.values(numeralsRenderStyleClasses)) el.toggleClass(className, className === numeralsRenderStyleClasses[blockRenderStyle]);
 	el.toggleClass("numerals-alt-row-color", settings.alternateRowColor)
 
-	if (hasEmitters) {
-		el.toggleClass("numerals-emitters-present", true);
-		el.toggleClass("numerals-hide-non-emitters", settings.hideLinesWithoutMarkupWhenEmitting);
-	}	
+	el.toggleClass("numerals-emitters-present", hasEmitters);
+	el.toggleClass("numerals-hide-non-emitters", hasEmitters && settings.hideLinesWithoutMarkupWhenEmitting);
 }
