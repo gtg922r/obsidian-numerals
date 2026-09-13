@@ -214,3 +214,28 @@ describe('click-through editor navigation', () => {
 		expect(editor.focus).not.toHaveBeenCalled();
 	});
 });
+
+describe('navigation across document realms', () => {
+	it.each(['text', 'svg'])('handles a foreign-document %s target without editing note text', kind => {
+		const iframe = document.createElement('iframe'); document.body.appendChild(iframe);
+		const doc = iframe.contentDocument!, win = doc.defaultView!;
+		const block = doc.createElement('div'), line = doc.createElement('div');
+		line.className = 'numerals-line'; line.dataset.sourceLine = '2'; block.appendChild(line); doc.body.appendChild(block);
+		const input = doc.createElement('span'); input.className = 'numerals-input'; input.textContent = '2 + 3'; line.appendChild(input);
+		let target: Node = input.firstChild!;
+		if (kind === 'svg') {
+			const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+			target = doc.createElementNS('http://www.w3.org/2000/svg', 'path'); svg.appendChild(target); line.appendChild(svg);
+		}
+		const range = doc.createRange(); range.setStart(input.firstChild!, 2); range.collapse(true);
+		Object.defineProperty(doc, 'caretRangeFromPoint', { value: jest.fn(() => range), configurable: true });
+		const editor = { getLine: jest.fn(() => '2 + 3'), setCursor: jest.fn(), focus: jest.fn(), setLine: jest.fn(), transaction: jest.fn() };
+		const app = { workspace: { iterateAllLeaves: (visit: (leaf: unknown) => void) => visit(createMarkdownLeaf('source.md', editor)) } } as unknown as App;
+		const ctx = { sourcePath: 'source.md', getSectionInfo: () => ({ lineStart: 3 }) } as unknown as MarkdownPostProcessorContext;
+		const event = new win.MouseEvent('click', { clientX: 10, clientY: 20 }); Object.defineProperty(event, 'target', { value: target });
+		handleNumeralsBlockClick(event, ctx, block, app);
+		expect(editor.setCursor).toHaveBeenCalledWith({ line: 6, ch: kind === 'text' ? 2 : 5 });
+		expect(editor.focus).toHaveBeenCalledTimes(1); expect(editor.setLine).not.toHaveBeenCalled(); expect(editor.transaction).not.toHaveBeenCalled();
+		iframe.remove();
+	});
+});

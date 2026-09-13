@@ -1,25 +1,27 @@
+import { createTestHost } from './hostTestSupport';
 import NumeralsPlugin from '../src/main';
-import { App, Notice, PluginManifest, renderMath, loadMathJax } from 'obsidian';
+import { Notice, PluginManifest, renderMath, loadMathJax } from 'obsidian';
 import { createDefaultSettings, customCurrency } from '../src/settings/normalization';
 import { evaluateMathFromSourceStrings } from '../src/processing/evaluator';
 import { NumeralsScope, CurrencyDisplayMode, NumeralsNumberFormat } from '../src/numerals.types';
 import { getMathRuntime } from '../src/mathRuntime';
 
 jest.mock('../src/NumeralsSuggestor', () => ({ NumeralsSuggestor: class {} }));
-jest.mock('../src/inline', () => ({ createInlineNumeralsPostProcessor: jest.fn(), createInlineLivePreviewExtension: jest.fn() }));
+jest.mock('../src/inline', () => ({ createInlineNumeralsPostProcessor: jest.fn(() => Object.assign(jest.fn(), { dispose: jest.fn() })), createInlineLivePreviewExtension: jest.fn() }));
 jest.mock('../src/rendering/orchestrator', () => ({ processAndRenderNumeralsBlockFromSource: jest.fn() }));
 jest.mock('obsidian', () => ({
 	Plugin: class {
+		constructor(readonly app: unknown) {}
 		register = jest.fn(); registerMarkdownCodeBlockProcessor = jest.fn(); registerMarkdownPostProcessor = jest.fn();
 		registerEditorExtension = jest.fn(); registerEditorSuggest = jest.fn(); addSettingTab = jest.fn();
 		loadData = jest.fn().mockResolvedValue(undefined); saveData = jest.fn().mockResolvedValue(undefined);
 	},
-	PluginSettingTab: class {}, Modal: class {}, Notice: jest.fn(),
+	MarkdownRenderChild: class {}, PluginSettingTab: class {}, Modal: class {}, Notice: jest.fn(),
 	loadMathJax: jest.fn().mockResolvedValue(undefined), renderMath: jest.fn(),
 }));
 const plugins: NumeralsPlugin[] = [];
 function plugin(data: unknown = undefined) {
-	const instance = new NumeralsPlugin({} as App, {} as PluginManifest);
+	const instance = new NumeralsPlugin(createTestHost().app, {} as PluginManifest);
 	jest.mocked(instance.loadData).mockResolvedValue(data);
 	plugins.push(instance); return instance;
 }

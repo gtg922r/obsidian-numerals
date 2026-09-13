@@ -13,15 +13,14 @@ import { NumeralsSettingTab } from "./settings";
 import { createCurrencyPreProcessors } from './settings/currencies';
 import { SettingsChange, SettingsController } from './settings/changes';
 import { NumeralsRuntimeContext, NumeralsSettingsRuntime } from './settings/runtimeState';
-import equal from 'fast-deep-equal';
+import { HostEventHub } from './host/events';
+import { BlockOccurrence } from './host/occurrence';
 import {
 	Plugin,
 	Notice,
 	loadMathJax,
 	MarkdownPostProcessorContext,
-	MarkdownRenderChild,
 } from "obsidian";
-import { getDataviewApi } from './dataview';
 
 export default class NumeralsPlugin extends Plugin {
 	private loadGeneration = 0;
@@ -41,106 +40,41 @@ export default class NumeralsPlugin extends Plugin {
 	private get resultFormatter() { return this.getRuntimeContext().formatter; }
 	public scopeCache: Map<string, NumeralsScope> = new Map<string, NumeralsScope>();
 
-	/**
-	 * Tracks rendered source strings to deduplicate the double-render issue.
-	 * Obsidian calls the code block processor twice (with and without trailing newline).
-	 * We use a WeakMap keyed by the container element to detect and skip duplicates.
-	 */
-	private renderedBlocks: WeakMap<HTMLElement, string> = new WeakMap();
+	private hostEvents!: HostEventHub;
+	private blockOccurrences = new WeakMap<HTMLElement, BlockOccurrence>();
+	private activeBlocks = new Set<BlockOccurrence>();
+	private disposeInline: (() => void) | undefined;
 
 	async numeralsMathBlockHandler(
-		type: NumeralsRenderStyle | undefined,
-		source: string,
-		el: HTMLElement,
+		type: NumeralsRenderStyle | undefined, source: string, el: HTMLElement,
 		ctx: MarkdownPostProcessorContext
 	): Promise<void> {
-		// Fix double-rendering: Obsidian calls processors twice (with/without trailing newline).
-		// Normalize source and skip if we've already rendered this block.
-		const normalizedSource = source.replace(/\n$/, '');
-		const parentEl = el.parentElement;
-		if (parentEl) {
-			const previousSource = this.renderedBlocks.get(parentEl);
-			if (previousSource === normalizedSource) {
-				el.remove();
-				return;
-			}
-			this.renderedBlocks.set(parentEl, normalizedSource);
-		}
-
-		let metadata = getMetadataForFileAtPath(ctx.sourcePath, this.app, this.scopeCache);
-
-		let blockResult = processAndRenderNumeralsBlockFromSource(
-			el,
-			source,
-			ctx,
-			metadata,
-			type,
-			this.settings,
-			this.resultFormatter,
-			this.preProcessors,
-			this.app
-		);
-
-		addGlobalsFromScopeToPageCache(ctx.sourcePath, blockResult.scope, this.scopeCache);
-
-		// Track paths of cross-note referenced files for re-render detection
-		let referencedPaths = blockResult.referencedPaths;
-
-		// TS-1 Fix: Register events on the MarkdownRenderChild, not on the Plugin.
-		// This ensures listeners are cleaned up when the render child is unloaded
-		// (e.g., when navigating away), preventing unbounded listener accumulation.
-		const numeralsBlockChild = new MarkdownRenderChild(el);
-
-		const numeralsBlockCallback = (_callbackType: unknown, file: unknown, _oldPath?: unknown) => {
-			// Check if the changed file is a cross-note referenced file
-			const changedPath = (file && typeof file === 'object' && 'path' in file)
-				? (file as { path: string }).path
-				: undefined;
-			const isReferencedFileChange = changedPath && referencedPaths.includes(changedPath);
-
-			const currentMetadata = getMetadataForFileAtPath(ctx.sourcePath, this.app, this.scopeCache);
-			if (!isReferencedFileChange && equal(currentMetadata, metadata)) {
-				return;
-			}
-			metadata = currentMetadata;
-
+		const render = (context: MarkdownPostProcessorContext) => {
 			el.empty();
-
-			blockResult = processAndRenderNumeralsBlockFromSource(
-				el,
-				source,
-				ctx,
-				metadata,
-				type,
-				this.settings,
-				this.resultFormatter,
-				this.preProcessors,
-				this.app
-			);
-
-			addGlobalsFromScopeToPageCache(ctx.sourcePath, blockResult.scope, this.scopeCache);
-			referencedPaths = blockResult.referencedPaths;
+			const metadata = getMetadataForFileAtPath(context.sourcePath, this.app, this.scopeCache);
+			const result = processAndRenderNumeralsBlockFromSource(el, source, context, metadata, type,
+				this.settings, this.resultFormatter, this.preProcessors, this.app);
+			addGlobalsFromScopeToPageCache(context.sourcePath, result.scope, this.scopeCache);
+			return result;
 		};
-
-		const dataviewAPI = getDataviewApi(this.app);
-		if (dataviewAPI) {
-			// Register on the child component so it auto-cleans on unload
-			const ref = this.app.metadataCache.on(
-				// @ts-expect-error: dataview custom event not in Obsidian types
-				"dataview:metadata-change",
-				numeralsBlockCallback
-			);
-			numeralsBlockChild.registerEvent(ref);
-		} else {
-			const ref = this.app.metadataCache.on("changed", numeralsBlockCallback);
-			numeralsBlockChild.registerEvent(ref);
+		const sourceKey = `${type ?? ""}\0${source.replace(/\n$/, "")}`;
+		const clickListener = (event: MouseEvent) => handleNumeralsBlockClick(event, occurrence.getContext(), el, this.app);
+		const existing = this.blockOccurrences.get(el);
+		if (existing && !existing.isDisposed && existing.ownedBy(ctx)) {
+			existing.refresh(ctx, render, sourceKey);
+			return;
 		}
-
-		numeralsBlockChild.registerDomEvent(el, "click", (event: MouseEvent) => {
-			handleNumeralsBlockClick(event, ctx, el, this.app);
+		existing?.dispose();
+		const occurrence = new BlockOccurrence(el, ctx, render, sourceKey, this.hostEvents, () => {
+			el.removeEventListener("click", clickListener);
+			this.activeBlocks.delete(occurrence);
+			if (this.blockOccurrences.get(el) === occurrence) this.blockOccurrences.delete(el);
 		});
-
-		ctx.addChild(numeralsBlockChild);
+		this.blockOccurrences.set(el, occurrence);
+		this.activeBlocks.add(occurrence);
+		occurrence.registerDomEvent(el, 'click', clickListener);
+		ctx.addChild(occurrence);
+		occurrence.renderNow();
 	}
 
 	async onload() {
@@ -149,8 +83,11 @@ export default class NumeralsPlugin extends Plugin {
 		if (generation !== this.loadGeneration) return;
 		const controller = this.settingsController;
 		this.register(() => controller.dispose());
-		this.register(this.subscribeSettingsChanges(change => {
-			if (change.effects.has('evaluation')) this.scopeCache.clear();
+		const hostEvents = new HostEventHub(this.app, listener => this.subscribeSettingsChanges(listener));
+		this.hostEvents = hostEvents;
+		this.register(() => hostEvents.dispose());
+		this.register(this.hostEvents.subscribe(event => {
+			if (event.kind !== 'settings' || event.change.effects.has('evaluation')) this.scopeCache.clear();
 		}));
 		if (this.configurationError) new Notice(this.configurationError);
 		await loadMathJax();
@@ -166,15 +103,11 @@ export default class NumeralsPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor("math-highlight", this.numeralsMathBlockHandler.bind(this, NumeralsRenderStyle.SyntaxHighlight), priority);
 
 		// Register inline Numerals post-processor (Reading mode)
-		this.registerMarkdownPostProcessor(
-			createInlineNumeralsPostProcessor(
-				this.app,
-				() => this.settings,
-				() => this.resultFormatter,
-				() => this.preProcessors,
-				this.scopeCache
-			)
-		);
+		const inlineProcessor = createInlineNumeralsPostProcessor(this.app, () => this.settings,
+			() => this.resultFormatter, () => this.preProcessors, this.scopeCache, this.hostEvents);
+		this.disposeInline = () => inlineProcessor.dispose();
+		this.register(this.disposeInline);
+		this.registerMarkdownPostProcessor(inlineProcessor);
 
 		// Register inline Numerals CM6 extension (Live Preview mode)
 		this.registerEditorExtension(
@@ -183,7 +116,8 @@ export default class NumeralsPlugin extends Plugin {
 				() => this.resultFormatter,
 				() => this.preProcessors,
 				this.scopeCache,
-				this.app
+				this.app,
+				this.hostEvents
 			)
 		);
 
@@ -197,6 +131,9 @@ export default class NumeralsPlugin extends Plugin {
 
 	onunload() {
 		this.loadGeneration++;
+		for (const occurrence of [...this.activeBlocks]) occurrence.dispose();
+		this.disposeInline?.();
+		this.hostEvents?.dispose();
 		this.scopeCache.clear();
 		this.settingsController?.dispose();
 	}
