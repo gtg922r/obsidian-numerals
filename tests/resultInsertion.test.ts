@@ -3,6 +3,9 @@
  * Tests the isolated side effect of writing results back to the editor.
  */
 
+import { createCurrencyPreProcessors } from '../src/settings/currencies';
+import { NumeralsSettingsRuntime } from '../src/settings/runtimeState';
+import { createDefaultSettings } from '../src/settings/normalization';
 import { handleResultInsertions } from '../src/numeralsUtilities';
 import {
 	createNumberFormatProfile,
@@ -462,4 +465,25 @@ describe('handleResultInsertions', () => {
 		expect(mockEditor.setLine).toHaveBeenNthCalledWith(1, 1, '@[result1::100]');
 		expect(mockEditor.setLine).toHaveBeenNthCalledWith(2, 3, '@[result3::300]');
 	});
+	it('inserts native semicolon ResultSets with their retained currency code after a remap', () => {
+		const settings = createDefaultSettings();
+		const runtime = new NumeralsSettingsRuntime(createCurrencyPreProcessors);
+		runtime.prepare(settings).activate();
+		const old = runtime.context;
+		const source = '@[answer] = unit("1$"); unit("2$")';
+		const raw: unknown = old.engine.evaluate('unit("1$"); unit("2$")');
+		settings.dollarSymbolCurrency.currency = 'CAD';
+		runtime.prepare(settings).activate();
+		const current = runtime.context;
+		expect(old.formatter.format(raw).canonical).toBe('[2 USD]');
+		expect(current.formatter.format(current.engine.evaluate('unit("1$"); unit("2$")')).canonical).toBe('[2 CAD]');
+		mockCtx.getSectionInfo.mockReturnValue({ lineStart: 0 });
+		mockEditor.getLine.mockReturnValue(source);
+		handleResultInsertions([raw], [0], old.formatter, {}, mockCtx as unknown as MarkdownPostProcessorContext, mockApp as App, mockEl);
+		jest.runAllTimers();
+		expect(mockEditor.setLine).toHaveBeenCalledWith(1, '@[answer::[2 USD]] = unit("1$"); unit("2$")');
+		expect(old.engine.format(raw)).toBe('[2 $]');
+		runtime.dispose();
+	});
+
 });

@@ -69,3 +69,33 @@ it('preserves unconfigured suffix placement for native unit parsing', () => {
 	for (const source of ['1$', '1 €', '1𞋿']) expect(normalizeExpression(originalSource(source)).source).toBe(source);
 	expect(normalizeExpression(originalSource('1,234$')).source).toBe('1234$');
 });
+
+it.each([
+	'x = {$: 2}; x["$"]', 'x = {$: 2}; x.$',
+	'x = {€: 2}; x["€"]', 'x = {€: 2}; x.€',
+	'x = {USD: 8, $: 2}; x.$', 'x = {$: 2}; x?.$',
+	'x = {𞋿: 2}; x.𞋿', 'x = {$1: 2}; x.$1',
+	'x = {nested: {$: 2}}; x.nested.$',
+	'x = {unused: 8, # property comment\n$: 2}; x.$',
+])('preserves currency symbols used as native property names: %s', source => {
+	const normalized = normalizeExpression(originalSource(source), processors);
+	expect(normalized.source).toBe(source);
+	expect(normalized.mappings.every(mapping => mapping.kind === 'identity')).toBe(true);
+	const native: unknown = runtime.math.evaluate(source);
+	expect(runtime.math.format(native)).toBe('[2]');
+	const block = evaluateMathFromSourceStrings(normalized.source, new NumeralsScope());
+	// The legacy block adapter evaluates rows separately; multiline object parsing belongs to F.
+	if (!source.includes('\n')) {
+		expect(block.errorMsg).toBeNull();
+		expect(runtime.math.format(block.results[0])).toBe('[2]');
+	}
+	const inline = evaluateInlineExpression(source, new NumeralsScope(), processors, undefined, app, 'note.md', settings);
+	expect(runtime.math.format(inline.raw)).toBe('[2]');
+});
+
+it('still normalizes currency values and conversion targets inside objects', () => {
+	const source = 'x = {$: $2, €: 3 EUR to €}; [x.$, x.€]';
+	expect(normalizeExpression(originalSource(source), processors).source).toBe('x = {$: 2 USD, €: 3 EUR to EUR}; [x.$, x.€]');
+	const result: unknown = runtime.math.evaluate(normalizeExpression(originalSource(source), processors).source);
+	expect(runtime.math.format(result)).toBe('[[2 USD, 3 EUR]]');
+});

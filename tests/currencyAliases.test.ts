@@ -50,6 +50,37 @@ describe('narrow native currency alias canonicalization', () => {
 		expect(runtime.math.format(normalizeCurrencyAliases(runtime.math.evaluate('2 cup'), runtime.mappings, runtime.math))).toBe('2 cup');
 		runtime.dispose();
 	});
+	it.each([
+		'unit("1$"); unit("2$")',
+		'unit("1$")\nunit("2$")',
+		'1; 2 m',
+		'unit("1$");',
+		'unit(bignumber("1.234567890123456789"), "$") / h; unit(bignumber("2.345678901234567890"), "$") / h',
+	])('preserves native ResultSet entries and serialization: %s', expression => {
+		const runtime = createCurrencyRuntime(createDefaultSettings());
+		const original: unknown = runtime.math.evaluate(expression);
+		const originalText = runtime.math.format(original);
+		const normalized = normalizeCurrencyAliases(original, runtime.mappings, runtime.math);
+		expect(runtime.math.isResultSet(normalized)).toBe(true);
+		const expected: unknown = runtime.math.evaluate(expression.replace(/\$/gu, ' USD'));
+		expect(runtime.math.format(normalized)).toBe(runtime.math.format(expected));
+		expect(runtime.math.format(original)).toBe(originalText);
+		if (runtime.math.isResultSet(original) && runtime.math.isResultSet(normalized)) {
+			expect(normalized).not.toBe(original);
+			expect(normalized.entries).not.toBe(original.entries);
+			expect(normalized.entries).toHaveLength(original.entries.length);
+		}
+		runtime.dispose();
+	});
+	it('normalizes nested and shared ResultSets without changing their entry shape', () => {
+		const runtime = createCurrencyRuntime(createDefaultSettings());
+		const result: unknown = runtime.math.evaluate('unit("1$"); [unit("2$"),unit("3$")]');
+		const normalized = normalizeCurrencyAliases({ left: result, right: result }, runtime.mappings, runtime.math) as { left: unknown; right: unknown };
+		expect(normalized.left).toBe(normalized.right);
+		expect(runtime.math.format(normalized)).toBe('{"left": [[2 USD, 3 USD]], "right": [[2 USD, 3 USD]]}');
+		expect(runtime.math.format(result)).toBe('[[2 $, 3 $]]');
+		runtime.dispose();
+	});
 	it('normalizes repeated references to the same matrix consistently', () => {
 		const runtime = createCurrencyRuntime(createDefaultSettings());
 		const matrix: unknown = runtime.math.evaluate('[unit("1$"),unit("2$")]');
@@ -66,6 +97,41 @@ describe('narrow native currency alias canonicalization', () => {
 		const normalized = currencyAliasesToCodes(value, runtime.mappings, runtime.math);
 		expect(runtime.math.format(normalized)).toBe('1.234567890123456789 USD / h');
 		expect(normalized.equals(value)).toBe(true);
+		runtime.dispose();
+	});
+	it.each([[false, false], [false, true], [true, false], [true, true]])(
+		'preserves exact normalized BigNumber rates and flags (fixed %s, skip simplification %s)', (fixPrefix, skipAutomaticSimplification) => {
+			const runtime = createCurrencyRuntime(createDefaultSettings());
+			const value = runtime.math.evaluate('add(unit(bignumber(1) / 7, "$/h"), unit(bignumber(2) / 11, "$/day"))') as Unit;
+			// These public flags are booleans; mathjs typings narrow skip to literal true.
+			const flags: { fixPrefix: boolean; skipAutomaticSimplification: boolean } = value;
+			flags.fixPrefix = fixPrefix; flags.skipAutomaticSimplification = skipAutomaticSimplification;
+			const originalValue: unknown = value.value;
+			const normalized = currencyAliasesToCodes(value, runtime.mappings, runtime.math);
+			const normalizedValue: unknown = normalized.value;
+			expect(runtime.math.isBigNumber(originalValue)).toBe(true);
+			expect(runtime.math.isBigNumber(normalizedValue)).toBe(true);
+			if (runtime.math.isBigNumber(originalValue) && runtime.math.isBigNumber(normalizedValue)) {
+				expect(normalizedValue.eq(originalValue)).toBe(true);
+				expect(normalizedValue.toString()).toBe(originalValue.toString());
+			}
+			expect(normalized.fixPrefix).toBe(fixPrefix);
+			expect(normalized.skipAutomaticSimplification).toBe(skipAutomaticSimplification);
+			expect(normalized.formatUnits()).toBe('USD / h');
+			expect(value.value).toBe(originalValue);
+			expect(value.formatUnits()).toBe('$ / h');
+			runtime.dispose();
+		}
+	);
+	it.each(['$/h', '$^2', '$/£'])('keeps alias-only units valueless with their public flags: %s', source => {
+		const runtime = createCurrencyRuntime(createDefaultSettings());
+		const value = runtime.math.unit(source);
+		const normalized = currencyAliasesToCodes(value, runtime.mappings, runtime.math);
+		expect(value.value).toBeNull();
+		expect(normalized.value).toBeNull();
+		expect(normalized.fixPrefix).toBe(value.fixPrefix);
+		expect(normalized.skipAutomaticSimplification).toBe(value.skipAutomaticSimplification);
+		expect(runtime.math.format(normalized)).not.toMatch(/^1 /);
 		runtime.dispose();
 	});
 	it('uses a retained mapping after remaps and handles a custom symbol', () => {

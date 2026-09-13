@@ -26,6 +26,9 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Preserve exact normalized BigNumber currency-rate values and public Unit formatting flags when converting aliases to codes.
+- Preserve currency symbols used as native object keys and dotted property names while normalizing currency values and conversion targets.
+- Canonicalize currency aliases inside native mathjs ResultSets, preserving semicolon result entries and retained currency codes during insertion after a remap.
 - Apply currency remaps and removal atomically using private full mathjs runtimes; failed saves keep the active configuration, and invalid saved mappings stay editable with a visible calculation error until repaired. Expose typed settings generations for cache/insertion invalidation.
 - Support currency suffixes, standalone conversion symbols and native quoted unit strings without shared parser patches or global MathJax macros. Preserve delimiter commas, variable names, compound-unit serialization and retained values' originating runtime.
 - Preserve grouped literals after implicit multiplication and compose insertion wrappers with previous/sum directives; keep reference display labels intact with many references and magic-variable text in note/property names.

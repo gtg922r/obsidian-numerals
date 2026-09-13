@@ -138,10 +138,14 @@ export function scanExpression(source: string, currencySymbols: readonly string[
 			const amount = currency ? readNumericCandidate(tail.slice(currency.length), delimiters) : undefined;
 			const numeric = readNumericCandidate(tail, delimiters);
 			const name = identifier.exec(tail)?.[0];
+			// Object keys and dotted accessors name properties, not currency values.
+			const identifierRole = previous?.text === '.' || previous?.text === '?.' ||
+				(frames[frames.length - 1]?.close === '}' && (previous?.text === '{' || previous?.text === ','));
 			const suffixTail = numeric ? tail.slice(numeric.length).replace(/^[\t ]+/, '') : '';
 			const suffix = readSymbol(suffixTail);
 			const isWholeSymbol = (input: string, symbol: string) => !/^[\p{Sc}\p{L}\p{N}_$]/u.test(input.slice(symbol.length));
-			if (amount && !/^[\p{Sc}\p{L}\p{N}_$]/u.test(tail.slice(currency!.length + amount.length))) { kind = 'currency'; text = currency + amount; currencySymbol = currency; currencyAmount = amount; }
+			if (name && identifierRole) { kind = 'identifier'; text = name; }
+			else if (amount && !/^[\p{Sc}\p{L}\p{N}_$]/u.test(tail.slice(currency!.length + amount.length))) { kind = 'currency'; text = currency + amount; currencySymbol = currency; currencyAmount = amount; }
 			else if (numeric && (!delimiters || !numeric.includes(',')) && suffix && isWholeSymbol(suffixTail, suffix)) {
 				kind = 'currency'; text = tail.slice(0, tail.length - suffixTail.length + suffix.length);
 				currencySymbol = suffix; currencyAmount = numeric;
