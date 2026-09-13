@@ -4,67 +4,57 @@ import { NumeralsSettings, StringReplaceMap } from '../numerals.types';
 import { replaceStringsInTextFromMap } from './preprocessor';
 import { getScopeFromFrontmatter, removeCanonicalizedDuplicates } from './scope';
 import { getDataviewApi } from '../dataview';
+import { applySourceEdits, originalSource, scanExpression, CROSS_NOTE_REF_REGEX, MappedSource, SourceSpan } from './expressionScanner';
+import { cloneReferenceValue, restoreReferenceNames, mapExpressionDiagnostic } from './referenceBindings';
 import { hasOwnProperty } from '../utils/hasOwnProperty';
 
-/**
- * Result of resolving cross-note references in a source string.
- */
-export interface CrossNoteResolutionResult {
-	/** Source string with all [[note]].prop references replaced with resolved values */
-	resolvedSource: string;
-	/** File paths of all referenced notes (for re-render tracking) */
-	referencedPaths: string[];
-	/** Warnings generated during resolution (non-fatal issues) */
-	warnings: string[];
-	/** Fatal error if a reference couldn't be resolved (stops evaluation) */
-	error: string | null;
-}
+export { CROSS_NOTE_REF_REGEX } from './expressionScanner';
 
-/**
- * Parsed cross-note reference extracted from source text.
- */
-export interface CrossNoteReference {
-	/** The full matched text, e.g. `[[my note]].price.hourly` */
+export interface CrossNoteReference extends SourceSpan {
 	fullMatch: string;
-	/** The note name inside the brackets, e.g. `my note` */
 	noteName: string;
-	/** The property path after the dot, e.g. `price.hourly` */
 	propertyPath: string;
 }
 
-/**
- * Regex pattern for matching cross-note references.
- *
- * Matches: `[[note name]].property` or `[[note name]].property.sub`
- * Does NOT match: `[[x]]` (no dot), `[[x]] .y` (space before dot)
- *
- * The property path supports alphanumeric characters, underscores, `$`, and
- * Unicode letters (to match mathjs variable naming rules).
- */
-export const CROSS_NOTE_REF_REGEX = /\[\[([^\]]+)\]\]\.([$\w\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F]+(?:\.[$\w\u00C0-\u02AF\u0370-\u03FF\u2100-\u214F]+)*)/g;
+/** A dependency survives missing files, missing properties, and failed value evaluation. */
+export interface ReferenceDependency extends CrossNoteReference {
+	sourcePath: string;
+	resolvedPath?: string;
+	status: 'resolved' | 'missing-note' | 'unavailable-property' | 'invalid-value';
+	error?: string;
+}
 
-/**
- * Parse all cross-note references from a source string.
- *
- * @param source - The source string to scan
- * @returns Array of parsed cross-note references
- */
-export function parseCrossNoteReferences(source: string): CrossNoteReference[] {
-	const refs: CrossNoteReference[] = [];
-	let match: RegExpExecArray | null;
+export interface CrossNoteResolutionResult {
+	/** Mathjs source containing opaque symbols; evaluate only with this binding table. */
+	resolvedSource: string;
+	sourceMap: MappedSource;
+	bindings: ReadonlyMap<string, unknown>;
+	bindingNames: ReadonlyMap<string, string>;
+	referencedPaths: string[];
+	dependencies: ReferenceDependency[];
+	warnings: string[];
+	error: string | null;
+}
 
-	// Reset lastIndex for global regex
-	CROSS_NOTE_REF_REGEX.lastIndex = 0;
-
-	while ((match = CROSS_NOTE_REF_REGEX.exec(source)) !== null) {
-		refs.push({
-			fullMatch: match[0],
-			noteName: match[1],
-			propertyPath: match[2],
-		});
+export class ReferenceEvaluationError extends Error {
+	readonly referencedPaths: string[];
+	readonly dependencies: ReferenceDependency[];
+	readonly sourceSpan?: SourceSpan;
+	constructor(message: string, readonly resolution: CrossNoteResolutionResult, readonly originalInput: string, readonly sourceMap = resolution.sourceMap) {
+		const diagnostic = mapExpressionDiagnostic(message, sourceMap);
+		super(restoreReferenceNames(diagnostic.message, resolution.bindingNames));
+		this.sourceSpan = diagnostic.span;
+		this.name = 'Note Reference Error';
+		this.referencedPaths = resolution.referencedPaths;
+		this.dependencies = resolution.dependencies;
 	}
+}
 
-	return refs;
+export function parseCrossNoteReferences(source: string): CrossNoteReference[] {
+	return scanExpression(source).filter(token => token.kind === 'reference').map(token => {
+		const match = new RegExp(CROSS_NOTE_REF_REGEX.source).exec(token.text)!;
+		return { start: token.start, end: token.end, fullMatch: token.text, noteName: match[1], propertyPath: match[2] };
+	});
 }
 
 /**
@@ -82,6 +72,7 @@ export function getNestedProperty(obj: Record<string, unknown>, path: string): u
 		if (current === null || current === undefined || typeof current !== 'object') {
 			return undefined;
 		}
+		if (!hasOwnProperty(current, part)) return undefined;
 		current = (current as Record<string, unknown>)[part];
 	}
 
@@ -225,228 +216,78 @@ export function evaluateMetadataValue(
 	return { result: value };
 }
 
-/**
- * Resolve a single cross-note reference to its value.
- *
- * @param ref - The parsed cross-note reference
- * @param app - The Obsidian App instance
- * @param sourcePath - Path of the file containing the reference (for link resolution)
- * @param settings - Numerals settings
- * @param preProcessors - String replacement maps
- * @returns Object with the formatted value string, or an error
- */
+/** Resolve a raw typed property using only the referenced note's opted-in metadata. */
 export function resolveSingleReference(
-	ref: CrossNoteReference,
+	ref: Pick<CrossNoteReference, 'fullMatch' | 'noteName' | 'propertyPath'>,
 	app: App,
 	sourcePath: string,
 	settings: NumeralsSettings,
 	preProcessors: StringReplaceMap[],
-): { value: string; referencedPath: string; warning?: string; error?: string } {
-	// Resolve the note
+): { value?: unknown; referencedPath?: string; status: ReferenceDependency['status']; error?: string } {
 	const file = app.metadataCache.getFirstLinkpathDest(ref.noteName, sourcePath);
-	if (!file) {
-		return {
-			value: '',
-			referencedPath: '',
-			error: `Note "${ref.noteName}" not found in vault`,
-		};
-	}
-
-	// Get metadata
-	const metadata = getMetadataForReferencedNote(file, app);
-	if (!metadata) {
-		return {
-			value: '',
-			referencedPath: file.path,
-			error: `No metadata found in "${ref.noteName}"`,
-		};
-	}
-
-	// Filter to available properties
+	if (!file) return { status: 'missing-note', error: `Note "${ref.noteName}" not found in vault` };
+	const referencedPath = file.path;
+	const metadata = getMetadataForReferencedNote(file, app) ?? {};
 	const available = filterAvailableProperties(metadata, settings.forceProcessAllFrontmatter);
-
-	// Get the property value (supports nested paths)
-	const pathParts = ref.propertyPath.split('.');
-	const topLevelKey = pathParts[0];
-
-	if (!(topLevelKey in available)) {
-		return {
-			value: '',
-			referencedPath: file.path,
-			error: `Property "${topLevelKey}" not available in "${ref.noteName}". `
-				+ `Ensure the property exists and is exposed via the \`numerals\` frontmatter key or starts with \`$\`.`,
-		};
+	const [key, ...nested] = ref.propertyPath.split('.');
+	if (!hasOwnProperty(available, key)) {
+		return { referencedPath, status: 'unavailable-property', error: `Property "${key}" not available in "${ref.noteName}". Ensure it exists and is exposed via the numerals frontmatter key or starts with $.` };
 	}
-
-	// For simple (non-nested) access, evaluate the top-level value directly
-	if (pathParts.length === 1) {
-		const rawValue = available[topLevelKey];
-		const { scope } = getScopeFromFrontmatter(
-			available,
-			undefined,
-			true,
-			preProcessors,
-		);
-
-		if (scope.has(topLevelKey)) {
-			const formatted = formatValueForInsertion(scope.get(topLevelKey));
-			return { value: formatted, referencedPath: file.path };
+	let value: unknown;
+	if (nested.length) {
+		const raw = getNestedProperty(available, ref.propertyPath);
+		if (raw === undefined) return { referencedPath, status: 'unavailable-property', error: `Property "${ref.propertyPath}" not found in "${ref.noteName}"` };
+		const evaluated = evaluateMetadataValue(raw, preProcessors);
+		if (evaluated.error) return { referencedPath, status: 'invalid-value', error: evaluated.error };
+		value = evaluated.result;
+	} else {
+		const { scope, warnings } = getScopeFromFrontmatter(available, undefined, true, preProcessors);
+		if (scope.has(key)) value = scope.get(key);
+		else {
+			const evaluated = evaluateMetadataValue(available[key], preProcessors);
+			if (evaluated.error) return { referencedPath, status: 'invalid-value', error: warnings[0] ?? evaluated.error };
+			value = evaluated.result;
 		}
-
-		const { result, error } = evaluateMetadataValue(rawValue, preProcessors);
-
-		if (result === undefined || error) {
-			return {
-				value: '',
-				referencedPath: file.path,
-				warning: `Could not evaluate "${ref.propertyPath}" from "${ref.noteName}": ${error ?? 'undefined value'}`,
-			};
-		}
-
-		// Format result back to a string that mathjs can parse
-		const formatted = formatValueForInsertion(result);
-		return { value: formatted, referencedPath: file.path };
 	}
-
-	// For nested access: first evaluate the top-level value, then traverse
-	const topValue = available[topLevelKey];
-
-	if (typeof topValue === 'object' && topValue !== null && !Array.isArray(topValue)) {
-		const nestedPath = pathParts.slice(1).join('.');
-		const nestedValue = getNestedProperty(topValue as Record<string, unknown>, nestedPath);
-
-		if (nestedValue === undefined) {
-			return {
-				value: '',
-				referencedPath: file.path,
-				error: `Property "${ref.propertyPath}" not found in "${ref.noteName}"`,
-			};
-		}
-
-		const { result, error } = evaluateMetadataValue(nestedValue, preProcessors);
-		if (result === undefined || error) {
-			return {
-				value: '',
-				referencedPath: file.path,
-				warning: `Could not evaluate "${ref.propertyPath}" from "${ref.noteName}": ${error ?? 'undefined value'}`,
-			};
-		}
-
-		const formatted = formatValueForInsertion(result);
-		return { value: formatted, referencedPath: file.path };
-	}
-
-	// Top-level value is not an object but nested access was attempted
-	return {
-		value: '',
-		referencedPath: file.path,
-		error: `Property "${topLevelKey}" in "${ref.noteName}" is not an object; cannot access "${ref.propertyPath}"`,
-	};
-}
-
-/**
- * Format a resolved value into a string suitable for insertion into a mathjs expression.
- *
- * Numbers, units, and other mathjs types use `math.format()` to produce
- * a parseable string. Strings are inserted as-is (they may contain expressions).
- *
- * @param value - The evaluated value to format
- * @returns A string representation suitable for mathjs parsing
- */
-export function formatValueForInsertion(value: unknown): string {
-	if (typeof value === 'number') {
-		return String(value);
-	}
-
-	if (typeof value === 'string') {
-		return value;
-	}
-
-	// mathjs types (units, BigNumber, Complex, etc.)
 	try {
-		return math.format(value, { notation: 'fixed' });
-	} catch {
-		return String(value);
+		return { value: cloneReferenceValue(value), referencedPath, status: 'resolved' };
+	} catch (error: unknown) {
+		return { referencedPath, status: 'invalid-value', error: error instanceof Error ? error.message : String(error) };
 	}
 }
 
-/**
- * Resolve all cross-note references in a source string.
- *
- * Scans the source for `[[note]].property` patterns, resolves each one
- * to its value from the referenced note's metadata, and substitutes the
- * value back into the source string.
- *
- * This should be called as the FIRST preprocessing step, before currency
- * and other preprocessors, because resolved values may contain currency
- * symbols or other patterns that need further preprocessing.
- *
- * @param source - The source string (may be multi-line)
- * @param app - The Obsidian App instance
- * @param sourcePath - Path of the current file (for link resolution)
- * @param settings - Numerals settings
- * @param preProcessors - String replacement maps for value evaluation
- * @returns Resolution result with substituted source and metadata
- */
+// Monotonic per runtime, plus source/scope collision checks. Never a shared mutable value table.
+let bindingGeneration = 0;
+
 export function resolveCrossNoteReferences(
 	source: string,
 	app: App,
 	sourcePath: string,
 	settings: NumeralsSettings,
 	preProcessors: StringReplaceMap[],
+	occupiedNames: ReadonlyMap<string, unknown> = new Map(),
 ): CrossNoteResolutionResult {
-	if (!settings.enableCrossNoteReferences) {
-		return {
-			resolvedSource: source,
-			referencedPaths: [],
-			warnings: [],
-			error: null,
-		};
-	}
-
-	const refs = parseCrossNoteReferences(source);
-	if (refs.length === 0) {
-		return {
-			resolvedSource: source,
-			referencedPaths: [],
-			warnings: [],
-			error: null,
-		};
-	}
-
-	let resolvedSource = source;
-	const referencedPaths: string[] = [];
-	const warnings: string[] = [];
-
+	const refs = settings.enableCrossNoteReferences ? parseCrossNoteReferences(source) : [];
+	const dependencies: ReferenceDependency[] = [];
+	const bindings = new Map<string, unknown>();
+	const bindingNames = new Map<string, string>();
+	const edits = [];
 	for (const ref of refs) {
-		const result = resolveSingleReference(ref, app, sourcePath, settings, preProcessors);
-
-		if (result.referencedPath && !referencedPaths.includes(result.referencedPath)) {
-			referencedPaths.push(result.referencedPath);
-		}
-
-		if (result.error) {
-			return {
-				resolvedSource,
-				referencedPaths,
-				warnings,
-				error: result.error,
-			};
-		}
-
-		if (result.warning) {
-			warnings.push(result.warning);
-		}
-
-		// Replace the reference with the resolved value
-		// Use a literal string replacement (not regex) to avoid issues with special chars
-		resolvedSource = resolvedSource.replace(ref.fullMatch, result.value);
+		let result: ReturnType<typeof resolveSingleReference>;
+		try { result = resolveSingleReference(ref, app, sourcePath, settings, preProcessors); }
+		catch (error: unknown) { result = { status: 'invalid-value', error: error instanceof Error ? error.message : String(error) }; }
+		dependencies.push({ ...ref, sourcePath, resolvedPath: result.referencedPath, status: result.status, error: result.error });
+		if (result.error) continue;
+		let symbol: string;
+		do { symbol = `__numerals_ref_${bindingGeneration++}`; } while (source.includes(symbol) || occupiedNames.has(symbol));
+		bindings.set(symbol, result.value);
+		bindingNames.set(symbol, ref.fullMatch);
+		edits.push({ start: ref.start, end: ref.end, text: symbol });
 	}
-
+	const sourceMap = applySourceEdits(originalSource(source), edits);
 	return {
-		resolvedSource,
-		referencedPaths,
-		warnings,
-		error: null,
+		resolvedSource: sourceMap.source, sourceMap, bindings, bindingNames, dependencies,
+		referencedPaths: [...new Set(dependencies.flatMap(d => d.resolvedPath ? [d.resolvedPath] : []))],
+		warnings: [], error: dependencies.find(d => d.error)?.error ?? null,
 	};
 }

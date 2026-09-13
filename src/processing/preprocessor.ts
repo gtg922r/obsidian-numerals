@@ -1,3 +1,4 @@
+import { applySourceEdits, originalSource, scanExpression, normalizeNumericToken, MappedSource, SourceEdit } from './expressionScanner';
 import {
 	NumeralsNumberFormat,
 	ProcessedBlock,
@@ -25,11 +26,47 @@ const blockNumberFormatMap: Record<BlockNumberFormat, NumeralsNumberFormat> = {
  * @param stringReplaceMap Array of StringReplaceMap objects to use for replacement
  * @returns Processed text 
  */
-export function replaceStringsInTextFromMap(text: string, stringReplaceMap: StringReplaceMap[]): string {
-	for (const processor of stringReplaceMap ) {
-		text = text.replace(processor.regex, processor.replaceStr)
+export function normalizeExpression(mapped: MappedSource, processors: readonly StringReplaceMap[] = []): MappedSource {
+	const edits: SourceEdit[] = [];
+	const symbols = processors.flatMap(p => p.currencySymbol ? [p.currencySymbol] : []);
+	for (const token of scanExpression(mapped.source, symbols)) {
+		let text = token.text;
+		if (token.kind === 'number') {
+			text = normalizeNumericToken(text, token.groupingAllowed) ?? text;
+		} else if (token.kind === 'currency') {
+			const symbol = [...symbols].sort((a, b) => b.length - a.length).find(s => text.startsWith(s)) ?? text[0];
+			const amount = normalizeNumericToken(text.slice(symbol.length), true);
+			if (amount === undefined) continue;
+			const currency = processors.find(p => p.currencySymbol === symbol && p.currencyCode !== undefined);
+			if (currency) text = `${amount} ${currency.currencyCode!}`.trimEnd();
+			else {
+				text = symbol + amount;
+				for (const processor of processors) text = text.replace(processor.regex, processor.replaceStr);
+			}
+		} else if (token.kind === 'identifier') {
+			for (const processor of processors) text = text.replace(processor.regex, processor.replaceStr);
+		}
+		if (text !== token.text) edits.push({ ...token, text });
 	}
-	return text;
+	return applySourceEdits(mapped, edits);
+}
+
+export function replaceStringsInTextFromMap(text: string, processors: StringReplaceMap[]): string {
+	return normalizeExpression(originalSource(text), processors).source;
+}
+
+export function replaceExpressionDirectives(mapped: MappedSource, block: boolean): MappedSource {
+	const edits: SourceEdit[] = [];
+	for (const token of scanExpression(mapped.source)) {
+		if (token.kind === 'directive' && (block || token.text.toLowerCase() === '@prev')) {
+			edits.push({ ...token, text: token.text.toLowerCase() === '@prev' ? '__prev' : '__total' });
+		} else if (block && token.kind === 'insertion') {
+			edits.push({ ...token, text: /^@[\t ]*\[([^\]:]+)(::[^\]]*)?\]/.exec(token.text)![1] });
+		} else if (block && token.kind === 'emitter') {
+			edits.push({ ...token, start: mapped.source.slice(0, token.start).replace(/[\t ]+$/, '').length, text: '' });
+		}
+	}
+	return applySourceEdits(mapped, edits);
 }
 
 /**
@@ -43,69 +80,49 @@ export function replaceStringsInTextFromMap(text: string, stringReplaceMap: Stri
  * insertion lines.
  */
 export function preProcessBlockForNumeralsDirectives(
-	source: string,
+	source: string | MappedSource,
 	preProcessors: StringReplaceMap[] | undefined,
 ): ProcessedBlock {
 
-	const rawRows: string[] = source.split("\n");
-	const formatDirectives = collectFormatDirectives(source);
-	let processedSource:string = formatDirectives.sourceWithoutDirectives;
-
+	const mapped = typeof source === 'string' ? originalSource(source) : source;
+	const rawRows = mapped.originalSource.split('\n');
+	const tokens = scanExpression(mapped.source);
+	// Only rows starting outside a literal can declare whole-line formatting.
+	let directiveOffset = 0;
+	const directiveSource = mapped.source.split('\n').map(row => {
+		const start = directiveOffset + row.search(/\S/);
+		directiveOffset += row.length + 1;
+		return tokens.some(t => t.kind === 'string' && t.start <= start && t.end > start)
+			? row.replace(/[^\r]/g, ' ') : row;
+	}).join('\n');
+	const formatDirectives = collectFormatDirectives(directiveSource);
 	const emitter_lines: number[] = [];
 	const insertion_lines: number[] = [];
-	const hidden_lines: number[] = [];
-	hidden_lines.push(...formatDirectives.directiveLineIndexes);
+	const hidden_lines = [...formatDirectives.directiveLineIndexes];
 	let shouldHideNonEmitterLines = false;
-
-	// Find emitter and result insertion lines before modifying source
-	for (let i = 0; i < rawRows.length; i++) {
-
-		// Find emitter lines (lines that end with `=>`)
-		if (rawRows[i].match(/^[^#\r\n]*=>.*$/)) {				 								
-			emitter_lines.push(i);
+	const edits: SourceEdit[] = [];
+	let offset = 0;
+	for (const [index, row] of mapped.source.split('\n').entries()) {
+		const rowTokens = tokens.filter(t => t.start >= offset && t.start < offset + row.length);
+		if (rowTokens.some(t => t.kind === 'emitter')) emitter_lines.push(index);
+		if (rowTokens.some(t => t.kind === 'insertion')) insertion_lines.push(index);
+		// Whole-line directives must also start outside a string/comment.
+		const start = offset + row.search(/\S/);
+		const protectedStart = tokens.some(t => (t.kind === 'string' || t.kind === 'comment') && t.start <= start && t.end > start);
+		const hide = !protectedStart && /^\s*@hideRows\s*$/i.test(row);
+		if (hide) { hidden_lines.push(index); shouldHideNonEmitterLines = true; }
+		if (!protectedStart && (hide || formatDirectives.directiveLineIndexes.includes(index))) {
+			edits.push({ start: offset, end: offset + row.replace(/\r$/, '').length, text: '' });
 		}
-
-		// Find result insertion lines (lines that match `@[variable::result]`)
-		const insertionMatch = rawRows[i].match(/@\s*\[([^\]:]+)(::)?([^\]]*)\].*$/);
-		if (insertionMatch) {
-			insertion_lines.push(i)
-		}
-
-		// Find hideRows directives (starts with @hideRows, ignoring whitespace)
-		if (rawRows[i].match(/^\s*@hideRows\s*$/)) {
-			hidden_lines.push(i);
-			shouldHideNonEmitterLines = true;
-		}
-
-		// Find @createUnit directives (starts with @createUnit, ignoring whitespace)
-		if (rawRows[i].match(/^\s*@createUnit\s*$/)) {
-			hidden_lines.push(i);
-		}
-	} 
-
-	// remove `=>` at the end of lines, but preserve comments.
-	processedSource = processedSource.replace(/^([^#\r\n]*?)([\t ]*=>[\t ]*)(\$\{.*\})?(.*)$/gm,"$1") 
-
-	// Replace Directives
-	// Replace result insertion directive `@[variable::result]` with only the variable
-	processedSource = processedSource.replace(/@\s*\[([^\]:]+)(::[^\]]*)?\](.*)$/gm, "$1$3")	
-
-	// Replace sum and prev directives
-	processedSource = processedSource.replace(/@sum/gi, "__total");
-	processedSource = processedSource.replace(/@total/gi, "__total");
-	processedSource = processedSource.replace(/@prev/gi, "__prev");
-
-	// Remove @hideRows directive
-	processedSource = processedSource.replace(/^\s*@hideRows/gim, "");
-
-	// Apply any pre-processors (e.g. currency replacement, thousands separator replacement, etc.)
-	if (preProcessors && preProcessors.length > 0) {
-		processedSource = replaceStringsInTextFromMap(processedSource, preProcessors);
+		offset += row.length + 1;
 	}
+	const sourceMap = normalizeExpression(replaceExpressionDirectives(applySourceEdits(mapped, edits), true), preProcessors);
+	const processedSource = sourceMap.source;
 
 	return {
 		rawRows,
 		processedSource,
+		sourceMap,
 		transparentLineIndexes: formatDirectives.directiveLineIndexes,
 		formatOverrides: {
 			numberFormat: formatDirectives.format === undefined

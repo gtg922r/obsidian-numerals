@@ -94,6 +94,10 @@ Numerals uses [mathjs](https://mathjs.org/) for calculations and adds Obsidian-f
 | Bases | `0xff + 0b100` -> `259` |
 | Fractions | `fraction(1/3) + fraction(1/4)` -> `7/12` |
 
+Recovery candidate input rules: use **ungrouped numbers inside function arguments, arrays, and indexes**. `max(1,234)` means two arguments and returns `234`; `[1,234]` has two elements. Use `max(1234, 5)` for one thousand two hundred thirty-four. Outside these contexts, complete grouped literals such as `1,234.50 + 2` are accepted, including inside ordinary grouping parentheses. This restriction also applies to parentheses nested in a call/list. Explicit currency amounts such as `max($1,234.50, $2)` remain single amounts. Malformed grouping such as `1,0001` is never partially stripped. Strings and `#` comments are preserved.
+
+Cross-note properties retain their raw value and type: if `[[numbers]].value` is `-2`, `[[numbers]].value ^ 2` returns `4`. References support scalar values, complex numbers, units, BigNumbers, fractions, and matrices. They cannot be assignment targets or export functions/objects. Quoted metadata expressions can produce matrices; a raw metadata field array still uses its last entry, matching Dataview repeated-field behavior. These changes are recovery-candidate behavior; stable distribution remains 1.10.2.
+
 Currency symbols can be customized in settings.
 
 ### Note-Wide Variables

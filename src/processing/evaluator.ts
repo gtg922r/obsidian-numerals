@@ -1,3 +1,6 @@
+import { CrossNoteResolutionResult } from './crossNoteResolver';
+import { createReferenceScope, evaluateWithReferences, restoreReferenceNames, mapExpressionDiagnostic } from './referenceBindings';
+import { scanExpression, MappedSource } from './expressionScanner';
 import * as math from 'mathjs';
 import { NumeralsScope, NumeralsError } from '../numerals.types';
 
@@ -22,7 +25,8 @@ import { NumeralsScope, NumeralsError } from '../numerals.types';
 export function evaluateMathFromSourceStrings(
 	processedSource: string,
 	scope: NumeralsScope,
-	transparentLineIndexes: readonly number[] = []
+	transparentLineIndexes: readonly number[] = [],
+	context?: { originalRows: readonly string[]; resolution: CrossNoteResolutionResult; sourceMap?: MappedSource },
 ): {
 	results: unknown[];
 	inputs: string[];
@@ -32,6 +36,11 @@ export function evaluateMathFromSourceStrings(
 	let errorMsg = null;
 	let errorInput = "";
 
+	let evaluationScope: NumeralsScope;
+	try { evaluationScope = createReferenceScope(scope, context?.resolution.bindings ?? new Map()); }
+	catch (error: unknown) {
+		return { results: [], inputs: [], errorMsg: error instanceof Error ? error : new Error(String(error)), errorInput: context?.originalRows[0] ?? processedSource.split('\n')[0] };
+	}
 	const rows: string[] = processedSource.split("\n");
 	const results: unknown[] = [];
 	const inputs: string[] = [];
@@ -49,33 +58,35 @@ export function evaluateMathFromSourceStrings(
 			// Preserve source/result index alignment without allowing a display-only
 			// directive row to change @prev or reset the current @total segment.
 			results.push(undefined);
-			inputs.push(row);
+			inputs.push(restoreReferenceNames(row, context?.resolution.bindingNames ?? new Map()));
 			continue;
 		}
 
 		try {
+			const failure = context?.resolution.dependencies.find(d => d.error && context.resolution.sourceMap.originalSource.slice(0, d.start).split('\n').length - 1 === index);
+			if (failure) throw new NumeralsError('Note Reference Error', failure.error!);
 			if (hasPreviousEvaluation) {
 				scope.set("__prev", previousResult);
 			} else {
 				scope.set("__prev", undefined);
-				if (/__prev/i.test(row)) {
+				if (scanExpression(row).some(t => t.kind === 'identifier' && t.text === '__prev')) {
 					errorMsg = new NumeralsError("Previous Value Error", 'Error evaluating @prev directive. There is no previous result.');
-					errorInput = row;
+					errorInput = context?.originalRows[index] ?? row;
 					break;
 				}
 			}
 			
 			if (segmentResults.length > 1) {
 				try {
-					// eslint-disable-next-line prefer-spread
+					// eslint-disable-next-line prefer-spread -- mathjs variadic add requires at least two typed operands
 					const rollingSum = math.add.apply(math, segmentResults as [math.MathType, math.MathType, ...math.MathType[]]);
 					scope.set("__total", rollingSum);
 				} catch {
 					scope.set("__total", undefined);
 					// TODO consider doing this check before evaluating
-					if (/__total/i.test(row)) {
+					if (scanExpression(row).some(t => t.kind === 'identifier' && t.text === '__total')) {
 						errorMsg = new NumeralsError("Summing Error", 'Error evaluating @sum or @total directive. Previous lines may not be summable.');
-						errorInput = row;
+						errorInput = context?.originalRows[index] ?? row;
 						break;
 					}						
 				}
@@ -86,9 +97,9 @@ export function evaluateMathFromSourceStrings(
 				scope.set("__total", undefined);
 			}
 
-			const result = math.evaluate(row, scope) as unknown;
+			const result = evaluateWithReferences(row, evaluationScope, context?.resolution.bindings);
 			results.push(result);
-			inputs.push(row); // Only pushes if evaluate is successful
+			inputs.push(restoreReferenceNames(row, context?.resolution.bindingNames ?? new Map())); // Only pushes if evaluate is successful
 			hasPreviousEvaluation = true;
 			previousResult = result;
 			if (result === undefined) {
@@ -98,7 +109,13 @@ export function evaluateMathFromSourceStrings(
 			}
 		} catch (error: unknown) {
 			errorMsg = error instanceof Error ? error : new Error(String(error));
-			errorInput = row;
+			if (context?.sourceMap) {
+				const generatedBase = rows.slice(0, index).reduce((sum, line) => sum + line.length + 1, 0);
+				const originalBase = context.originalRows.slice(0, index).reduce((sum, line) => sum + line.length + 1, 0);
+				errorMsg.message = mapExpressionDiagnostic(errorMsg.message, context.sourceMap, generatedBase, originalBase).message;
+			}
+			errorMsg.message = restoreReferenceNames(errorMsg.message, context?.resolution.bindingNames ?? new Map());
+			errorInput = context?.originalRows[index] ?? row;
 			break;
 		}
 	}

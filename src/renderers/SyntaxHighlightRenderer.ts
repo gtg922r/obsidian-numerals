@@ -1,3 +1,4 @@
+import { parseCrossNoteReferences } from '../processing/crossNoteResolver';
 import * as math from 'mathjs';
 import { LineRenderData, RenderContext } from '../numerals.types';
 import { BaseLineRenderer } from './BaseLineRenderer';
@@ -87,7 +88,21 @@ export class SyntaxHighlightRenderer extends BaseLineRenderer {
 		lineData: LineRenderData
 	): void {
 		// Convert input to highlighted HTML, preserving numeric literals
-		const inputHtml = math.parse(lineData.processedInput).toHTML(SyntaxHighlightRenderer.toHtmlOptions);
+		let displaySource = lineData.processedInput;
+		const labels = new Map<string, string>();
+		for (const [index, ref] of parseCrossNoteReferences(displaySource).slice().reverse().entries()) {
+			let symbol = `NumeralsReferenceLabel${index}`;
+			while (lineData.processedInput.includes(symbol)) symbol += 'X';
+			const label = inputElement.ownerDocument.createElement('span');
+			label.className = 'math-symbol';
+			label.textContent = ref.fullMatch;
+			labels.set(symbol, label.outerHTML);
+			displaySource = displaySource.slice(0, ref.start) + symbol + displaySource.slice(ref.end);
+		}
+		const inputHtml = math.parse(displaySource).toHTML({ handler: (node: math.MathNode) => {
+			if (math.isSymbolNode(node) && labels.has(node.name)) return labels.get(node.name);
+			return SyntaxHighlightRenderer.toHtmlOptions.handler(node);
+		} });
 
 		// Replace magic sum variable with directive from raw input
 		const processedHtml = replaceSumMagicVariableInProcessedWithSumDirectiveFromRaw(

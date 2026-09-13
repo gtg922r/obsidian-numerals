@@ -3,7 +3,6 @@ import {
 	getNestedProperty,
 	filterAvailableProperties,
 	evaluateMetadataValue,
-	formatValueForInsertion,
 	resolveSingleReference,
 	CROSS_NOTE_REF_REGEX,
 } from '../src/processing/crossNoteResolver';
@@ -86,6 +85,7 @@ describe('parseCrossNoteReferences', () => {
 			fullMatch: '[[note]].price',
 			noteName: 'note',
 			propertyPath: 'price',
+			start: 4, end: 18,
 		});
 	});
 
@@ -289,24 +289,7 @@ describe('resolveSingleReference', () => {
 			[],
 		);
 
-		expect(result).toEqual({ value: '20', referencedPath: 'materials.md' });
-	});
-});
-
-describe('formatValueForInsertion', () => {
-	it('formats numbers', () => {
-		expect(formatValueForInsertion(42)).toBe('42');
-		expect(formatValueForInsertion(3.14)).toBe('3.14');
-	});
-
-	it('formats strings as-is', () => {
-		expect(formatValueForInsertion('10 USD')).toBe('10 USD');
-	});
-
-	it('formats mathjs values', () => {
-		// This tests that mathjs BigNumber and similar types are handled
-		const result = formatValueForInsertion(100.5);
-		expect(result).toBe('100.5');
+		expect(result).toEqual({ value: 20, referencedPath: 'materials.md', status: 'resolved' });
 	});
 });
 

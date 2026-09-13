@@ -210,29 +210,23 @@ export function processAndRenderNumeralsBlockFromSource(
 	// Phase 1: Determine render style
 	const blockRenderStyle: NumeralsRenderStyle = type ?? settings.defaultRenderStyle;
 
-	// Phase 1.5: Resolve cross-note references (before other preprocessing)
-	const crossNoteResult = resolveCrossNoteReferences(
-		source, app, ctx.sourcePath, settings, preProcessors
+	// Phase 4: Build scope
+	const { scope, warnings } = getScopeFromFrontmatter(
+		metadata,
+		undefined,
+		settings.forceProcessAllFrontmatter,
+		preProcessors
 	);
 
-	if (crossNoteResult.error) {
-		// Apply block styles even for error display
-		applyBlockStyles({ el, settings, blockRenderStyle });
 
-		const errorResult: EvaluationResult = {
-			results: [],
-			inputs: [],
-			errorMsg: new NumeralsError('Note Reference Error', crossNoteResult.error),
-			errorInput: source.split('\n').find(line =>
-				line.includes('[[') && line.includes(']].')) ?? source.split('\n')[0] ?? '',
-		};
-		renderError(el, errorResult);
+	// Phase 1.5: Resolve cross-note references (before other preprocessing)
+	const crossNoteResult = resolveCrossNoteReferences(
+		source, app, ctx.sourcePath, settings, preProcessors, scope
+	);
 
-		return { scope: new NumeralsScope(), referencedPaths: crossNoteResult.referencedPaths };
-	}
 
 	// Phase 2: Preprocess (using cross-note resolved source)
-	const processedBlock = preProcessBlockForNumeralsDirectives(crossNoteResult.resolvedSource, preProcessors);
+	const processedBlock = preProcessBlockForNumeralsDirectives(crossNoteResult.sourceMap, preProcessors);
 	if (processedBlock.invalidFormatDirectives.length > 0) {
 		applyBlockStyles({ el, settings, blockRenderStyle });
 		const directiveError = processedBlock.invalidFormatDirectives[0];
@@ -242,7 +236,7 @@ export function processAndRenderNumeralsBlockFromSource(
 			errorMsg: new NumeralsError('Formatting Directive Error', directiveError.message),
 			errorInput: directiveError.source,
 		});
-		return { scope: new NumeralsScope(), referencedPaths: crossNoteResult.referencedPaths };
+		return { scope: new NumeralsScope(), referencedPaths: crossNoteResult.referencedPaths, dependencies: crossNoteResult.dependencies };
 	}
 
 	// Phase 3: Apply block styles
@@ -253,19 +247,13 @@ export function processAndRenderNumeralsBlockFromSource(
 		hasEmitters: processedBlock.blockInfo.emitter_lines.length > 0,
 	});
 
-	// Phase 4: Build scope
-	const { scope, warnings } = getScopeFromFrontmatter(
-		metadata,
-		undefined,
-		settings.forceProcessAllFrontmatter,
-		preProcessors
-	);
 
 	// Phase 5: Evaluate
 	const evaluationResult = evaluateMathFromSourceStrings(
 		processedBlock.processedSource,
 		scope,
-		processedBlock.transparentLineIndexes
+		processedBlock.transparentLineIndexes,
+		{ originalRows: processedBlock.rawRows, resolution: crossNoteResult, sourceMap: processedBlock.sourceMap },
 	);
 
 	// Phase 6: Handle side effects (result insertions)
@@ -297,7 +285,7 @@ export function processAndRenderNumeralsBlockFromSource(
 		warningEl.createEl('span', { cls: 'numerals-warning-message', text: warning });
 	}
 
-	return { scope, referencedPaths: crossNoteResult.referencedPaths };
+	return { scope, referencedPaths: crossNoteResult.referencedPaths, dependencies: crossNoteResult.dependencies };
 
 }
 

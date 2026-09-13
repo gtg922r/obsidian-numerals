@@ -1,8 +1,9 @@
-import * as math from 'mathjs';
 import { App } from 'obsidian';
 import { NumeralsScope, NumeralsSettings, StringReplaceMap, InlineEvaluationResult } from '../numerals.types';
-import { replaceStringsInTextFromMap } from '../processing/preprocessor';
-import { resolveCrossNoteReferences } from '../processing/crossNoteResolver';
+import { normalizeExpression, replaceExpressionDirectives } from '../processing/preprocessor';
+import { originalSource, scanExpression } from '../processing/expressionScanner';
+import { createReferenceScope, evaluateWithReferences, restoreReferenceNames } from '../processing/referenceBindings';
+import { resolveCrossNoteReferences, ReferenceEvaluationError, CrossNoteResolutionResult } from '../processing/crossNoteResolver';
 
 /**
  * Evaluate a single inline expression against a scope.
@@ -33,46 +34,23 @@ export function evaluateInlineExpression(
 	sourcePath?: string,
 	settings?: NumeralsSettings,
 ): InlineEvaluationResult {
-	// Resolve cross-note references before preprocessing
-	let processed = expression;
-	let referencedPaths: string[] = [];
-	if (app && sourcePath && settings) {
-		const crossNoteResult = resolveCrossNoteReferences(
-			processed, app, sourcePath, settings, preProcessors
-		);
-		if (crossNoteResult.error) {
-			throw new Error(crossNoteResult.error);
-		}
-		processed = crossNoteResult.resolvedSource;
-		referencedPaths = crossNoteResult.referencedPaths;
-	}
-
-	// Apply preprocessors (currency symbols, thousands separators)
-	if (preProcessors.length > 0) {
-		processed = replaceStringsInTextFromMap(processed, preProcessors);
-	}
-
-	// Replace @prev directive with __prev (case-insensitive, matching code block behavior)
-	processed = processed.replace(/@prev/gi, '__prev');
-
-	// Clone scope so inline evaluation doesn't write back to shared state
+	const resolution: CrossNoteResolutionResult = app && sourcePath && settings
+		? resolveCrossNoteReferences(expression, app, sourcePath, settings, preProcessors, scope)
+		: { resolvedSource: expression, sourceMap: originalSource(expression), bindings: new Map(), bindingNames: new Map(), referencedPaths: [], dependencies: [], warnings: [], error: null };
+	const sourceMap = normalizeExpression(replaceExpressionDirectives(resolution.sourceMap, false), preProcessors);
+	const processed = sourceMap.source;
 	const localScope = new NumeralsScope(scope);
-
-	// Inject __prev into scope if the expression references it
-	if (/__prev/i.test(processed)) {
-		if (prevResult === undefined) {
-			throw new Error('Error evaluating @prev directive. There is no previous inline result.');
+	let result: unknown;
+	try {
+		if (resolution.error) throw new Error(resolution.error);
+		if (scanExpression(processed).some(t => t.kind === 'identifier' && t.text === '__prev')) {
+			if (prevResult === undefined) throw new Error('Error evaluating @prev directive. There is no previous inline result.');
+			localScope.set('__prev', prevResult);
 		}
-		localScope.set('__prev', prevResult);
-	}
-
-	// Evaluate — let mathjs errors propagate to caller
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- mathjs evaluate() returns `any`
-	const result = math.evaluate(processed, localScope);
-
-	// mathjs returns undefined for comments/empty expressions
-	if (result === undefined) {
-		throw new Error('Expression produced no result');
+		result = evaluateWithReferences(processed, createReferenceScope(localScope, resolution.bindings), resolution.bindings);
+		if (result === undefined) throw new Error('Expression produced no result');
+	} catch (error: unknown) {
+		throw new ReferenceEvaluationError(error instanceof Error ? error.message : String(error), resolution, expression, sourceMap);
 	}
 
 	// Extract note-global ($-prefixed) variable assignments.
@@ -84,5 +62,5 @@ export function evaluateInlineExpression(
 		}
 	}
 
-	return { raw: result, processedExpression: processed, globals, referencedPaths };
+	return { raw: result, processedExpression: restoreReferenceNames(processed, resolution.bindingNames), sourceMap, globals, referencedPaths: resolution.referencedPaths, dependencies: resolution.dependencies };
 }
