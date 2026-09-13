@@ -180,14 +180,39 @@ it.each(['public-first', 'cm-first'])('keeps the independent native-input witnes
  const current = editor('```math\n@[x::2] = 2\n```'); await flush();
  expect(current.transaction).not.toHaveBeenCalled();
  const offset = current.text().indexOf('= 2') + 3, before = current.text(); current.cm.dispatch({selection: {anchor: offset}});
+ const attachment = current.coordinator.attachmentId(current.editor);
  current.cm.plugin(current.extension)!.observe({type: 'input', target: current.cm.contentDOM, isTrusted: true,
   defaultPrevented: false, inputType: 'insertText', data: '+1', isComposing: false} as unknown as Event);
  current.setText(before.slice(0, offset) + '+1' + before.slice(offset));
- if (order === 'public-first') current.coordinator.invalidateChangedSource(current.editor);
+ if (order === 'public-first') {
+  current.coordinator.invalidateChangedSource(current.editor);
+  expect(current.coordinator.current(current.editor)).toBeUndefined();
+  expect(current.coordinator.attachmentId(current.editor)).toBe(attachment);
+ }
  current.cm.dispatch({changes: {from: offset, insert: '+1'}, userEvent: 'input.type'});
  if (order === 'cm-first') current.coordinator.invalidateChangedSource(current.editor);
  current.coordinator.sourceChanged(current.editor, false); await flush();
  expect(current.transaction).toHaveBeenCalledTimes(1); expect(current.text()).toContain('@[x::3]');
+});
+
+it.each(['source.md', 'other.md'])('cannot carry a trusted input into a replacement file at %s before its new snapshot is current', async path => {
+ const before = '```math\n@[x::2] = 2\n```', current = editor(before); await flush();
+ expect(current.transaction).not.toHaveBeenCalled();
+ const offset = before.indexOf('= 2') + 3; current.cm.dispatch({selection: {anchor: offset}});
+ const oldId = current.coordinator.attachmentId(current.editor);
+ current.cm.plugin(current.extension)!.observe({type: 'input', target: current.cm.contentDOM, isTrusted: true,
+  defaultPrevented: false, inputType: 'insertText', data: '+1', isComposing: false} as unknown as Event);
+ const next = Object.assign(new TFile(), {path}); current.files.set(path, next);
+ current.view.file = next; current.setFile(next); current.info.file = next; current.registry.reconcile();
+ const newId = current.coordinator.attachmentId(current.editor); expect(newId).not.toBe(oldId);
+ const classify = jest.spyOn(current.registry, 'sourceChanged');
+ const after = before.slice(0, offset) + '+1' + before.slice(offset); current.setText(after);
+ current.coordinator.invalidateChangedSource(current.editor);
+ expect(current.coordinator.current(current.editor)).toBeUndefined();
+ expect(current.coordinator.attachmentId(current.editor)).toBe(newId);
+ current.cm.dispatch({changes: {from: offset, insert: '+1'}, userEvent: 'input.type'}); await flush();
+ expect(classify.mock.calls.map(call => call[1])).toEqual([false]);
+ expect(current.transaction).not.toHaveBeenCalled(); expect(current.text()).toBe(after);
 });
 
 it('drops prepared effects after disposal and never dispatches queued refresh work', async () => {

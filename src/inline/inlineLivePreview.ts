@@ -154,11 +154,12 @@ export function createInlineLivePreviewExtension(registry: SourceRegistry) {
   }
   private bind(): boolean {
    const source = registry.fromCodeMirror(this.view, this.view.state.field(editorInfoField, false));
-   const sourceId = source && registry.coordinator.current(source.identity)?.sourceId;
+   const sourceId = source && registry.coordinator.attachmentId(source.identity);
    // A reused Editor may own a replacement session/TFile even at the same path.
-   // An ordinary text invalidation temporarily hides current(); it is not a new attachment.
+   // Full-source validity can disappear during ordinary edits or immediately
+   // after retargeting. The live attachment identity remains available in both cases.
    if (source?.identity === this.source?.identity && source?.path === this.source?.path &&
-    (sourceId === undefined || sourceId === this.sourceId)) return false;
+    sourceId === this.sourceId) return false;
    this.stopSource(); this.input.clear(); this.source = source; this.sourceId = sourceId;
    this.stopSource = source ? registry.coordinator.subscribe(source.identity, () => this.changed()) : () => {};
    this.refreshLifetime();

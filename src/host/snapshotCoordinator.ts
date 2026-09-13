@@ -172,6 +172,13 @@ export class SnapshotCoordinator {
 		}
 	}
 
+	/** Stable live attachment identity, including a temporarily mismatched buffer.
+	 * This does not establish snapshot validity or grant an editor write capability. */
+	attachmentId(identity: object): string | undefined {
+		const session = this.sessions.get(identity);
+		return session && this.live(session) ? session.id : undefined;
+	}
+
 	current(identity: object): SourceSnapshotState | undefined {
 		const session = this.sessions.get(identity);
 		if (!session || !this.live(session) || session.owner.text() !== session.text) return undefined;
