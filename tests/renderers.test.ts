@@ -6,6 +6,7 @@ import { inputPresentation } from '../src/host/presentation';
 
 // Mock Obsidian functions before imports
 jest.mock('obsidian', () => ({
+	loadMathJax: jest.fn().mockResolvedValue(undefined),
 	renderMath: jest.fn((tex: string) => {
 		const span = document.createElement('span');
 		span.textContent = `TeX:${tex}`;
@@ -27,7 +28,7 @@ import {
 	SyntaxHighlightRenderer,
 	RendererFactory,
 } from '../src/renderers';
-import { renderMath } from 'obsidian';
+import { loadMathJax, renderMath } from 'obsidian';
 import { getMathRuntime } from '../src/mathRuntime';
 const math = getMathRuntime();
 import {
@@ -368,7 +369,7 @@ describe('Renderer Implementations', () => {
 
 			renderer.renderLine(container, {...lineData, ...(!lineData.isEmpty ? inputPresentation(lineData.processedInput,
     lineData.rawInput + (lineData.comment ?? ''), NumeralsRenderStyle.TeX, math) : {})}, context);
-			await Promise.resolve();
+			await Promise.resolve(); await Promise.resolve();
 
 			const input = container.querySelector('.numerals-input');
 			const result = container.querySelector('.numerals-result');
@@ -383,6 +384,22 @@ describe('Renderer Implementations', () => {
 			expect(result?.textContent).toContain('TeX:4');
 			expect(renderMath).toHaveBeenNthCalledWith(1, '2+2', true);
 			expect(renderMath).toHaveBeenNthCalledWith(2, '4', true);
+		});
+
+		it('keeps plain output available while TeX startup is pending', async () => {
+			let ready!: () => void;
+			const pending = new Promise<void>(resolve => { ready = resolve; });
+			jest.mocked(loadMathJax).mockReturnValueOnce(pending).mockReturnValueOnce(pending);
+			const lineData: LineRenderData = {index: 0, rawInput: '2+2', processedInput: '2+2', inputTeX: '2+2',
+				formattedResult: formatter.format(4), isEmpty: false, isEmitter: false, isHidden: false, comment: null};
+			const plain = document.createElement('div');
+			renderer.renderLine(container, lineData, context);
+			new PlainRenderer().renderLine(plain, lineData, context);
+			expect(plain.querySelector('.numerals-result')?.textContent).toBe(' → 4');
+			expect(renderMath).not.toHaveBeenCalled();
+			expect(container.querySelector('.numerals-result .numerals-tex')?.textContent).toBe('');
+			ready(); await Promise.resolve(); await Promise.resolve();
+			expect(container.querySelector('.numerals-result .numerals-tex')?.textContent).toBe('TeX:4');
 		});
 
 		it('should render empty line', () => {

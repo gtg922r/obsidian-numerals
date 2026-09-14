@@ -1,10 +1,12 @@
-import { renderMath, finishRenderMath } from 'obsidian';
+import { loadMathJax, renderMath, finishRenderMath } from 'obsidian';
 
 /** Own both synchronous MathJax calls and its asynchronous completion. */
 export function renderOwnedMath(container: HTMLElement, tex: string, signal: AbortSignal, displayMode = true): void {
 	if (signal.aborted) return;
 	void (async () => {
 		try {
+			await loadMathJax();
+			if (signal.aborted) return;
 			const output = renderMath(tex, displayMode);
 			await finishRenderMath();
 			if (!signal.aborted) container.append(output);

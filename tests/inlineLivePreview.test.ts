@@ -6,6 +6,7 @@
  */
 
 jest.mock('obsidian', () => ({
+	loadMathJax: jest.fn().mockResolvedValue(undefined),
 	editorInfoField: {},
 	editorLivePreviewField: {},
 	renderMath: jest.fn((tex: string) => {
@@ -156,7 +157,7 @@ describe('InlineNumeralsWidget', () => {
 				[], NumeralsRenderStyle.TeX, '3 ft in inches'
 			);
 			const el = widget.toDOM();
-			await Promise.resolve();
+			await Promise.resolve(); await Promise.resolve();
 
 			expect(el.classList.contains('numerals-inline-result')).toBe(true);
 			expect(el.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toBe('TeX:36');
@@ -185,7 +186,7 @@ describe('InlineNumeralsWidget', () => {
 				[], NumeralsRenderStyle.TeX, '3 ft in inches'
 			);
 			const el = widget.toDOM();
-			await Promise.resolve();
+			await Promise.resolve(); await Promise.resolve();
 
 			expect(el.querySelector('.numerals-inline-value .numerals-tex')?.textContent).toContain('MathJax unavailable');
 		});
@@ -196,7 +197,7 @@ describe('InlineNumeralsWidget', () => {
 				[], NumeralsRenderStyle.TeX, '\\sqrt{144}'
 			);
 			const el = widget.toDOM();
-			await Promise.resolve();
+			await Promise.resolve(); await Promise.resolve();
 
 			expect(el.querySelector('.numerals-inline-input .numerals-tex')?.textContent).toBe('TeX:\\sqrt{144}');
 			expect(el.querySelector('.numerals-inline-separator')?.textContent).toBe(' = ');

@@ -1,4 +1,5 @@
 jest.mock('obsidian', () => ({
+	loadMathJax: jest.fn().mockResolvedValue(undefined),
 	finishRenderMath: jest.fn().mockResolvedValue(undefined),
 	renderMath: jest.fn((tex: string) => {
 		const span = document.createElement('span');
@@ -347,7 +348,7 @@ describe('formatter consumers', () => {
 			...context,
 			renderStyle: NumeralsRenderStyle.TeX,
 		});
-		await Promise.resolve();
+		await Promise.resolve(); await Promise.resolve();
 
 		expect(plainContainer.querySelector('.numerals-result')?.textContent)
 			.toBe(`${DEFAULT_SETTINGS.resultSeparator}${formatted.text}`);
