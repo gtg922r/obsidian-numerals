@@ -71,7 +71,7 @@ The resulting full source is evaluated afresh. Stored output is the checked pre-
 | F | Dedicated task; new modules after D/settings contract, integration after E | Source index + ordered note snapshots |
 | G | Dedicated task after C-F | Both surfaces use snapshots + transactional insertion |
 | H | Targeted agents | Suggestions/errors, documentation, accurate backlog disposition |
-| I | Dedicated validation + owner | Installed-artifact QA, BRAT publication/verification, handoff |
+| I | Dedicated validation + owner | Local installed-artifact QA, BRAT publication/verification, handoff; hosted installed suite deferred |
 
 At most two implementation tasks run concurrently, with no overlapping file ownership. Owner assigns exact bases and target branches. Do not make alternative parallel implementations. Existing APIs may need phased adaptation, but no temporary compatibility path may silently violate the contracts above.
 
@@ -83,7 +83,17 @@ CI: npm ci, lint, production and test typechecks, Jest, production build, symbol
 
 Acceptance fixtures: reference freshness/negative/complex values, deleted globals, missing references repaired; function/matrix/currency grouping and comments/strings; offscreen definitions/selected predecessors/identical blocks; Reading/LP/Source transitions, embeds/callouts/split panes/popouts; rapid edits/stale generations/unload/mismatched buffers; settings upgrades/currency mapping; multi-backtick/tilde/longer fences, nested quote/list prefixes, inline newlines, CRLF/frontmatter/HTML and Obsidian comments.
 
-Disposable vaults only for automated host QA; do not modify personal notes or replace the live installed plugin without owner coordination. Test Obsidian minimum/current public desktop/mobile and early access when available. Report unavailable coverage honestly. Node unit tests do not establish live host behavior.
+### Current validation path (2026-09-13)
+
+The user selected local computer testing plus the existing reviewed automated checks as the recovery path. The owner selects focused installed checks against the verified candidate in a disposable fixture vault, covering the changed behavior and source-safety risks above. Record the tested commit, artifact hashes, host version/platform, observations, failures and unavailable coverage. Minimum/current desktop, mobile and early-access coverage must be described accurately; unavailable platforms are disclosed gaps, not implied passes. Node unit tests do not establish live host behavior.
+
+GitHub-hosted installed Obsidian testing is **DEFERRED: optional roadmap work**, not required for recovery. The earlier request for permission to add its execution workflow is superseded; no workflow approval is awaited. Retain the disabled helper and its 83 `NOT_RUN` catalog rows as reusable test design. Completing those rows or enabling the helper is not a recovery gate, and their status must not be changed to imply local evidence that was not collected. Existing extraction evidence and pure CI checks remain valid within their documented limits.
+
+Disposable vaults only for automated host QA; do not modify personal notes or replace the live installed plugin without owner coordination. Local testing does not require the deferred hosted workflow or helper. Exact artifact verification and owner-only BRAT publication remain required.
+
+### Optional validation roadmap
+
+Revisit a GitHub-hosted installed suite if repeatable multi-version or platform coverage justifies it. Build on the retained helper, synthetic catalog and reviewed artifact-selection design; separately scope the native drivers, workflow and evidence gaps before enabling execution. This future capability does not delay local recovery validation or BRAT readiness.
 
 ## Known evidence and explicit non-fixes
 
@@ -97,4 +107,4 @@ Do not close #82 as fulfilled by @hideRows: it asks to retain variable/result wh
 
 ## Completion
 
-Verified BRAT prerelease assets, tested commit/hashes, reviewed PR history, recorded platform coverage/limitations, and stable distribution unchanged. Stop before production promotion. Later custom units, locale input, export/alignment and other features remain separately specified work; any publication remains prerelease-only.
+Existing automated checks and focused local installed validation, verified BRAT prerelease assets, tested commit/hashes, reviewed PR history, recorded platform coverage/limitations, and stable distribution unchanged. The optional hosted installed suite and its unexecuted catalog are not completion criteria. Stop before production promotion. Later custom units, locale input, export/alignment and other features remain separately specified work; any publication remains prerelease-only.
