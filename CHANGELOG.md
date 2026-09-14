@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. The format 
 ## [Unreleased]
 
 ### Added
+- Add current Reading occurrence sampling with original native source anchors, bounded snapshot/DOM settling, and an explicit closed-gate installed-acceptance dispatch plan. Each observation binds the selected action, pane, full source and snapshot; separate candidate and disabled controls remain unexecuted pending owner selection.
 - Add an independently pinned installed-acceptance helper with passive source/snapshot and write observers, bounded controller/validator, synthetic cases and pure CI checks. Host execution remains disabled pending a separate reviewed artifact handoff; extraction evidence and product code are unchanged.
 - Upload the three checked candidate files from ordinary recovery CI as a separate acceptance artifact named by the actual tested commit, without requiring a tag or publishing a release.
 - Add **Update stored results**, an explicit one-shot command for the current editor, plus a compact architecture map and recovery surface/insertion contracts.
@@ -37,6 +38,7 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Reject stale or incomplete installed-acceptance evidence by replaying pane aliases, retaining the original sample request, matching every journal point read, and invalidating seals after source, rendered output, plugin or owner changes.
 - Register one suggestor with independent block/inline controls; complete copied tokens in complete or unfinished inline spans, preserve closing delimiters and reject stale source, cursor, settings and reference proposals.
 - Use current source-ordered suggestion names and inline `@prev`, with real-class regressions and safe, repairable inline diagnostic coverage.
 - Recheck current editor, view, file, document and vault identity before installed-acceptance helper pane actions, refusing stale observer and control handles before input or mutation.

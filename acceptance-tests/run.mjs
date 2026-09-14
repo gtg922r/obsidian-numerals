@@ -10,7 +10,6 @@ import {candidateZip} from './archive.cjs';
 import {connect, targetProof} from './cdp.mjs';
 import {runFamily, nativeAction} from './controller.mjs';
 import {validateFamily} from './validate.mjs';
-import {installControl} from './control.mjs';
 import {DiskEvidence} from './disk.mjs';
 import {cancellable, childExit, processTeardown} from './cancellation.mjs';
 const directory = path.dirname(fileURLToPath(import.meta.url));
@@ -36,7 +35,7 @@ async function receipt(selection, signal) {
   const bytes = await boundedFetch(`${prefix}/actions/artifacts/${selection.artifactId}/zip`, C.LIMITS.bytes, undefined, headers, signal);
   return {files: candidateZip(bytes, selection), receipt: {runId: run.id, runAttempt: run.run_attempt, artifactId: artifact.id, commit: commit.sha, tree: commit.tree.sha}};
 }
-function cleanFailure(error) {
+export function cleanFailure(error) {
   const message = typeof error?.message === 'string' ? error.message : '';
   return /^[a-z][a-z0-9-]{0,70}$/.test(message) ? message : 'unexpected-controller-failure';
 }
@@ -46,18 +45,27 @@ export async function preflight(env = process.env, platform = process.platform, 
   const execution = JSON.parse(await fs.readFile(path.join(directory, 'execution.json')));
   C.check(execution.enabled === true, 'host-execution-wiring-disabled');
 }
-export async function main() {
+/** Only the reviewed first Reading plan is dispatchable; one mode per fresh process. */
+export function dispatchSelection(selectionText, planName) {
+  C.check(typeof selectionText === 'string' && Buffer.byteLength(selectionText) <= 16384, 'dispatch-selection-size');
+  C.check(planName === 'native-ordering.plan.json', 'dispatch-plan-allowlist');
+  const selection = C.selectionCheck(JSON.parse(selectionText));
+  C.check(selection.integration === 'none', 'first-admission-integration');
+  return selection;
+}
+export async function main({selectionText, planName} = {}) {
   await preflight(); // No selection read, network, temporary profile, child or CDP before this gate.
-  const selection = C.selectionCheck(JSON.parse(await fs.readFile(process.argv[2], 'utf8')));
-  C.check(/^[a-z0-9-]+\.plan\.json$/.test(process.argv[3] || ''), 'plan-filename');
+  const selection = dispatchSelection(selectionText, planName);
+  C.check(selection.harnessCommit === process.env.GITHUB_SHA, 'dispatch-helper-head');
   const catalogBytes = await fs.readFile(path.join(directory, 'catalog.json')), catalog = JSON.parse(catalogBytes);
   const inputsBytes = await fs.readFile(path.join(directory, 'inputs.json')), inputs = JSON.parse(inputsBytes);
-  const planBytes = await fs.readFile(path.join(directory, process.argv[3])), plan = JSON.parse(planBytes);
+  const planBytes = await fs.readFile(path.join(directory, planName)), plan = JSON.parse(planBytes);
   C.catalogCheck(catalog); C.planCheck(plan, catalog);
   C.check(C.hash(catalogBytes) === selection.catalogSha256 && C.hash(inputsBytes) === selection.inputsSha256 && C.hash(planBytes) === selection.planSha256, 'selected-input-hashes');
   const head = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: directory, encoding: 'utf8'}).trim();
   C.check(head === selection.harnessCommit && execFileSync('git', ['status', '--porcelain'], {cwd: directory, encoding: 'utf8'}).trim() === '', 'harness-head');
   const helper = await fs.readFile(path.join(directory, 'dist/main.js')); C.check(C.hash(helper) === selection.helperSha256, 'helper-identity');
+  const control = await fs.readFile(path.join(directory, 'dist/control.js')); C.check(C.hash(control) === selection.controlSha256, 'control-identity');
   const output = path.join(directory, 'evidence'); await fs.mkdir(output);
   const scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'numerals-acceptance-')); await fs.chmod(scratch, 0o700);
   const root = path.join(scratch, 'Numerals Acceptance NA13B'), children = new Set(), connections = new Set();
@@ -124,19 +132,20 @@ export async function main() {
     const target = await until(async () => (await targets()).find(t => t.type === 'page' && t.url.startsWith('app://obsidian.md/')), 60000);
     const main = await connect(target, port); connections.add(main);
     C.check(await main.evaluate('app.vault.adapter.getBasePath()') === root, 'main-vault-identity');
-    const backend = await makeBackend({main, target, targets, port, connections, selection, config: {...config,
+    const backend = await makeBackend({main, target, targets, port, connections, selection, control, config: {...config, mode: selection.mode,
       paths: catalog.scenarios.flatMap(s => s.notes.map(n => n.path)), caseIds: plan.cases.map(c => c.id)}, alive, until});
     const disk = new DiskEvidence(root, [...catalog.scenarios.flatMap(s => s.notes.map(n => n.path)), '.obsidian/plugins/numerals/data.json'], () => { alive(); C.guard(root, config); });
     backend.captureDisk = () => disk.capture(); backend.diskBlobs = disk.blobs;
     stage = 'cases'; result = await runFamily(backend, plan, catalog, abort.signal); alive();
     result.savedDisk = await disk.capture();
     C.installedCheck(pluginPath, selection);
-    provenance = {selection, candidate: candidate.receipt, host: inputs.host, platform: 'linux-x64', helperSha256: C.hash(helper), status: 'bounded-observations'};
+    provenance = {selection, candidate: candidate.receipt, host: inputs.host, platform: 'linux-x64', helperSha256: C.hash(helper), controlSha256: C.hash(control), plan: planName, status: 'bounded-observations'};
   } catch (error) { result = {...result, ...error.familyEvidence, failure: {stage, reason: cleanFailure(error)}}; process.exitCode = 1; }
   finally {
     shuttingDown = true; clearTimeout(timer); process.off('SIGTERM', stop); process.off('SIGINT', stop);
     const exits = await teardown.finish();
-    result = finalizeEvidence(plan, result, exits.every(Boolean));
+    try { result = finalizeEvidence(plan, result, exits.every(Boolean)); }
+    catch (error) { result.failure = {stage: 'evidence-validation', reason: cleanFailure(error)}; }
     if (result.failure) process.exitCode = 1;
     const names = ['results.json', 'provenance.json', 'selection.json', 'sha256.json'];
     await fs.writeFile(path.join(output, 'results.json'), JSON.stringify(result ?? {failure: {stage}}, null, 2));
@@ -164,13 +173,16 @@ export function finalizeEvidence(plan, result, processesExited) {
     result.observations ??= {records: [], faults: []};
     result.observations.faults.push(result.cleanupFailure);
   }
-  if (result.observations) result.results = validateFamily(plan, result.observations);
+  if (result.observations) {
+    result.results = validateFamily(plan, result.observations, result.actions, result.mode);
+    if (result.results.some(c => c.assertions.some(a => a.status === 'FAIL'))) result.failure ??= {stage: 'assertions', reason: 'installed-assertion-failed'};
+  }
   return result;
 }
 
-async function makeBackend({main, target, targets, port, connections, selection, config, alive, until}) {
+async function makeBackend({main, target, targets, port, connections, selection, control, config, alive, until}) {
   const bridge = selection.mode === 'instrumented' ? '__numeralsAcceptance' : '__numeralsAcceptanceControl';
-  if (selection.mode !== 'instrumented') await main.evaluate(`(${installControl.toString()})(${JSON.stringify(config)})`);
+  if (selection.mode !== 'instrumented') await main.evaluate(`(() => {${control.toString('utf8')}\nreturn NumeralsAcceptanceControl.install(${JSON.stringify(config)});})()`);
   const expression = op => `window.${bridge}.call(${JSON.stringify(config.nonce)},${JSON.stringify(op)})`;
   await until(() => main.evaluate(`Boolean(window.${bridge})`), 60000);
   const hello = await main.evaluate(`window.${bridge}.hello(${JSON.stringify(config.nonce)})`);
@@ -214,5 +226,5 @@ async function makeBackend({main, target, targets, port, connections, selection,
   };
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main().catch(error => { console.error(JSON.stringify({status: 'REFUSED', reason: cleanFailure(error)})); process.exitCode = 1; });
+  main({selectionText: process.env.ACCEPTANCE_SELECTION, planName: process.env.ACCEPTANCE_PLAN}).catch(error => { console.error(JSON.stringify({status: 'REFUSED', reason: cleanFailure(error)})); process.exitCode = 1; });
 }

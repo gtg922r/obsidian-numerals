@@ -1,11 +1,12 @@
 import C from './contracts.cjs';
 import {cancellable} from './cancellation.mjs';
+import {settleCurrent} from './native-settle.mjs';
 
 /** Awaited operations cannot continue a case after cancellation or a failed owner check. */
 export async function runFamily(backend, plan, catalog, signal) {
   C.planCheck(plan, catalog);
   const actions = [], observations = {records: [], faults: []};
-  const family = {actions, observations, diskBlobs: backend.diskBlobs};
+  const family = {mode: backend.mode, actions, observations, diskBlobs: backend.diskBlobs};
   let evidenceBytes = 0;
   const bound = value => { evidenceBytes += Buffer.byteLength(JSON.stringify(value)); C.check(evidenceBytes <= C.LIMITS.bytes, 'controller-byte-limit'); };
   const wait = work => cancellable(work, signal);
@@ -25,7 +26,20 @@ export async function runFamily(backend, plan, catalog, signal) {
         if (['open', 'split', 'popout'].includes(action.op)) action.path ??= c.path;
         live(); actions.push({caseId: c.id, action, status: 'started'});
         if (backend.captureDisk) { actions.at(-1).diskBefore = await wait(() => backend.captureDisk()); live(); }
-        const result = await wait(() => backend.action(action)); live();
+        let result;
+        if (action.op === 'current-sample') {
+          const proof = await wait(() => backend.action({...action, op: 'current-owner'})); live();
+          const request = {...action.sample, caseId: c.id, actionId: action.actionId, leafId: action.leafId, path: c.path, owner: proof?.owner};
+          actions.at(-1).request = structuredClone(request);
+          try {
+            result = {request, currentSample: await settleCurrent({request, mode: backend.mode, signal,
+              capture: async () => { live(); const frame = await backend.action({...action, op: 'current-read', request}); live(); return frame; }})};
+          } catch (error) {
+            actions.at(-1).result = {request, currentSample: error.sampleEvidence};
+            throw error;
+          }
+        } else result = await wait(() => backend.action(action));
+        live();
         bound(result ?? null); C.check(!action.bind || typeof result?.leafId === 'string', 'action-binding-unavailable');
         if (result?.leafId) leafId = result.leafId;
         if (action.bind && result?.leafId) aliases.set(action.bind, result.leafId);

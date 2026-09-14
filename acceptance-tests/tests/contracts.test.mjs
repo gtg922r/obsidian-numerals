@@ -32,7 +32,7 @@ test('app environment retains HOME, excludes credentials/Node/Electron injection
 });
 test('host preflight refuses desktop and even Linux CI while execution wiring is disabled', async () => {
   await assert.rejects(preflight({}, 'darwin', 'arm64'), /linux-ci-only/);
-  await assert.rejects(preflight({GITHUB_ACTIONS: 'true', RUNNER_ENVIRONMENT: 'github-hosted', GITHUB_REPOSITORY: 'gtg922r/obsidian-numerals', GITHUB_RUN_ID: '123'}, 'linux', 'x64'), /host-execution-wiring-disabled/);
+  await assert.rejects(preflight({GITHUB_ACTIONS: 'true', RUNNER_ENVIRONMENT: 'github-hosted', GITHUB_REPOSITORY: 'gtg922r/obsidian-numerals', GITHUB_RUN_ID: '123', GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REF: 'refs/heads/chore/recovery-1.11', GITHUB_WORKFLOW_REF: 'gtg922r/obsidian-numerals/.github/workflows/installed-acceptance.yml@refs/heads/chore/recovery-1.11'}, 'linux', 'x64'), /host-execution-wiring-disabled/);
 });
 test('source marker and realpath must agree; symlinks/traversal are refused', () => {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'acceptance-unit-')), root = path.join(scratch, 'Numerals Acceptance NA13B'); fs.mkdirSync(root);

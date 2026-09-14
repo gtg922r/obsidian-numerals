@@ -1,5 +1,5 @@
 /** Serialized controller action handles only: no observer plugin, wrappers, CM extension or listeners. */
-export function installControl(config) {
+export function installControl(config, native) {
   const app = window.app;
   if (app.vault.adapter.getBasePath() !== config.root || app.plugins.getPlugin('numerals-recovery-acceptance-observer')) throw Error('control-identity');
   const leaves = new Map(), owners = new Map(), windows = new Map([[window, 'control-window-1']]);
@@ -20,9 +20,12 @@ export function installControl(config) {
     for (const [leafId, leaf] of leaves) {
       const {view} = current(leaf);
       const buffer = view.editor.getValue(); check(buffer.length <= 262144);
-      const nodes = [...view.containerEl.querySelectorAll('.numerals-block, .numerals-inline')]; check(nodes.length <= 2000);
+      const nodes = [...view.containerEl.querySelectorAll(native ? '.numerals-block, .numerals-inline, .markdown-preview-view code' : '.numerals-block, .numerals-inline')]
+        .filter(node => !native || !node.matches('code') || !node.closest('pre, .cm-editor, .markdown-embed, .internal-embed'));
+      check(nodes.length <= 2000);
       emit('surface', {leafId, sourcePath: view.file.path, buffer, mode: view.getMode(), windowId: windows.get(view.containerEl.ownerDocument.defaultView),
-        occurrences: nodes.map(node => ({text: node.textContent.slice(0, 16384), classes: node.className, connected: node.isConnected, mathJax: node.querySelectorAll('mjx-container').length}))});
+        occurrences: nodes.map(node => ({...(native ? {id: native.elementId(node)} : {}), text: node.textContent.slice(0, 16384),
+          classes: node.className, connected: node.isConnected, mathJax: node.querySelectorAll('mjx-container').length}))});
     }
   }
   async function call(nonce, operation) {
@@ -49,13 +52,24 @@ export function installControl(config) {
       await leaf.setViewState({type: 'markdown', active: true, state: {file: operation.path, mode: 'source'}}); check(leaf.view.file?.path === operation.path);
       const win = leaf.view.containerEl.ownerDocument.defaultView;
       if (!windows.has(win)) { check(op === 'popout' && win.app === app); windows.set(win, 'control-window-2'); addBridge(win, 'popout'); }
-      owners.set(leaf, {view: leaf.view, editor: leaf.view.editor, file: leaf.view.file, path: operation.path, document: leaf.view.containerEl.ownerDocument, win});
+      owners.set(leaf, {view: leaf.view, editor: leaf.view.editor, file: leaf.view.file, path: operation.path, document: leaf.view.containerEl.ownerDocument, win, window: win, leaf});
       current(leaf);
       const existing = [...leaves].find(([, value]) => value === leaf), leafId = existing?.[0] ?? `control-leaf-${++serial}`; leaves.set(leafId, leaf);
       return {leafId, windowId: windows.get(win)};
       } finally { creatingLeaf = false; }
     }
     const leaf = leaves.get(operation.leafId), owner = current(leaf), editor = owner.editor;
+    if (op === 'current-owner') { check(native); return {owner: native.proof(leaf, owner, operation.leafId)}; }
+    if (op === 'current-read') {
+      check(native && operation.request?.caseId === caseId && operation.request.actionId === actionId && operation.request.leafId === operation.leafId);
+      const frame = native.capture(leaf, current, operation.request, operation.leafId);
+      frame.recordSequence = sequence + 1; emit('current-sample', frame); return frame;
+    }
+    if (op === 'reveal') {
+      check(Number.isSafeInteger(operation.line) && operation.line >= 0 && operation.line < editor.getValue().split(/\r\n?|\n/).length);
+      leaf.view.setEphemeralState({line: operation.line}); current(leaf, owner);
+      return {setup: 'public-ephemeral-line', nativeInteraction: false, requestedLine: operation.line};
+    }
     if (op === 'sample') { observe(); current(leaf, owner); return {sampled: true, texts: [...leaf.view.containerEl.querySelectorAll('.numerals-block, .numerals-inline')].slice(0, 2000).map(node => node.textContent.slice(0, 16384))}; }
     if (op === 'focus') { app.workspace.setActiveLeaf(leaf, {focus: true}); current(leaf, owner); editor.focus(); current(leaf, owner); return {focused: true}; }
     if (op === 'select') { check(Number.isInteger(operation.from) && Number.isInteger(operation.to) && operation.from >= 0 && operation.to >= operation.from && operation.to <= editor.getValue().length); editor.setSelection(editor.offsetToPos(operation.from), editor.offsetToPos(operation.to)); return {selected: true}; }

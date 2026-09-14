@@ -1,5 +1,5 @@
 'use strict';
-const {Plugin, MarkdownView, editorInfoField, editorLivePreviewField} = require('obsidian');
+const {Plugin, MarkdownView, MarkdownRenderChild, apiVersion, editorInfoField, editorLivePreviewField} = require('obsidian');
 const {ViewPlugin} = require('@codemirror/view');
 const {Transaction} = require('@codemirror/state');
 const fs = require('node:fs');
@@ -9,6 +9,8 @@ const {Journal, Identities, Ownership, PopoutTicket} = require('./observer-core.
 const {observeEditor, observeVault} = require('./observer-writes.cjs');
 const {StateObserver} = require('./observer-state.cjs');
 const {cmObserver, domRecord} = require('./observer-cm-dom.cjs');
+const Native = require('./native-reader.cjs');
+const {versions} = require('./native-versions.cjs');
 
 module.exports = class AcceptanceObserver extends Plugin {
   async onload() {
@@ -26,6 +28,7 @@ module.exports = class AcceptanceObserver extends Plugin {
     this.state = new StateObserver(this.ownership, this.ids, this.journal);
     this.stops = new Map(); this.windowStops = new Map(); this.leaves = new Map(); this.dead = false;
     this.register(() => this.dispose());
+    this.anchors = new Native.ReadingAnchors(this, root => new MarkdownRenderChild(root));
     this.stopVault = observeVault(this.app.vault, this.allowedNotes, this.journal);
     this.addWindow(this.app.workspace.containerEl.ownerDocument.defaultView, 'main');
     this.registerEvent(this.app.workspace.on('window-open', (workspaceWindow, win) => {
@@ -49,7 +52,7 @@ module.exports = class AcceptanceObserver extends Plugin {
     }));
     this.registerEditorExtension(cmObserver({ViewPlugin, editorInfoField, editorLivePreviewField, Transaction}, this));
     for (const phase of ['before-native', 'after-native']) this.registerMarkdownPostProcessor((el, context) => {
-      try { const record = domRecord(el, context, this, phase); if (record) this.journal.emit('markdown-dom', record); }
+      try { if (phase === 'before-native') this.anchors.capture(el, context); const record = domRecord(el, context, this, phase); if (record) this.journal.emit('markdown-dom', record); }
       catch { this.journal.fault('dom-observation-gap'); }
     }, phase === 'before-native' ? -1000 : 1000);
     this.reconcile();
@@ -159,6 +162,19 @@ module.exports = class AcceptanceObserver extends Plugin {
     }
     const leaf = this.leaves.get(operation.leafId), owner = this.actionOwner(leaf);
     const view = owner.view, editor = view.editor;
+    if (op === 'current-owner') return {owner: Native.ownerProof(leaf, owner, this.ids)};
+    if (op === 'current-read') {
+      const request = operation.request;
+      C.check(request?.caseId === this.journal.context.caseId && request.actionId === operation.actionId && request.leafId === operation.leafId, 'sample-action-identity');
+      const frame = Native.readCurrent({leaf, request, mode: 'instrumented', guard: (target, expected) => this.actionOwner(target, expected), ids: this.ids,
+        getPlugin: () => this.plugin('numerals'), anchors: this.anchors, versions: versions(owner.window, apiVersion), faults: this.journal.faults});
+      frame.recordSequence = this.journal.sequence + 1; this.journal.emit('current-sample', frame); return frame;
+    }
+    if (op === 'reveal') {
+      C.check(Number.isSafeInteger(operation.line) && operation.line >= 0 && operation.line < editor.getValue().split(/\r\n?|\n/).length, 'reveal-line');
+      view.setEphemeralState({line: operation.line}); this.actionOwner(leaf, owner);
+      return {setup: 'public-ephemeral-line', nativeInteraction: false, requestedLine: operation.line};
+    }
     if (op === 'sample') { this.observe(); this.actionOwner(leaf, owner); return {sampled: true, texts: [...view.containerEl.querySelectorAll('.numerals-block, .numerals-inline')].slice(0, 2000).map(node => node.textContent.slice(0, 16384))}; }
     if (op === 'close') { leaf.detach(); this.reconcile(); return {closed: true}; }
     if (op === 'mode') {
@@ -185,6 +201,7 @@ module.exports = class AcceptanceObserver extends Plugin {
     release(() => this.pendingPopout?.cancel());
     release(() => { if (this.popoutWait) { clearTimeout(this.popoutWait.timer); this.popoutWait.reject(Error('popout-cancelled')); this.popoutWait = undefined; } });
     release(() => this.stopVault?.()); this.stopVault = undefined;
+    release(() => this.anchors?.dispose());
     release(() => this.state?.dispose());
     for (const stop of this.stops?.values() ?? []) release(stop); this.stops?.clear();
     for (const stop of this.windowStops?.values() ?? []) release(stop); this.windowStops?.clear();
