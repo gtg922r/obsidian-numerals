@@ -127,6 +127,7 @@ function readCurrent({leaf, leafId, request, mode, guard, ids, getPlugin, anchor
       visible: visible(code, owner.window) && (!product || Boolean(value && visible(value, owner.window))), original: anchor.original,
       renderedKind: !product ? 'raw-code' : value && !errors.length && !code.classList.contains('numerals-inline-error') ? 'numerals-inline-value' : 'inline-error',
       text: !product ? code.textContent : value?.textContent ?? code.textContent, tex,
+      codeText: code.textContent,
       mathJax: {version: versions.mathJax ?? null, ready: !tex || math.length > 0 && math.every(node => node.querySelector('svg, mjx-math') && !node.querySelector('[data-mjx-error], mjx-merror')),
         publicCompletionSignal: 'not-invoked', allPendingWorkDrained: false}};
     const snapshot = mode === 'instrumented' ? readSnapshot(source, plugin, buffer, owner.file.path, binding, ids) : {available: false, reason: 'observer-absent-control'};

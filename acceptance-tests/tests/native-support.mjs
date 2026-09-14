@@ -13,5 +13,5 @@ export function frame() {
       generation: {sourceId: 'source-1', sourcePath: r.path, sourceText: text, sourceRevision: 1, metadataRevision: '1', dependencyRevision: '1', evaluationSettingsRevision: '1', runtimeGeneration: 1},
       settingsGeneration: 1, evaluationSettingsGeneration: 1, calculationId: 'first', result: 14},
     occurrence: {available: true, sourceSpan: {start: 0, end: 10}, elementId: 'element-first', sectionId: 'section-first', connected: true, visible: true,
-      calculationId: 'first', renderedKind: 'numerals-inline-value', text: '14', tex: false}};
+      calculationId: 'first', renderedKind: 'numerals-inline-value', text: '14', codeText: '14', tex: false}};
 }

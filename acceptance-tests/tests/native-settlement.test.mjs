@@ -53,7 +53,7 @@ async function capturedFamily({wrong = false, interrupt = false} = {}) {
       s.source = {path: r.path, text: source, viewText: source, sha256: r.sourceSha256};
       Object.assign(s.snapshot.generation, {sourcePath: r.path, sourceText: source});
       s.occurrence.sourceSpan = {start: r.target.start, end: r.target.end};
-      if (wrong) { s.snapshot.result = 16; s.occurrence.text = '16'; }
+      if (wrong) { s.snapshot.result = 16; s.occurrence.text = '16'; s.occurrence.codeText = '16'; }
       records.push({kind: 'current-sample', sequence, ...structuredClone(s)}); return s;
     },
     drain() { return {records: records.splice(0), faults: []}; },
@@ -125,4 +125,24 @@ test('an unavailable intermediate journal point read cannot be omitted from the 
   family.observations.records.push(unavailable); family.observations.records.sort((a, b) => a.sequence - b.sequence);
   const assertion = validateFamily(plan, family.observations, family.actions, family.mode)[0].assertions[0];
   assert.equal(assertion.status, 'UNAVAILABLE'); assert.equal(assertion.reason, 'current-frame-journal');
+});
+
+test('later unchanged source cannot preserve PASS when the sampled DOM or owner has visibly retired', async () => {
+  const captured = await capturedFamily(), seal = captured.family.actions[3].result.currentSample.sample;
+  const surface = {kind: 'surface', editorId: 'e', windowId: 'w', leafId: 'leaf-a', sourcePath: seal.source.path, buffer: seal.source.text, mode: 'preview',
+    occurrences: [{id: seal.occurrence.elementId, text: seal.occurrence.codeText, connected: true}]};
+  const evaluate = event => {
+    const family = JSON.parse(JSON.stringify(captured.family));
+    family.observations.records.push({sequence: 100, caseId: 'ORD-01', actionId: 'action-4', ...event});
+    return validateFamily(captured.plan, family.observations, family.actions, family.mode)[0].assertions[0];
+  };
+  assert.equal(evaluate(surface).status, 'PASS');
+  const invalid = [
+    {...surface, occurrences: []}, {...surface, occurrences: [{...surface.occurrences[0], text: 'WRONG'}]},
+    {...surface, occurrences: [{...surface.occurrences[0], connected: false}]},
+    {...surface, occurrences: [{...surface.occurrences[0], id: 'new-element'}]},
+    {kind: 'window-close', windowId: seal.owner.windowId},
+    {kind: 'editor-owner', leafId: 'leaf-a', editorId: 'replacement-editor', windowId: 'w', sourcePath: seal.source.path},
+  ];
+  for (const event of invalid) { const result = evaluate(event); assert.equal(result.status, 'UNAVAILABLE'); assert.equal(result.reason, 'current-seal-invalidated'); }
 });

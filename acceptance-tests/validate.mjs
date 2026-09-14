@@ -107,9 +107,17 @@ export function validateFamily(plan, observations, actions = [], mode) {
           r.sequence > currentSample.sample.recordSequence)) return unavailable('current-seal-superseded');
         const seal = currentSample.sample;
         const later = records.filter(r => r.caseId === c.id && r.actionId === a.actionId && r.sequence > seal.recordSequence);
+        if (later.some(r => r.kind === 'window-close' && r.windowId === request.owner.windowId) ||
+          later.some(r => r.kind === 'editor-owner' && r.leafId === request.leafId && (r.editorId !== request.owner.editorId ||
+            r.windowId !== request.owner.windowId || r.sourcePath !== request.path))) return unavailable('current-seal-invalidated');
         if (later.some(r => r.kind === 'cm-transaction' && r.editorId === request.owner.editorId && r.docChanged) ||
           later.some(r => r.kind === 'surface' && (r.editorId === request.owner.editorId || r.leafId === request.leafId) &&
             (r.buffer !== seal.source.text || r.mode !== 'preview' || r.sourcePath !== request.path))) return unavailable('current-seal-invalidated');
+        for (const surface of later.filter(r => r.kind === 'surface' && (r.editorId === request.owner.editorId || r.leafId === request.leafId))) {
+          const occurrences = surface.occurrences?.filter(o => o.id === seal.occurrence.elementId);
+          if (!occurrences || occurrences.length !== 1 || !occurrences[0].connected || typeof seal.occurrence.codeText !== 'string' ||
+            occurrences[0].text !== seal.occurrence.codeText) return unavailable('current-seal-invalidated');
+        }
         if (mode === 'instrumented') {
           if (later.some(r => r.kind === 'capability' && r.snapshot === false)) return unavailable('current-seal-invalidated');
           if (later.some(r => r.kind === 'snapshot' && r.editorId === request.owner.editorId &&

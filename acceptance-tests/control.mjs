@@ -20,9 +20,12 @@ export function installControl(config, native) {
     for (const [leafId, leaf] of leaves) {
       const {view} = current(leaf);
       const buffer = view.editor.getValue(); check(buffer.length <= 262144);
-      const nodes = [...view.containerEl.querySelectorAll('.numerals-block, .numerals-inline')]; check(nodes.length <= 2000);
+      const nodes = [...view.containerEl.querySelectorAll(native ? '.numerals-block, .numerals-inline, .markdown-preview-view code' : '.numerals-block, .numerals-inline')]
+        .filter(node => !native || !node.matches('code') || !node.closest('pre, .cm-editor, .markdown-embed, .internal-embed'));
+      check(nodes.length <= 2000);
       emit('surface', {leafId, sourcePath: view.file.path, buffer, mode: view.getMode(), windowId: windows.get(view.containerEl.ownerDocument.defaultView),
-        occurrences: nodes.map(node => ({text: node.textContent.slice(0, 16384), classes: node.className, connected: node.isConnected, mathJax: node.querySelectorAll('mjx-container').length}))});
+        occurrences: nodes.map(node => ({...(native ? {id: native.elementId(node)} : {}), text: node.textContent.slice(0, 16384),
+          classes: node.className, connected: node.isConnected, mathJax: node.querySelectorAll('mjx-container').length}))});
     }
   }
   async function call(nonce, operation) {

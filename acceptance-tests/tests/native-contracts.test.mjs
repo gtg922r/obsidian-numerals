@@ -50,3 +50,30 @@ test('built control installs and disposes only action handles without a retained
   const receipt = await win.__numeralsAcceptanceControl.call('n', {op: 'dispose'});
   assert.equal(receipt.disposed, true); assert.equal(Object.hasOwn(win, '__numeralsAcceptanceControl'), false);
 });
+
+test('bundled candidate and disabled controls preserve exact current element IDs in later surface receipts without evaluator reads', async () => {
+  const {fixture, render} = await import('./native-dom-support.mjs'), built = await buildControl(), require = createRequire(import.meta.url);
+  for (const mode of ['control', 'numerals-disabled']) {
+    const h = fixture(); h.anchors.dispose(); if (mode === 'control') render(h);
+    h.plugin.getEditorSnapshot = () => { throw Error('control-must-not-read-evaluator'); };
+    h.leaf.setViewState = async () => {};
+    const win = h.owner.window;
+    win.app = {vault: {adapter: {getBasePath: () => '/fixture'}, getAbstractFileByPath: () => h.owner.file},
+      plugins: {getPlugin: id => id === 'numerals' && mode === 'control' ? h.plugin : null},
+      workspace: {getLeaf: () => h.leaf, iterateAllLeaves: fn => fn(h.leaf)}};
+    const config = {root: '/fixture', nonce: 'n', mode, paths: [h.owner.file.path], caseIds: ['ORD-01']};
+    const context = vm.createContext({window: win, performance, require: name => name === 'obsidian' ? {apiVersion: '1.13.7'} : require(name)});
+    vm.runInContext(`(() => {${built.bytes.toString('utf8')}\nreturn NumeralsAcceptanceControl.install(${JSON.stringify(config)});})()`, context);
+    const call = operation => win.__numeralsAcceptanceControl.call('n', {actionId: 'action-4', ...operation});
+    await call({op: 'beginCase', caseId: 'ORD-01'});
+    const opened = await call({op: 'open', path: h.owner.file.path});
+    const proof = await call({op: 'current-owner', leafId: opened.leafId});
+    const request = {...h.request, leafId: opened.leafId, owner: proof.owner};
+    const sample = await call({op: 'current-read', leafId: opened.leafId, request}); assert.equal(sample.available, true, sample.reason);
+    await call({op: 'endCase'});
+    const evidence = await call({op: 'drain'}), surface = evidence.records.find(r => r.kind === 'surface');
+    const occurrence = surface.occurrences.find(o => o.id === sample.occurrence.elementId);
+    assert.equal(occurrence.text, sample.occurrence.codeText); assert.equal(occurrence.connected, true);
+    assert.equal(sample.snapshot.available, false); await call({op: 'dispose'});
+  }
+});
