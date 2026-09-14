@@ -1,5 +1,5 @@
 import { EditorView, ViewPlugin, type ViewUpdate, Decoration, type DecorationSet, WidgetType } from '@codemirror/view';
-import { type EditorSelection, type EditorState, type Range, StateEffect, StateField } from '@codemirror/state';
+import { type EditorSelection, type EditorState, type Range, Prec, StateEffect, StateField } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
 import { editorInfoField, editorLivePreviewField, type Editor, type TFile } from 'obsidian';
 import { NumeralsRenderStyle, InlineNumeralsMode } from '../numerals.types';
@@ -230,7 +230,7 @@ export function createInlineLivePreviewExtension(registry: SourceRegistry) {
    this.destroyed = true; this.lifetime.abort(); this.input.clear(); this.stopSource(); this.stopRegistry();
   }
  }, {
-  provide: () => inlineProjection,
+  provide: () => Prec.highest(inlineProjection),
   eventObservers: {
    input(event) { this.observe(event); },
    paste(event) { this.observe(event); },

@@ -40,6 +40,7 @@ All notable changes to this project will be documented in this file. The format 
 - Result insertion continues to persist currency codes even when configured-symbol display is enabled.
 
 ### Fixed
+- Keep Live Preview inline results above native code-marker hiding after settings and editor refreshes, while retaining selected-source reveal.
 - Wait for Obsidian's MathJax readiness before rendering TeX on cold plugin load, and discard retired occurrences while startup is pending.
 - Reject stale or incomplete installed-acceptance evidence by replaying pane aliases, retaining the original sample request, matching every journal point read, and invalidating seals after source, rendered output, plugin or owner changes.
 - Register one suggestor with independent block/inline controls; complete copied tokens in complete or unfinished inline spans, preserve closing delimiters and reject stale source, cursor, settings and reference proposals.
