@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. The format 
 ## [Unreleased]
 
 ### Added
+- Register installed-candidate manual acceptance with a default-branch stub that always fails without inspecting inputs or running project code; only the owner selects the separately reviewed recovery workflow.
 - Per-expression TeX rendering for Inline Numerals via the new `#$:` (result only) and `#$=:` (equation) trigger prefixes, which render with MathJax in both Live Preview and Reading mode. Both prefixes are configurable in settings. (Closes #161)
 - Block-level `@format` and `@decimalPlaces` directives for overriding result presentation without changing calculated values. (Closes #75, #140)
 - Currency-standard decimal places by default and optional configured-symbol display for pure currency results, including derived currency values. Currency-code display remains the default. (Closes #160)
