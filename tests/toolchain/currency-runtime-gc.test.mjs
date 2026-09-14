@@ -15,7 +15,7 @@ test('retired currency engines are collectable while retained formatters keep un
       outfile: bundle, bundle: true, platform: 'node', format: 'esm', logLevel: 'silent',
       plugins: [{ name: 'no-host-runtime', setup(build) {
         build.onResolve({ filter: /^obsidian$/ }, () => ({ path: 'obsidian', namespace: 'test-host' }));
-        build.onLoad({ filter: /.*/, namespace: 'test-host' }, () => ({ contents: 'export class TFile {} export const renderMath = () => { throw Error("No host UI"); }; export const finishRenderMath = renderMath; export const sanitizeHTMLToDom = renderMath;' }));
+        build.onLoad({ filter: /.*/, namespace: 'test-host' }, () => ({ contents: 'export class TFile {} export const renderMath = () => { throw Error("No host UI"); }; export const loadMathJax = renderMath; export const finishRenderMath = renderMath; export const sanitizeHTMLToDom = renderMath;' }));
       } }],
     });
     const script = path.join(directory, 'check.mjs');

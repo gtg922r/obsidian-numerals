@@ -44,7 +44,7 @@ it.each([NumeralsRenderStyle.Plain, NumeralsRenderStyle.TeX, NumeralsRenderStyle
  'retains reference names and typed negative-value precedence in %s', async style => {
   const element = document.createElement('div');
   const snapshot = renderSnapshotFixture(element, '[[Budget 💰]].price ^ 2', {style, references: new Map([['[[Budget 💰]].price', -2]])});
-  await Promise.resolve();
+  await Promise.resolve(); await Promise.resolve();
   expect(snapshot.dependencies[0].status).toBe('resolved');
   expect(element.querySelector('.numerals-input')?.textContent).toContain('Budget 💰');
   expect(element.querySelector('.numerals-result')?.textContent).toContain('4');
