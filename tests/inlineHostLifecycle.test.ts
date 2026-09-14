@@ -1,8 +1,8 @@
 import { StreamLanguage } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
 import type { Extension, TransactionSpec } from '@codemirror/state';
-import { EditorState } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
+import { EditorState, Prec, StateEffect, StateField } from '@codemirror/state';
+import { Decoration, EditorView } from '@codemirror/view';
 import { editorInfoField, editorLivePreviewField, TFile } from 'obsidian';
 import { registeredSnapshotFixture } from './sourceRegistryTestSupport';
 import { flushSnapshots as flush } from './hostSnapshotTestSupport';
@@ -29,6 +29,58 @@ function editor(text = 'before `#: 2+3` after', presentation: Extension = []) {
  cleanups.push(() => {view.destroy(); host.destroy();});
  return {...host, cm: view, extension, info, change};
 }
+
+/** Model native high-priority code-marker hiding arriving after the result widget.
+ * Pinned CM exposes the conflict as an extra empty NullWidget; installed Obsidian
+ * also hid the result. Fixed spans exercise CM precedence, not Markdown parsing. */
+const refreshNativeMarkers = StateEffect.define<boolean>();
+function nativeCodeMarkers(from: number, to: number, ticks: number): Extension {
+ const decorations = (state: EditorState, active: boolean) => active && state.field(editorLivePreviewField, false) &&
+  !state.selection.ranges.some(range => range.from <= to && range.to >= from)
+  ? Decoration.set([Decoration.replace({}).range(from, from + ticks), Decoration.replace({}).range(to - ticks, to)])
+  : Decoration.none;
+ return Prec.high(StateField.define({
+  create: () => ({active: false, decorations: Decoration.none}),
+  update: (value, transaction) => {
+   let active = value.active;
+   for (const effect of transaction.effects) if (effect.is(refreshNativeMarkers)) active = effect.value;
+   return {active, decorations: decorations(transaction.state, active)};
+  },
+  provide: field => EditorView.decorations.from(field, value => value.decorations),
+ }));
+}
+
+it.each([
+ {text: 'before `#=: 2+3` after', ticks: 1},
+ {text: 'before ``#$=: 2+\n3`` after', ticks: 2},
+])('keeps one real widget above native marker hiding across refresh and source reveal: $text', async ({text: source, ticks}) => {
+ const from = source.indexOf('`'), to = source.lastIndexOf('`') + 1;
+ const evaluate = jest.spyOn(evaluation, 'evaluateNote');
+ const current = editor(source, nativeCodeMarkers(from, to, ticks)); await flush();
+ const assertWidget = () => {
+  expect(current.cm.contentDOM.querySelectorAll('.numerals-inline')).toHaveLength(1);
+  expect(current.cm.contentDOM.querySelector('.numerals-inline-value')?.textContent).toBe('5');
+  // NullWidget.toDOM() creates an unclassed span in the real CM implementation.
+  expect(current.cm.contentDOM.querySelectorAll('.cm-line > span:not(.numerals-inline)')).toHaveLength(0);
+ };
+ current.cm.dispatch({effects: setLivePreview.of(true)}); await flush(); assertWidget();
+ current.cm.dispatch({effects: refreshNativeMarkers.of(true)}); await flush(); assertWidget();
+ const old = current.configuration();
+ current.configure({...old, settings: {...old.settings, inlineEquationSeparator: ' equals '}, settingsGeneration: 1});
+ current.coordinator.settingsChanged(false); await flush(); assertWidget();
+ expect(current.cm.contentDOM.querySelector('.numerals-inline-separator')?.textContent).toBe(' equals ');
+ current.cm.dispatch({selection: {anchor: from + ticks + 2}});
+ expect(current.cm.contentDOM.querySelector('.numerals-inline')).toBeNull();
+ expect(current.cm.contentDOM.textContent).toContain('#');
+ expect(current.cm.contentDOM.textContent).toContain('2+');
+ current.cm.dispatch({selection: {anchor: 0}}); await flush(); assertWidget();
+ current.cm.dispatch({effects: setLivePreview.of(false)}); await flush();
+ expect(current.cm.contentDOM.querySelector('.numerals-inline')).toBeNull();
+ expect(current.cm.contentDOM.textContent).toContain('2+');
+ current.cm.dispatch({effects: setLivePreview.of(true)}); current.cm.requestMeasure(); await flush(); assertWidget();
+ expect(current.cm.state.doc.toString()).toBe(source);
+ expect(evaluate).toHaveBeenCalledTimes(1); expect(current.transaction).not.toHaveBeenCalled();
+});
 
 it('evaluates in Source mode and changes only projection on mode, selection and viewport updates', async () => {
  const evaluate = jest.spyOn(evaluation, 'evaluateNote'), current = editor(); await flush();
