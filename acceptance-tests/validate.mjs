@@ -1,6 +1,29 @@
 import C from './contracts.cjs';
 import {verifySettlement} from './native-settle.mjs';
 
+/** Replay the plan's pane aliases from complete, returned action receipts. */
+function currentLeaf(c, actions, lastIndex) {
+  const aliases = new Map(); let leafId;
+  for (let i = 0; i <= lastIndex; i++) {
+    const planned = c.actions[i], actionId = `action-${i + 1}`;
+    const entries = actions.filter(e => e.caseId === c.id && e.action?.actionId === actionId);
+    if (!planned || entries.length !== 1 || entries[0].status !== 'returned') return;
+    const entry = entries[0], action = entry.action, expectedLeaf = planned.target ? aliases.get(planned.target) : leafId;
+    if (planned.target && !expectedLeaf || action.leafId !== expectedLeaf ||
+      Object.entries(planned).some(([key, value]) => JSON.stringify(action[key]) !== JSON.stringify(value))) return;
+    if (i === lastIndex) return expectedLeaf;
+    if (['open', 'split', 'popout'].includes(planned.op)) {
+      if (action.path !== (planned.path ?? c.path) || typeof entry.result?.leafId !== 'string' ||
+        planned.op === 'open' && expectedLeaf && entry.result.leafId !== expectedLeaf) return;
+      leafId = entry.result.leafId;
+      if (planned.bind) { if (aliases.has(planned.bind)) return; aliases.set(planned.bind, leafId); }
+    } else if (planned.op === 'close') {
+      for (const [alias, bound] of aliases) if (bound === expectedLeaf) aliases.delete(alias);
+      if (leafId === expectedLeaf) leafId = undefined;
+    }
+  }
+}
+
 function assertionResult(assertion, records, faults) {
   const unavailable = reason => ({kind: assertion.kind, status: 'UNAVAILABLE', reason});
   const result = ok => ({kind: assertion.kind, status: ok ? 'PASS' : 'FAIL'});
@@ -61,27 +84,34 @@ export function validateFamily(plan, observations, actions = [], mode) {
       const unavailable = reason => ({kind: a.kind, sampleId: a.sampleId, actionId: a.actionId, status: 'UNAVAILABLE', reason});
       const entries = actions.filter(e => e.caseId === c.id && e.action.actionId === a.actionId && e.action.op === 'current-sample');
       if (entries.length !== 1 || entries[0].status !== 'returned') return unavailable('current-action-unfinished');
-      const entry = entries[0], selected = c.actions[Number(a.actionId.slice(7)) - 1], {request, currentSample} = entry.result ?? {};
+      const entry = entries[0], selectedIndex = Number(a.actionId.slice(7)) - 1, selected = c.actions[selectedIndex], {request, currentSample} = entry.result ?? {};
       if (!request || selected?.sample?.id !== a.sampleId || request.id !== a.sampleId || request.caseId !== c.id || request.path !== c.path ||
         request.actionId !== a.actionId || request.leafId !== entry.action.leafId ||
+        !request.leafId || request.leafId !== currentLeaf(c, actions, selectedIndex) || JSON.stringify(entry.request) !== JSON.stringify(request) ||
         ['expected', 'mode', 'target', 'sourceSha256'].some(key => JSON.stringify(request[key]) !== JSON.stringify(selected.sample[key]))) return unavailable('current-plan-binding');
       if (faults.length) return {kind: a.kind, sampleId: a.sampleId, status: 'PARTIAL', reason: 'current-coverage-fault', faults};
       const verified = verifySettlement(currentSample, request, mode);
       if (verified.status === 'PASS' || verified.status === 'FAIL') {
         const frames = currentSample.frames;
-        // Every retained point read must be linked to the same explicit host action's journal.
-        for (const frame of frames) {
-          const matches = records.filter(r => r.kind === 'current-sample' && r.sequence === frame.recordSequence &&
-            r.caseId === c.id && r.actionId === a.actionId && r.sampleId === a.sampleId && r.leafId === request.leafId);
-          if (matches.length !== 1 || Object.entries(frame).some(([key, value]) => key !== 'controllerElapsedMs' &&
-            JSON.stringify(matches[0][key]) !== JSON.stringify(value))) return unavailable('current-frame-journal');
+        // Replay every point read in this action, including unavailable intermediate reads.
+        const reads = records.filter(r => r.kind === 'current-sample' && r.caseId === c.id && r.actionId === a.actionId);
+        if (reads.length !== frames.length) return unavailable('current-frame-journal');
+        for (let i = 0; i < frames.length; i++) {
+          const frame = frames[i], record = reads[i];
+          if (record.sequence !== frame.recordSequence || record.sampleId !== a.sampleId || record.leafId !== request.leafId ||
+            Object.entries(frame).some(([key, value]) => key !== 'controllerElapsedMs' &&
+              JSON.stringify(record[key]) !== JSON.stringify(value))) return unavailable('current-frame-journal');
         }
         // A later point read in the same requested action supersedes its seal, even if an earlier value matched.
         if (records.some(r => r.kind === 'current-sample' && r.caseId === c.id && r.actionId === a.actionId &&
           r.sequence > currentSample.sample.recordSequence)) return unavailable('current-seal-superseded');
+        const seal = currentSample.sample;
+        const later = records.filter(r => r.caseId === c.id && r.actionId === a.actionId && r.sequence > seal.recordSequence);
+        if (later.some(r => r.kind === 'cm-transaction' && r.editorId === request.owner.editorId && r.docChanged) ||
+          later.some(r => r.kind === 'surface' && (r.editorId === request.owner.editorId || r.leafId === request.leafId) &&
+            (r.buffer !== seal.source.text || r.mode !== 'preview' || r.sourcePath !== request.path))) return unavailable('current-seal-invalidated');
         if (mode === 'instrumented') {
-          const seal = currentSample.sample;
-          const later = records.filter(r => r.caseId === c.id && r.actionId === a.actionId && r.sequence > seal.recordSequence);
+          if (later.some(r => r.kind === 'capability' && r.snapshot === false)) return unavailable('current-seal-invalidated');
           if (later.some(r => r.kind === 'snapshot' && r.editorId === request.owner.editorId &&
             (!r.available || r.status !== 'ready' || !r.sourceMatches || r.sourceId !== seal.snapshot.sourceId || r.snapshotId !== seal.snapshot.snapshotId)) ||
             later.some(r => r.kind === 'settings' && (r.settingsGeneration !== seal.snapshot.settingsGeneration ||

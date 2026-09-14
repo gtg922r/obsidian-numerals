@@ -30,7 +30,7 @@ export async function runFamily(backend, plan, catalog, signal) {
         if (action.op === 'current-sample') {
           const proof = await wait(() => backend.action({...action, op: 'current-owner'})); live();
           const request = {...action.sample, caseId: c.id, actionId: action.actionId, leafId: action.leafId, path: c.path, owner: proof?.owner};
-          actions.at(-1).request = request;
+          actions.at(-1).request = structuredClone(request);
           try {
             result = {request, currentSample: await settleCurrent({request, mode: backend.mode, signal,
               capture: async () => { live(); const frame = await backend.action({...action, op: 'current-read', request}); live(); return frame; }})};

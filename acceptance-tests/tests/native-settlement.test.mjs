@@ -87,3 +87,42 @@ test('stable wrong output fails offline and interrupted current actions retain p
     assert.equal(error.familyEvidence.observations.records.length, 1); return true;
   });
 });
+
+test('offline current evidence replays the named pane from complete earlier action receipts and retains the original request', async () => {
+  const captured = await capturedFamily();
+  for (const edit of [
+    f => { f.actions[0].result.leafId = 'actual-primary-leaf'; },
+    f => { f.actions[0].action.bind = 'different-alias'; },
+    f => { f.actions.splice(0, 1); },
+    f => { f.actions.push(structuredClone(f.actions[0])); },
+    f => { f.actions[0].status = 'started'; },
+    f => { f.actions[3].request.owner.editorId = 'retained-different-editor'; },
+  ]) {
+    const family = JSON.parse(JSON.stringify(captured.family)); edit(family);
+    const assertion = validateFamily(captured.plan, family.observations, family.actions, family.mode)[0].assertions[0];
+    assert.equal(assertion.status, 'UNAVAILABLE'); assert.equal(assertion.reason, 'current-plan-binding');
+  }
+});
+test('later capability loss, changed CM source or changed surface buffer invalidates a current seal in the same action', async () => {
+  const captured = await capturedFamily();
+  const events = [{kind: 'capability', snapshot: false}, {kind: 'cm-transaction', editorId: 'e', docChanged: true, after: 'changed'},
+    {kind: 'surface', editorId: 'e', sourcePath: 'acceptance/ordering.md', mode: 'preview', buffer: 'changed', occurrences: []}];
+  for (const event of events) {
+    const family = JSON.parse(JSON.stringify(captured.family));
+    family.observations.records.push({sequence: 100, caseId: 'ORD-01', actionId: 'action-4', ...event});
+    const assertion = validateFamily(captured.plan, family.observations, family.actions, family.mode)[0].assertions[0];
+    assert.equal(assertion.status, 'UNAVAILABLE'); assert.equal(assertion.reason, 'current-seal-invalidated');
+  }
+});
+test('an unavailable intermediate journal point read cannot be omitted from the settled frames to manufacture a stable suffix', async () => {
+  const {plan, family} = await capturedFamily();
+  const result = family.actions[3].result.currentSample;
+  result.frames.forEach(frame => { frame.recordSequence *= 2; });
+  // The live in-memory seal refers to the final frame; JSON exports retain identical copies.
+  result.sample = result.frames.at(-1);
+  family.observations.records.forEach(record => { record.sequence *= 2; record.recordSequence *= 2; });
+  const unavailable = {...structuredClone(family.observations.records[0]), sequence: 5, recordSequence: 5, available: false, reason: 'current-snapshot-missing'};
+  family.observations.records.push(unavailable); family.observations.records.sort((a, b) => a.sequence - b.sequence);
+  const assertion = validateFamily(plan, family.observations, family.actions, family.mode)[0].assertions[0];
+  assert.equal(assertion.status, 'UNAVAILABLE'); assert.equal(assertion.reason, 'current-frame-journal');
+});
