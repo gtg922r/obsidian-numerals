@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. The format 
 ## [Unreleased]
 
 ### Added
+- Add current Reading occurrence sampling with original native source anchors, bounded snapshot/DOM settling, and an explicit closed-gate installed-acceptance dispatch plan. Each observation binds the selected action, pane, full source and snapshot; separate candidate and disabled controls remain unexecuted pending owner selection.
 - Add an independently pinned installed-acceptance helper with passive source/snapshot and write observers, bounded controller/validator, synthetic cases and pure CI checks. Host execution remains disabled pending a separate reviewed artifact handoff; extraction evidence and product code are unchanged.
 - Upload the three checked candidate files from ordinary recovery CI as a separate acceptance artifact named by the actual tested commit, without requiring a tag or publishing a release.
 - Add **Update stored results**, an explicit one-shot command for the current editor, plus a compact architecture map and recovery surface/insertion contracts.

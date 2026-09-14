@@ -5,7 +5,7 @@ import C from '../contracts.cjs';
 import {catalog, plan} from './support.mjs';
 import {validateFamily} from '../validate.mjs';
 
-test('checked-in workflow executes only pure package checks and no host dispatch exists', () => {
+test('PR workflow executes only pure checks and the execution gate remains closed', () => {
   const workflow = fs.readFileSync(new URL('../../.github/workflows/acceptance-observer-checks.yml', import.meta.url), 'utf8');
   const runs = [...workflow.matchAll(/- run: (.+)/g)].map(match => match[1]);
   assert.deepEqual(runs, ['npm ci --ignore-scripts --no-audit --no-fund', 'npm run check']);

@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "cases": [{
+    "id": "ORD-01",
+    "path": "acceptance/ordering.md",
+    "actions": [
+      {"op": "open", "bind": "primary"},
+      {"op": "mode", "mode": "reading", "target": "primary"},
+      {"op": "reveal", "line": 11, "target": "primary"},
+      {"op": "current-sample", "target": "primary", "sample": {
+        "id": "f-before", "mode": "reading", "sourceSha256": "fc14094a634e7bd893bfae6b4b6ff99422a3ba527720343b1137b37e89748e45",
+        "target": {"kind": "inline", "start": 76, "end": 86, "raw": "`#: $f(2)`"}, "expected": {"value": 14, "text": "14"}
+      }},
+      {"op": "reveal", "line": 339, "target": "primary"},
+      {"op": "current-sample", "target": "primary", "sample": {
+        "id": "f-after", "mode": "reading", "sourceSha256": "fc14094a634e7bd893bfae6b4b6ff99422a3ba527720343b1137b37e89748e45",
+        "target": {"kind": "inline", "start": 3536, "end": 3546, "raw": "`#: $f(2)`"}, "expected": {"value": 16, "text": "16"}
+      }},
+      {"op": "reveal", "line": 341, "target": "primary"},
+      {"op": "current-sample", "target": "primary", "sample": {
+        "id": "x-after", "mode": "reading", "sourceSha256": "fc14094a634e7bd893bfae6b4b6ff99422a3ba527720343b1137b37e89748e45",
+        "target": {"kind": "inline", "start": 3548, "end": 3557, "raw": "`#: $x+1`"}, "expected": {"value": 6, "text": "6"}
+      }}
+    ],
+    "assertions": [
+      {"kind": "current-sample", "sampleId": "f-before", "actionId": "action-4"},
+      {"kind": "current-sample", "sampleId": "f-after", "actionId": "action-6"},
+      {"kind": "current-sample", "sampleId": "x-after", "actionId": "action-8"}
+    ]
+  }]
+}

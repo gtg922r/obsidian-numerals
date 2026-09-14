@@ -10,8 +10,8 @@ export function owner() {
   return {journal, ownership, win, document, file, view, editor};
 }
 export function selection() {
-  return {schema: 1, repository: 'gtg922r/obsidian-numerals', integrationCommit: 'a'.repeat(40), integrationTree: 'b'.repeat(40), harnessCommit: 'c'.repeat(40),
-    runId: 1, runAttempt: 2, artifactId: 3, artifactZipSha256: 'd'.repeat(64), catalogSha256: 'e'.repeat(64), inputsSha256: 'f'.repeat(64), helperSha256: '1'.repeat(64), planSha256: '2'.repeat(64),
+  return {schema: 2, repository: 'gtg922r/obsidian-numerals', integrationCommit: 'a'.repeat(40), integrationTree: 'b'.repeat(40), harnessCommit: 'c'.repeat(40),
+    runId: 1, runAttempt: 2, artifactId: 3, artifactZipSha256: 'd'.repeat(64), catalogSha256: 'e'.repeat(64), inputsSha256: 'f'.repeat(64), helperSha256: '1'.repeat(64), controlSha256: '3'.repeat(64), planSha256: '2'.repeat(64),
     branch: 'chore/recovery-1.11', event: 'push', workflowPath: '.github/workflows/ci.yml', mode: 'instrumented', integration: 'none',
     files: Object.fromEntries(C.FILES.map(name => [name, {size: 3, sha256: C.hash(name.slice(0, 3))}])), manifest: {id: 'numerals', version: '1.11.0', minAppVersion: '1.13.0'}};
 }
@@ -42,7 +42,7 @@ export const paneInvalidations = {
   replacedEditor(h, leaf) { leaf.view.editor = {...leaf.view.editor}; },
   replacedView(h, leaf) { leaf.view = {...leaf.view}; },
 };
-export const existingPaneActions = ['focus', 'select', 'scroll', 'mode', 'sample', 'dataview', 'close'];
+export const existingPaneActions = ['focus', 'select', 'scroll', 'mode', 'sample', 'dataview', 'close', 'current-owner', 'current-read', 'reveal'];
 export function spyPaneActions(h, leaf) {
   const calls = [], record = name => () => { calls.push(name); };
   h.app.workspace.setActiveLeaf = record('activate');

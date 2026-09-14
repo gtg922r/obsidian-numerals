@@ -1,4 +1,5 @@
 import C from './contracts.cjs';
+import {verifySettlement} from './native-settle.mjs';
 
 function assertionResult(assertion, records, faults) {
   const unavailable = reason => ({kind: assertion.kind, status: 'UNAVAILABLE', reason});
@@ -49,13 +50,60 @@ function assertionResult(assertion, records, faults) {
   }
   return unavailable('Assertion has no reviewed installed observation implementation.');
 }
-export function validateFamily(plan, observations) {
+export function validateFamily(plan, observations, actions = [], mode) {
   const {records, faults} = observations;
   C.check(Array.isArray(records) && Array.isArray(faults), 'evidence-schema');
   for (let i = 0; i < records.length; i++) C.check(Number.isSafeInteger(records[i].sequence) && (i === 0 || records[i].sequence > records[i - 1].sequence), 'evidence-order');
   return plan.cases.map(c => {
-    const own = records.filter(r => r.caseId === c.id && r.sourcePath === c.path), results = c.assertions.map(a => assertionResult(a, own, faults));
-    // This increment verifies individual assertions, never the entire 83-row acceptance contract.
+    const own = records.filter(r => r.caseId === c.id && (r.sourcePath === c.path || r.kind === 'current-sample' && r.source?.path === c.path));
+    const results = c.assertions.map(a => {
+      if (a.kind !== 'current-sample') return assertionResult(a, own, faults);
+      const unavailable = reason => ({kind: a.kind, sampleId: a.sampleId, actionId: a.actionId, status: 'UNAVAILABLE', reason});
+      const entries = actions.filter(e => e.caseId === c.id && e.action.actionId === a.actionId && e.action.op === 'current-sample');
+      if (entries.length !== 1 || entries[0].status !== 'returned') return unavailable('current-action-unfinished');
+      const entry = entries[0], selected = c.actions[Number(a.actionId.slice(7)) - 1], {request, currentSample} = entry.result ?? {};
+      if (!request || selected?.sample?.id !== a.sampleId || request.id !== a.sampleId || request.caseId !== c.id || request.path !== c.path ||
+        request.actionId !== a.actionId || request.leafId !== entry.action.leafId ||
+        ['expected', 'mode', 'target', 'sourceSha256'].some(key => JSON.stringify(request[key]) !== JSON.stringify(selected.sample[key]))) return unavailable('current-plan-binding');
+      if (faults.length) return {kind: a.kind, sampleId: a.sampleId, status: 'PARTIAL', reason: 'current-coverage-fault', faults};
+      const verified = verifySettlement(currentSample, request, mode);
+      if (verified.status === 'PASS' || verified.status === 'FAIL') {
+        const frames = currentSample.frames;
+        // Every retained point read must be linked to the same explicit host action's journal.
+        for (const frame of frames) {
+          const matches = records.filter(r => r.kind === 'current-sample' && r.sequence === frame.recordSequence &&
+            r.caseId === c.id && r.actionId === a.actionId && r.sampleId === a.sampleId && r.leafId === request.leafId);
+          if (matches.length !== 1 || Object.entries(frame).some(([key, value]) => key !== 'controllerElapsedMs' &&
+            JSON.stringify(matches[0][key]) !== JSON.stringify(value))) return unavailable('current-frame-journal');
+        }
+        // A later point read in the same requested action supersedes its seal, even if an earlier value matched.
+        if (records.some(r => r.kind === 'current-sample' && r.caseId === c.id && r.actionId === a.actionId &&
+          r.sequence > currentSample.sample.recordSequence)) return unavailable('current-seal-superseded');
+        if (mode === 'instrumented') {
+          const seal = currentSample.sample;
+          const later = records.filter(r => r.caseId === c.id && r.actionId === a.actionId && r.sequence > seal.recordSequence);
+          if (later.some(r => r.kind === 'snapshot' && r.editorId === request.owner.editorId &&
+            (!r.available || r.status !== 'ready' || !r.sourceMatches || r.sourceId !== seal.snapshot.sourceId || r.snapshotId !== seal.snapshot.snapshotId)) ||
+            later.some(r => r.kind === 'settings' && (r.settingsGeneration !== seal.snapshot.settingsGeneration ||
+              r.evaluationSettingsGeneration !== seal.snapshot.evaluationSettingsGeneration))) return unavailable('current-seal-invalidated');
+        }
+      }
+      return {kind: a.kind, sampleId: a.sampleId, actionId: a.actionId, ...verified};
+    });
+    const current = c.assertions.filter(a => a.kind === 'current-sample');
+    if (current.length > 1 && results.filter(r => r.kind === 'current-sample').every(r => r.status === 'PASS')) {
+      const identities = current.map(a => {
+        const sample = actions.find(e => e.caseId === c.id && e.action.actionId === a.actionId).result.currentSample.sample;
+        return JSON.stringify({owner: sample.owner, source: sample.source, mode: sample.mode,
+          snapshot: mode === 'instrumented' ? {sourceId: sample.snapshot.sourceId, indexId: sample.snapshot.indexId, stateId: sample.snapshot.stateId,
+            snapshotId: sample.snapshot.snapshotId, pluginId: sample.snapshot.pluginId, generation: sample.snapshot.generation,
+            settings: sample.snapshot.settings, settingsGeneration: sample.snapshot.settingsGeneration} : null});
+      });
+      if (new Set(identities).size !== 1) for (const result of results.filter(r => r.kind === 'current-sample')) {
+        result.status = 'PARTIAL'; result.reason = 'separate-current-samples-changed-generation'; delete result.scope;
+      }
+    }
+    // Sequential virtualized samples do not imply simultaneous visibility or a complete case pass.
     const status = !own.length ? 'NOT_RUN' : results.some(r => r.status === 'FAIL') ? 'FAIL' : 'PARTIAL';
     return {id: c.id, status, scope: 'bounded-assertions-only', assertions: results};
   });

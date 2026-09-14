@@ -23,12 +23,12 @@ function catalogCheck(catalog) {
   check(catalog.upgrades.length === 13, 'catalog-upgrades');
 }
 function selectionCheck(s, receipt) {
-  check(s?.schema === 1 && s.repository === 'gtg922r/obsidian-numerals', 'selection-repository');
-  const fields = ['schema', 'repository', 'integrationCommit', 'integrationTree', 'harnessCommit', 'runId', 'runAttempt', 'artifactId', 'artifactZipSha256', 'catalogSha256', 'inputsSha256', 'helperSha256', 'planSha256', 'branch', 'event', 'workflowPath', 'mode', 'integration', 'files', 'manifest'];
+  check(s?.schema === 2 && s.repository === 'gtg922r/obsidian-numerals', 'selection-repository');
+  const fields = ['schema', 'repository', 'integrationCommit', 'integrationTree', 'harnessCommit', 'runId', 'runAttempt', 'artifactId', 'artifactZipSha256', 'catalogSha256', 'inputsSha256', 'helperSha256', 'controlSha256', 'planSha256', 'branch', 'event', 'workflowPath', 'mode', 'integration', 'files', 'manifest'];
   check(Object.keys(s).sort().join() === fields.sort().join(), 'selection-fields');
   for (const key of ['integrationCommit', 'integrationTree', 'harnessCommit']) check(sha(s[key], 40), 'selection-commit');
   for (const key of ['runId', 'runAttempt', 'artifactId']) check(integer(s[key]), 'selection-id');
-  for (const key of ['artifactZipSha256', 'catalogSha256', 'inputsSha256', 'helperSha256', 'planSha256']) check(sha(s[key]), 'selection-hash');
+  for (const key of ['artifactZipSha256', 'catalogSha256', 'inputsSha256', 'helperSha256', 'controlSha256', 'planSha256']) check(sha(s[key]), 'selection-hash');
   check(s.branch === 'chore/recovery-1.11' && s.event === 'push' && s.workflowPath === '.github/workflows/ci.yml', 'selection-build');
   check(s.mode === 'instrumented' || s.mode === 'control' || s.mode === 'numerals-disabled', 'selection-mode');
   check(s.integration === 'none' || s.integration === 'dataview', 'selection-integration');
@@ -49,6 +49,8 @@ function selectionCheck(s, receipt) {
 function environmentCheck(env, platform, arch) {
   check(platform === 'linux' && arch === 'x64' && env.GITHUB_ACTIONS === 'true' && env.RUNNER_ENVIRONMENT === 'github-hosted' &&
     env.GITHUB_REPOSITORY === 'gtg922r/obsidian-numerals' && /^\d+$/.test(env.GITHUB_RUN_ID || ''), 'linux-ci-only');
+  check(env.GITHUB_EVENT_NAME === 'workflow_dispatch' && env.GITHUB_REF === 'refs/heads/chore/recovery-1.11' &&
+    env.GITHUB_WORKFLOW_REF === 'gtg922r/obsidian-numerals/.github/workflows/installed-acceptance.yml@refs/heads/chore/recovery-1.11', 'manual-recovery-dispatch-only');
 }
 function appEnvironment(env, display, scratch) {
   const result = {}; for (const key of ['PATH', 'HOME', 'LANG', 'LC_ALL', 'TZ']) if (env[key]) result[key] = env[key];
@@ -84,18 +86,33 @@ function planCheck(plan, catalog) {
   for (const c of plan.cases) {
     check(catalog.cases.some(x => x.id === c.id) && paths.has(c.path) && Array.isArray(c.actions) && c.actions.length <= 40, 'plan-case');
     check(Array.isArray(c.assertions) && c.assertions.length <= 30, 'plan-assertions');
-    const aliases = new Set();
+    const aliases = new Set(), samples = new Map();
     for (const a of c.actions) {
-      check(Object.keys(a).every(k => ['op', 'path', 'mode', 'text', 'key', 'from', 'to', 'offset', 'command', 'bind', 'target', 'expectedText'].includes(k)), 'plan-action-fields');
+      check(Object.keys(a).every(k => ['op', 'path', 'mode', 'text', 'key', 'from', 'to', 'offset', 'command', 'bind', 'target', 'expectedText', 'line', 'sample'].includes(k)), 'plan-action-fields');
       if (a.expectedText !== undefined) check(a.op === 'sample' && typeof a.expectedText === 'string' && a.expectedText.length <= 1024, 'plan-expected-text');
       if (a.target !== undefined) check(aliases.has(a.target), 'plan-target');
       if (a.bind !== undefined) { check(['open', 'split', 'popout'].includes(a.op) && /^[a-z][a-z0-9-]{0,30}$/.test(a.bind) && !aliases.has(a.bind), 'plan-alias'); aliases.add(a.bind); }
-      check(['open', 'mode', 'sample', 'split', 'popout', 'close', 'type', 'key', 'select', 'scroll', 'command', 'dataview'].includes(a.op), 'plan-operation');
+      check(['open', 'mode', 'sample', 'split', 'popout', 'close', 'type', 'key', 'select', 'scroll', 'command', 'dataview', 'reveal', 'current-sample'].includes(a.op), 'plan-operation');
       if (a.path !== undefined) check(paths.has(a.path), 'plan-path');
+      if (a.op === 'reveal') check(aliases.has(a.target) && Number.isSafeInteger(a.line) && a.line >= 0 && a.line < 10000, 'plan-reveal');
+      if (a.op === 'current-sample') {
+        const sample = a.sample, note = catalog.scenarios.flatMap(s => s.notes).find(n => n.path === c.path);
+        check(aliases.has(a.target) && sample && Object.keys(sample).sort().join() === 'expected,id,mode,sourceSha256,target' &&
+          /^[a-z][a-z0-9-]{0,30}$/.test(sample.id) && !samples.has(sample.id) && sample.mode === 'reading' && sample.sourceSha256 === note.sha256 &&
+          sample.expected && Object.keys(sample.expected).sort().join() === 'text,value' && Number.isFinite(sample.expected.value) &&
+          typeof sample.expected.text === 'string' && sample.expected.text.length <= 1024, 'plan-current-sample');
+        // Lazy load avoids a CommonJS initialization cycle with pure source checks.
+        require('./native-sample.cjs').targetCheck(sample.target, note.text);
+        samples.set(sample.id, `action-${c.actions.indexOf(a) + 1}`);
+      }
+      if (a.op !== 'current-sample') check(a.sample === undefined, 'plan-sample-field');
+      if (a.op !== 'reveal') check(a.line === undefined, 'plan-line-field');
       if (a.op === 'type') check(typeof a.text === 'string' && a.text.length <= 1024, 'plan-text');
       if (a.op === 'mode') check(['reading', 'source', 'live-preview'].includes(a.mode), 'plan-mode');
       if (a.op === 'command') check(a.command === 'numerals:update-stored-results', 'plan-command');
     }
+    for (const a of c.assertions.filter(a => a.kind === 'current-sample')) check(
+      Object.keys(a).sort().join() === 'actionId,kind,sampleId' && samples.get(a.sampleId) === a.actionId, 'plan-current-assertion');
   }
 }
 module.exports = {LIMITS, ID, PLUGIN, FILES, hash, check, sha, notePath, catalogCheck, selectionCheck, environmentCheck, appEnvironment, guard, within, installedCheck, planCheck};
