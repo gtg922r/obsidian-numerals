@@ -365,6 +365,10 @@ Only the owner may prepare BRAT prereleases from the reviewed `chore/recovery-1.
 
 The publication denial applies to commits containing these entrypoints. Historical tags retain their historical workflows; the owner-only reviewed recovery tagging policy still applies.
 
+### Installed candidate acceptance
+
+GitHub requires a manually dispatched workflow to exist on the default branch before it can be selected on another branch. The default `.github/workflows/installed-acceptance.yml` only registers **Installed candidate acceptance**, with required string inputs `selection` (owner-reviewed bounded artifact-selection JSON) and `plan` (reviewed allowlisted `.plan.json` filename). This stub always fails with fixed guidance, including when copied to another branch; it never reads the inputs, checks out code, downloads artifacts or runs an app. Only the owner may dispatch the separately reviewed `chore/recovery-1.11` version, which must independently validate the selected ref, artifact and plan. See [GitHub's manual workflow documentation](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow). Registration does not perform acceptance or authorize publication.
+
 ## Related
 
 Other Obsidian calculation plugins may fit different workflows:

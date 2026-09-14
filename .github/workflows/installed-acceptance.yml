@@ -1,0 +1,25 @@
+name: Installed candidate acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      selection:
+        description: Owner-reviewed bounded artifact-selection JSON
+        required: true
+        type: string
+      plan:
+        description: Reviewed allowlisted .plan.json filename
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  registration-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    steps:
+      - name: Refuse execution from the registration stub
+        run: |
+          echo "::error::Select the reviewed chore/recovery-1.11 ref for installed candidate acceptance. This registration stub always refuses execution."
+          exit 1
