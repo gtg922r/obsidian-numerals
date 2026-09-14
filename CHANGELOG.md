@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file. The format 
 - Currency-standard decimal places by default and optional configured-symbol display for pure currency results, including derived currency values. Configured-symbol display is the default when no valid saved preference exists; saved code/symbol choices are preserved. (Closes #160)
 
 ### Changed
+- Record the reviewed manual-workflow registration and current-sample helper, distinguishing completed automated checks from installed testing that still requires workflow approval.
 - Record reviewed metadata, surface, suggestion and passive acceptance-helper merges in the work ledger; distinguish completed automated checks from pending installed-candidate validation.
 - Record accepted source evaluation, verified CI acceptance artifacts, default development-dependency remediation and stable/recovery documentation in the work ledger; define bounded automatic insertion and an explicit stored-result update action without changing source freshness or stable publication.
 - Render blocks, Reading inline code and Live Preview from one complete source-ordered snapshot per proved editor generation; selection, scrolling, mode changes and presentation settings project retained results without rerunning math.
